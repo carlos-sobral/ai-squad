@@ -64,51 +64,125 @@ O orquestrador vai te guiar pelo resto.
 
 ---
 
-## Como funciona — o fluxo em resumo
+## Como funciona — o fluxo completo
+
+O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente manualmente — ele te diz o que fazer em cada etapa.
 
 ```
-Você tem uma ideia
-       ↓
-/sdlc-orchestrator    ← ponto de entrada, sempre
-       ↓
-product-manager       ← transforma a ideia em requisitos
-       ↓
-software-architect    ← define a solução técnica
-       ↓
-backend-engineer      ← implementa o servidor/API
-frontend-engineer     ← implementa a interface      ← em paralelo
-       ↓
-security-engineer     ← revisão de segurança
-software-architect    ← revisão de código           ← em paralelo
-       ↓
-qa-engineer           ← escreve e roda os testes
-tech-writer           ← documenta                   ← em paralelo
-       ↓
-Pronto para fazer merge
+┌─────────────────────────────────────────────────────────────┐
+│  SETUP (roda uma vez por projeto)                           │
+│                                                             │
+│  cloud-architect    → configura CI/CD e infra               │
+│  product-designer   → cria o design system visual           │
+└─────────────────────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│  DISCOVERY (opcional — para ideias ainda em aberto)         │
+│                                                             │
+│  idea-researcher    → pesquisa e estrutura a ideia          │
+│  product-manager    → escreve os requisitos (PRD)           │
+└─────────────────────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│  DESIGN (para módulos com interface visual)                 │
+│                                                             │
+│  product-designer   → especifica telas, fluxos e copy       │
+│  software-architect → define a solução técnica              │
+└─────────────────────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│  IMPLEMENTAÇÃO                                              │
+│                                                             │
+│  backend-engineer   ──────────────────────────────┐         │
+│  frontend-engineer  → rodam em paralelo           │         │
+│  refactoring-engineer → limpa o código gerado     │         │
+└───────────────────────────────────────────────────┼─────────┘
+                                                    ↓
+┌─────────────────────────────────────────────────────────────┐
+│  REVISÃO                                                    │
+│                                                             │
+│  security-engineer  ──────────────────────────────┐         │
+│  software-architect → revisão de código           │         │
+│  quality-architect  → (opcional) guardrails de QA │         │
+│  cloud-architect    → (opcional) se mudou infra   │         │
+└───────────────────────────────────────────────────┼─────────┘
+                                                    ↓
+┌─────────────────────────────────────────────────────────────┐
+│  ENTREGA                                                    │
+│                                                             │
+│  qa-engineer        → escreve e roda os testes             │
+│  tech-writer        → documenta                            │
+│  performance-engineer → (opcional) auditoria de perf       │
+└─────────────────────────────────────────────────────────────┘
+                         ↓
+                   Merge para main
 ```
-
-Você não precisa chamar cada agente manualmente. O `/sdlc-orchestrator` sabe qual é o próximo passo e te diz o que fazer.
 
 ---
 
-## Os agentes disponíveis
+## Os agentes e seus modos
 
-| Skill | O que faz |
-|---|---|
-| `/sdlc-orchestrator` | **Ponto de entrada.** Guia você pelo fluxo completo, decide quem chamar e quando |
-| `/software-architect` | Transforma requisitos em especificação técnica; revisa implementações |
-| `/product-manager` | Escreve PRDs e histórias de usuário com critérios de aceite |
-| `/product-designer` | Define o design system do projeto; especifica telas e fluxos de UX |
-| `/idea-researcher` | Pesquisa e estrutura ideias antes de virar requisito |
-| `/backend-engineer` | Implementa APIs, banco de dados, lógica de negócio |
-| `/frontend-engineer` | Implementa componentes e páginas seguindo o design system |
-| `/qa-engineer` | Escreve e roda testes end-to-end; valida critérios de aceite |
-| `/security-engineer` | Revisa código procurando vulnerabilidades |
-| `/tech-writer` | Documenta APIs e decisões técnicas |
-| `/performance-engineer` | Audita performance de frontend e backend |
-| `/refactoring-engineer` | Limpa e simplifica código sem mudar comportamento |
-| `/cloud-architect` | Configura CI/CD e infraestrutura |
-| `/quality-architect` | Revisa qualidade dos testes e guardrails do projeto |
+Alguns agentes têm **modos diferentes** dependendo do momento do projeto. É importante entender isso para saber o que pedir.
+
+### `software-architect` — 2 modos
+
+| Modo | Quando usar | O que produz |
+|---|---|---|
+| **Spec mode** | Antes da implementação | Especificação técnica detalhada: API contracts, modelo de dados, decisões arquiteturais |
+| **Code review mode** | Depois da implementação | Revisão do código contra a spec original: bugs, desvios, problemas de qualidade |
+
+```
+# spec mode
+/software-architect escreve a spec para o módulo X
+
+# code review mode
+/software-architect revisa a implementação do módulo X
+```
+
+---
+
+### `product-designer` — 2 modos
+
+| Modo | Quando usar | O que produz |
+|---|---|---|
+| **Design System Mode** | Uma vez por projeto, antes do primeiro módulo com UI | `docs/design-system.md` com cores, tipografia, espaçamentos, componentes — a fundação visual de todas as telas |
+| **UX Spec Mode** | Uma vez por módulo com UI, depois do PRD | Especificação de telas: fluxos, estados, copy, acessibilidade, inventário de componentes |
+
+O Design System Mode só precisa rodar uma vez. Depois disso, todos os módulos seguintes usam o sistema definido — não é preciso aprovar o visual de cada tela separadamente.
+
+```
+# design system mode (uma vez)
+/product-designer cria o design system do projeto
+
+# ux spec mode (por módulo)
+/product-designer especifica as telas do módulo X
+```
+
+---
+
+### `cloud-architect` — 2 modos
+
+| Modo | Quando usar | O que produz |
+|---|---|---|
+| **Setup mode** | Uma vez por projeto, antes do primeiro deploy | Pipeline de CI/CD, script de setup local, documentação de variáveis de ambiente |
+| **Review mode** | Ao revisar PRs que tocam em infra ou CI/CD | Revisão de segurança e conformidade de mudanças de infraestrutura |
+
+```
+# setup mode (uma vez)
+/cloud-architect configura o CI/CD do projeto
+
+# review mode
+/cloud-architect revisa as mudanças de infra deste PR
+```
+
+---
+
+### `performance-engineer` — 2 modos
+
+| Modo | Quando usar | O que produz |
+|---|---|---|
+| **Gate mode** | Na primeira entrega de cada módulo | Veredicto de performance: aprovado / aprovado com ressalvas / reprovado |
+| **Audit mode** | Periodicamente (ex: a cada 2 semanas) | Relatório completo de performance da aplicação |
 
 ---
 
