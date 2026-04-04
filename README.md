@@ -186,6 +186,37 @@ O Design System Mode só precisa rodar uma vez. Depois disso, todos os módulos 
 
 ---
 
+## TeamMode — agentes em paralelo com tmux (opcional, recomendado)
+
+Quando o `sdlc-orchestrator` roda dois agentes ao mesmo tempo (ex: backend + frontend), eles aparecem como **painéis divididos no terminal** — você vê o progresso de cada um em tempo real.
+
+Para ativar, você precisa do **tmux** instalado e dois ajustes no `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "Preferences": {
+    "tmuxSplitPanes": true
+  },
+  "teammateMode": "tmux"
+}
+```
+
+Depois, sempre que for usar o Claude Code, abra dentro de uma sessão tmux:
+
+```bash
+tmux
+claude
+```
+
+Sem o tmux, os agentes ainda funcionam — rodam em sequência, sem os painéis. O TeamMode é opcional mas muda bastante a experiência.
+
+→ **Guia completo de instalação e configuração:** [TEAMMODE.md](./TEAMMODE.md)
+
+---
+
 ## Dica: o arquivo CLAUDE.md é o segredo
 
 O arquivo `CLAUDE.md` na raiz do seu projeto é o que dá contexto a todos os agentes. Sem ele, cada agente começa do zero e pode fazer suposições erradas sobre o seu stack ou convenções.
