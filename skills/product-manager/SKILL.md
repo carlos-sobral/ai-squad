@@ -1,417 +1,415 @@
 ---
 name: product-manager
 description: >
-  Cria PRDs (Product Requirements Documents) completos e escreve user stories com critérios de aceite,
-  tudo formatado em Markdown diretamente no chat. Use esta skill sempre que o usuário mencionar:
-  PRD, documento de requisitos, user story, história de usuário, critérios de aceite, acceptance criteria,
-  épico, feature spec, especificação de produto, "escrever requisitos", "definir produto",
-  "documentar funcionalidade", "criar backlog", ou qualquer tarefa de documentação de produto digital.
-  Mesmo que o usuário não cite explicitamente "PRD" ou "user story" — se estiver descrevendo uma
-  funcionalidade ou produto que precisa ser documentado, use esta skill.
+  Creates complete PRDs (Product Requirements Documents) and writes user stories with acceptance criteria,
+  all formatted in Markdown directly in the chat. Use this skill whenever the user mentions:
+  PRD, requirements document, user story, acceptance criteria, epic, feature spec, product specification,
+  "write requirements", "define product", "document feature", "create backlog", or any digital product
+  documentation task. Even if the user does not explicitly say "PRD" or "user story" — if they are
+  describing a feature or product that needs to be documented, use this skill.
 ---
 
 # Product Management Skill — Spec-Driven Development
 
-Gera documentação de produto de alta qualidade em Markdown, diretamente no chat.
-Orientada ao fluxo **Spec-Driven Development (SDD)**: a especificação é o artefato primário,
-não o código. O fluxo padrão é: **Intenção → Spec/PRD → User Stories → Plano de Tarefas → Implementação**.
+Generates high-quality product documentation in Markdown, directly in the chat.
+Oriented toward the **Spec-Driven Development (SDD)** flow: the specification is the primary artifact,
+not the code. The default flow is: **Intent → Spec/PRD → User Stories → Task Plan → Implementation**.
 
 ---
 
-## Filosofia Spec-Driven
+## Spec-Driven Philosophy
 
-> "Não peça à IA para adivinhar sua intenção. Dê contexto, guardrails e critérios de aceite."
+> "Don't ask the AI to guess your intent. Give it context, guardrails, and acceptance criteria."
 
-No SDD, a spec não é documentação burocrática — é o **contrato vivo** entre PM, design, engenharia
-e agentes de IA. Ela captura o *porquê* por trás de cada decisão, os trade-offs aceitos e os
-guardrails que não podem ser violados.
+In SDD, the spec is not bureaucratic documentation — it is the **living contract** between PM, design,
+engineering, and AI agents. It captures the *why* behind each decision, the trade-offs accepted, and
+the guardrails that cannot be violated.
 
-**Princípios fundamentais:**
-- **Problema antes de solução** — nunca descreva a solução sem antes alinhar o problema
-- **Não-objetivos explícitos** — o que não será feito é tão importante quanto o que será
-- **Spec como documento vivo** — atualize sempre que houver decisões ou mudanças; ela é a source of truth
-- **Edge cases no papel, não no código** — identifique os "gotchas" durante a spec, não na QA
-- **Critérios executáveis** — cada critério de aceite deve ser testável por humanos e por agentes
+**Core principles:**
+- **Problem before solution** — never describe the solution without first aligning on the problem
+- **Explicit non-goals** — what will NOT be done is as important as what will be done
+- **Spec as a living document** — update it whenever decisions or changes occur; it is the source of truth
+- **Edge cases on paper, not in code** — identify "gotchas" during spec, not during QA
+- **Executable criteria** — every acceptance criterion must be testable by humans and agents
 
 ---
 
-## Fluxo SDD: Como Usar Esta Skill
+## SDD Flow: How to Use This Skill
 
 ```
-1. ALINHAMENTO     → Clarificar estratégia, trade-offs e constraints antes de escrever
-2. PRD             → Documento de problema + solução de alto nível
-3. USER STORIES    → Decomposição em histórias testáveis com critérios Gherkin
-4. PLANO DE TASKS  → Breakdown em tarefas independentes e implementáveis (opcional)
-5. REVISÃO         → Validar spec antes de avançar para código
+1. ALIGNMENT    → Clarify strategy, trade-offs, and constraints before writing
+2. PRD          → Problem + high-level solution document
+3. USER STORIES → Decompose into testable stories with Gherkin criteria
+4. TASK PLAN    → Break into independent, implementable tasks (optional)
+5. REVIEW       → Validate the spec before advancing to code
 ```
 
-**Regra de ouro:** não avance para a próxima fase sem validação da fase anterior.
+**Golden rule:** do not advance to the next phase without validating the previous one.
 
 ---
 
-## Fase 0 — Alinhamento (Sempre Primeiro)
+## Phase 0 — Alignment (Always First)
 
-Antes de gerar qualquer documento, colete o contexto mínimo necessário.
-Se o usuário não forneceu, pergunte **no máximo 3 dessas questões**:
+Before generating any document, collect the minimum necessary context.
+If the user has not provided it, ask **at most 3 of these questions**:
 
-| Dimensão | Pergunta |
+| Dimension | Question |
 |---|---|
-| **Estratégia** | Como esta feature avança o roadmap? Qual a única métrica que importa? |
-| **Problema** | Qual dor do usuário estamos resolvendo? Quais dados ou feedbacks sustentam isso? |
-| **Trade-offs** | Quais constraints existem? (performance, privacidade, compliance, UX, reuso) |
-| **Edge cases** | Quais situações-limite precisamos tratar? O que pode dar errado? |
-| **Contexto técnico** | Há módulos, APIs ou padrões existentes que devem ser considerados? |
-| **Referências** | Existem wireframes, mockups ou fluxos já desenhados? |
+| **Strategy** | How does this feature advance the roadmap? What is the one metric that matters? |
+| **Problem** | What user pain are we solving? What data or feedback supports this? |
+| **Trade-offs** | What constraints exist? (performance, privacy, compliance, UX, reuse) |
+| **Edge cases** | What boundary conditions must we handle? What can go wrong? |
+| **Technical context** | Are there existing modules, APIs, or patterns to consider? |
+| **References** | Are there wireframes, mockups, or flows already designed? |
 
-> **Dica:** Não peça tudo de uma vez. Priorize as lacunas mais críticas para o documento.
+> **Tip:** Don't ask everything at once. Prioritize the most critical gaps for the document.
 
 ---
 
 ## 1. PRD — Product Requirements Document
 
-### Quando usar
-Ao documentar uma funcionalidade, produto ou iniciativa de forma estruturada para alignment entre
-times e como input para agentes de IA ou engenheiros.
+### When to use
+When documenting a feature, product, or initiative in a structured way for team alignment
+and as input for AI agents or engineers.
 
-### Processo
-1. Execute a Fase 0 se necessário
-2. Preencha o template abaixo com as informações disponíveis
-3. Marque lacunas com `[A DEFINIR]` em vez de inventar conteúdo
-4. Para MVPs: use versão simplificada (seções 1, 3, 4, 5 e 8)
+### Process
+1. Run Phase 0 if necessary
+2. Fill in the template below with available information
+3. Mark gaps with `[TO DEFINE]` instead of inventing content
+4. For MVPs: use a simplified version (sections 1, 3, 4, 5, and 8 only)
 
-### Template de PRD
+### PRD Template
 
 ```markdown
-# PRD: [Nome da Funcionalidade]
+# PRD: [Feature Name]
 
-**Status:** 🟡 Rascunho | 🔵 Em Revisão | 🟢 Aprovado
-**Autor:** [Nome] | **Time:** [Squad/Tribo]
-**Data:** [Data] | **Versão:** 1.0
-**Stakeholders:** PM: [Nome] · Design: [Nome] · Eng: [Nome]
-
----
-
-## 1. Problema & Contexto
-
-### O Problema
-[Descreva o problema do usuário em linguagem de negócio. Evite saltar para a solução aqui.]
-
-### Por Que Agora?
-[Dados, pesquisa de usuário ou contexto estratégico que tornam isso urgente.]
-
-### Alinhamento Estratégico
-[Como esta feature avança o roadmap? Qual OKR ou métrica-norte ela impacta?]
+**Status:** 🟡 Draft | 🔵 In Review | 🟢 Approved
+**Author:** [Name] | **Team:** [Squad/Tribe]
+**Date:** [Date] | **Version:** 1.0
+**Stakeholders:** PM: [Name] · Design: [Name] · Eng: [Name]
 
 ---
 
-## 2. Usuários-Alvo
+## 1. Problem & Context
 
-| Persona | Perfil | Dor Principal | Jobs-to-be-Done |
+### The Problem
+[Describe the user problem in business language. Avoid jumping to the solution here.]
+
+### Why Now?
+[Data, user research, or strategic context that makes this urgent.]
+
+### Strategic Alignment
+[How does this feature advance the roadmap? Which OKR or north-star metric does it impact?]
+
+---
+
+## 2. Target Users
+
+| Persona | Profile | Main Pain | Jobs-to-be-Done |
 |---|---|---|---|
-| [Nome] | [Descrição] | [O que frustra] | [O que tenta realizar] |
+| [Name] | [Description] | [What frustrates them] | [What they are trying to accomplish] |
 
 ---
 
-## 3. Solução Proposta
+## 3. Proposed Solution
 
-### Visão Geral
-[Descrição de alto nível da solução — o que será construído e como resolve o problema.]
+### Overview
+[High-level description of the solution — what will be built and how it solves the problem.]
 
-### Fluxo Principal
-[Descreva o happy path em 3-5 passos do ponto de vista do usuário.]
+### Main Flow
+[Describe the happy path in 3–5 steps from the user's perspective.]
 
-1. Usuário faz X
-2. Sistema responde com Y
-3. Usuário vê Z
+1. User does X
+2. System responds with Y
+3. User sees Z
 
-### Design & Referências
-[Links para Figma, wireframes ou protótipos. Se não houver, descreva o fluxo esperado.]
-
----
-
-## 4. Escopo
-
-### ✅ In Scope (O que será feito)
-- [Funcionalidade A]
-- [Funcionalidade B]
-
-### ❌ Out of Scope (O que NÃO será feito nesta versão)
-- [Item excluído] — *motivo: [justificativa]*
-- [Item excluído] — *motivo: [justificativa]*
-
-> Os não-objetivos são tão importantes quanto os objetivos. Documente o motivo.
+### Design & References
+[Links to Figma, wireframes, or prototypes. If none exist, describe the expected flow.]
 
 ---
 
-## 5. Requisitos Funcionais
+## 4. Scope
 
-> Descreva o **comportamento observável** do sistema — não a implementação técnica.
+### ✅ In Scope (What will be done)
+- [Feature A]
+- [Feature B]
 
-### RF-01: [Nome]
-- **Descrição:** [O que o sistema deve fazer]
-- **Prioridade:** 🔴 P0 — Bloqueante | 🟡 P1 — Importante | 🟢 P2 — Desejável
-- **Input:** [O que entra]
-- **Output:** [O que sai / o que o usuário vê]
-- **Edge cases:** [Condições-limite e comportamento esperado]
+### ❌ Out of Scope (What will NOT be done in this version)
+- [Excluded item] — *reason: [justification]*
+- [Excluded item] — *reason: [justification]*
 
-### RF-02: [Nome]
-*(repetir estrutura)*
+> Non-goals are as important as goals. Document the reason.
 
 ---
 
-## 6. Requisitos Não-Funcionais & Constraints
+## 5. Functional Requirements
 
-| Categoria | Requisito | Verificação |
+> Describe the **observable behavior** of the system — not the technical implementation.
+
+### FR-01: [Name]
+- **Description:** [What the system must do]
+- **Priority:** 🔴 P0 — Blocker | 🟡 P1 — Important | 🟢 P2 — Desirable
+- **Input:** [What comes in]
+- **Output:** [What comes out / what the user sees]
+- **Edge cases:** [Boundary conditions and expected behavior]
+
+### FR-02: [Name]
+*(repeat structure)*
+
+---
+
+## 6. Non-Functional Requirements & Constraints
+
+| Category | Requirement | Verification |
 |---|---|---|
-| **Performance** | [Ex: p95 < 500ms] | [Como medir] |
-| **Segurança** | [Ex: dados encriptados em repouso] | [Auditoria / pentest] |
-| **Acessibilidade** | [Ex: WCAG 2.1 AA] | [Ferramenta de lint] |
-| **Escalabilidade** | [Ex: suportar 50k req/min] | [Load test] |
-| **Compliance** | [Ex: LGPD — dados pessoais não saem do BR] | [Revisão jurídica] |
+| **Performance** | [e.g., p95 < 500ms] | [How to measure] |
+| **Security** | [e.g., data encrypted at rest] | [Audit / pentest] |
+| **Accessibility** | [e.g., WCAG 2.1 AA] | [Lint tool] |
+| **Scalability** | [e.g., support 50k req/min] | [Load test] |
+| **Compliance** | [e.g., GDPR — personal data stays in EU] | [Legal review] |
 
 ---
 
-## 7. Trade-offs & Decisões
+## 7. Trade-offs & Decisions
 
-> Registre decisões tomadas e o raciocínio por trás delas. Isso evita que a mesma discussão
-> aconteça novamente — e orienta agentes de IA que vão implementar.
+> Record decisions made and the reasoning behind them. This prevents the same discussion
+> from happening again — and guides AI agents that will implement the feature.
 
-| Decisão | Alternativas Consideradas | Escolha | Motivo |
+| Decision | Alternatives Considered | Choice | Reason |
 |---|---|---|---|
-| [Ex: Onde armazenar preferências] | Cookie vs. localStorage vs. DB | DB | Persistência cross-device necessária |
+| [e.g., Where to store preferences] | Cookie vs. localStorage vs. DB | DB | Cross-device persistence required |
 
 ---
 
-## 8. Métricas de Sucesso
+## 8. Success Metrics
 
-| Métrica | Baseline Atual | Meta | Prazo | Método de Medição |
+| Metric | Current Baseline | Target | Deadline | Measurement Method |
 |---|---|---|---|---|
-| [Ex: Taxa de conversão no onboarding] | [X%] | [Y%] | [Data] | [Mixpanel / SQL] |
+| [e.g., Onboarding conversion rate] | [X%] | [Y%] | [Date] | [Mixpanel / SQL] |
 
 ---
 
-## 9. Riscos & Mitigações
+## 9. Risks & Mitigations
 
-| Risco | Probabilidade | Impacto | Mitigação |
+| Risk | Probability | Impact | Mitigation |
 |---|---|---|---|
-| [Risco técnico ou de negócio] | Alta/Média/Baixa | Alto/Médio/Baixo | [Ação preventiva] |
+| [Technical or business risk] | High/Medium/Low | High/Medium/Low | [Preventive action] |
 
 ---
 
-## 10. Dependências
+## 10. Dependencies
 
-- **Bloqueia:** [Time ou sistema que depende desta feature]
-- **Bloqueado por:** [O que precisa estar pronto antes]
-- **Integrações:** [APIs, serviços externos ou módulos internos]
+- **Blocks:** [Team or system that depends on this feature]
+- **Blocked by:** [What must be ready first]
+- **Integrations:** [APIs, external services, or internal modules]
 
 ---
 
 ## 11. Timeline
 
-| Marco | Data Prevista | Responsável | Status |
+| Milestone | Target Date | Owner | Status |
 |---|---|---|---|
-| Spec aprovada | [Data] | PM | ⬜ Pendente |
-| Design aprovado | [Data] | Design | ⬜ Pendente |
-| Dev concluído | [Data] | Eng | ⬜ Pendente |
-| QA / Staging | [Data] | QA | ⬜ Pendente |
-| Go-live | [Data] | PM | ⬜ Pendente |
+| Spec approved | [Date] | PM | ⬜ Pending |
+| Design approved | [Date] | Design | ⬜ Pending |
+| Dev complete | [Date] | Eng | ⬜ Pending |
+| QA / Staging | [Date] | QA | ⬜ Pending |
+| Go-live | [Date] | PM | ⬜ Pending |
 
 ---
 
-## 12. Perguntas em Aberto
+## 12. Open Questions
 
-- [ ] [Questão que ainda precisa de resposta — atribua um responsável e prazo]
-- [ ] [Decisão pendente]
+- [ ] [Question that still needs an answer — assign an owner and deadline]
+- [ ] [Pending decision]
 
 ---
 
-## 13. Histórico de Revisões
+## 13. Revision History
 
-| Versão | Data | Autor | Mudanças |
+| Version | Date | Author | Changes |
 |---|---|---|---|
-| 1.0 | [Data] | [Nome] | Versão inicial |
+| 1.0 | [Date] | [Name] | Initial version |
 ```
 
 ---
 
-## 2. User Stories com Critérios de Aceite
+## 2. User Stories with Acceptance Criteria
 
-### Quando usar
-Ao decompor um PRD aprovado em histórias implementáveis para o backlog.
-No SDD, cada user story deve ser **independentemente testável** — um agente de IA ou QA
-deve conseguir verificar seu critério de aceite sem ambiguidade.
+### When to use
+When decomposing an approved PRD into implementable stories for the backlog.
+In SDD, each user story must be **independently testable** — an AI agent or QA engineer
+must be able to verify its acceptance criterion without ambiguity.
 
-### Processo
-1. Identifique o épico e as personas do PRD
-2. Decomponha em histórias atômicas (uma necessidade por história)
-3. Para cada história, mapeie: happy path + cenários alternativos + erros
-4. Ordene por dependência antes de entregar ao time de engenharia
+### Process
+1. Identify the epic and personas from the PRD
+2. Decompose into atomic stories (one need per story)
+3. For each story, map: happy path + alternative paths + errors
+4. Order by dependency before handing off to engineering
 
-### Template de User Story
+### User Story Template
 
 ```markdown
-## 📖 [US-001] [Título Descritivo e Específico]
+## 📖 [US-001] [Descriptive and Specific Title]
 
-**Épico:** [Nome do Épico]
-**PRD de referência:** [link ou nome]
-**Prioridade:** 🔴 P0 | 🟡 P1 | 🟢 P2
+**Epic:** [Epic Name]
+**PRD reference:** [link or name]
+**Priority:** 🔴 P0 | 🟡 P1 | 🟢 P2
 **Story Points:** [1 | 2 | 3 | 5 | 8 | 13]
-**Sprint:** [Número ou nome]
+**Sprint:** [Number or name]
 
 ---
 
-### História
+### Story
 
-> Como **[persona específica]**,
-> quero **[ação concreta e observável]**,
-> para **[benefício mensurável ou objetivo claro]**.
+> As a **[specific persona]**,
+> I want to **[concrete and observable action]**,
+> so that **[measurable benefit or clear goal]**.
 
-### Por Que Esta História Importa
-[Contexto de negócio: qual dor resolve? Como se encaixa no fluxo maior?]
-
----
-
-### Critérios de Aceite
-
-> Use formato Gherkin. Cada cenário deve ser testável de forma independente.
-
-**Cenário 1: [Happy Path — nome descritivo]**
-```gherkin
-Dado que [pré-condição clara e específica]
-Quando [ação do usuário ou evento do sistema]
-Então [resultado observável e verificável]
-  E [resultado adicional, se houver]
-```
-
-**Cenário 2: [Caminho Alternativo]**
-```gherkin
-Dado que [pré-condição alternativa]
-Quando [ação]
-Então [resultado diferente do happy path]
-```
-
-**Cenário 3: [Tratamento de Erro]**
-```gherkin
-Dado que [condição de erro ou dado inválido]
-Quando [tentativa de ação]
-Então [mensagem de erro clara ou fallback esperado]
-```
+### Why This Story Matters
+[Business context: what pain does it solve? How does it fit into the larger flow?]
 
 ---
 
-### Constraints Técnicos
-- [ ] [Ex: endpoint deve responder em < 500ms no p95]
-- [ ] [Ex: logs de auditoria devem ser gravados a cada operação]
-- [ ] [Ex: não deve armazenar dados pessoais fora do Brasil — LGPD]
+### Acceptance Criteria
+
+> Use Gherkin format. Each scenario must be independently testable.
+
+**Scenario 1: [Happy Path — descriptive name]**
+\`\`\`gherkin
+Given [clear and specific precondition]
+When [user action or system event]
+Then [observable and verifiable result]
+  And [additional result, if any]
+\`\`\`
+
+**Scenario 2: [Alternative Path]**
+\`\`\`gherkin
+Given [alternative precondition]
+When [action]
+Then [result different from the happy path]
+\`\`\`
+
+**Scenario 3: [Error Handling]**
+\`\`\`gherkin
+Given [error condition or invalid data]
+When [attempted action]
+Then [clear error message or expected fallback]
+\`\`\`
+
+---
+
+### Technical Constraints
+- [ ] [e.g., endpoint must respond in < 500ms at p95]
+- [ ] [e.g., audit logs must be written for every operation]
+- [ ] [e.g., no personal data stored outside the EU — GDPR]
 
 ---
 
 ### Definition of Done
-- [ ] Critérios de aceite validados pelo PO
-- [ ] Código revisado e aprovado em PR
-- [ ] Testes unitários escritos e passando (cobertura mínima: 80%)
-- [ ] Testado em ambiente de staging
-- [ ] Sem regressões nos fluxos adjacentes
-- [ ] Documentação atualizada (se aplicável)
+- [ ] Acceptance criteria validated by PO
+- [ ] Code reviewed and approved in PR
+- [ ] Unit tests written and passing (minimum coverage: 80%)
+- [ ] Tested in staging environment
+- [ ] No regressions in adjacent flows
+- [ ] Documentation updated (if applicable)
 
 ---
 
-### Dependências
-- **Bloqueado por:** [US-00X] ou [tarefa técnica]
-- **Bloqueia:** [US-00X]
+### Dependencies
+- **Blocked by:** [US-00X] or [technical task]
+- **Blocks:** [US-00X]
 
-### Notas & Decisões
-- [Decisão tomada durante refinamento e motivo]
-- [Link para discussão ou thread relevante]
+### Notes & Decisions
+- [Decision made during refinement and reason]
+- [Link to relevant discussion or thread]
 ```
 
 ---
 
-## 3. Plano de Tarefas (Task Breakdown) — Opcional para SDD
+## 3. Task Breakdown — Optional for SDD
 
-No SDD, após a spec validada, é boa prática decompor as user stories em **tarefas atômicas**
-que um agente de IA ou desenvolvedor pode implementar e testar de forma isolada.
+In SDD, after the validated spec, it is good practice to decompose user stories into **atomic tasks**
+that an AI agent or developer can implement and test in isolation.
 
-### Estrutura de Task
+### Task Structure
 
 ```markdown
-### TASK-001: [Título da Tarefa]
+### TASK-001: [Task Title]
 
 **Story:** US-001
-**Tipo:** Backend | Frontend | Infra | Design | QA
-**Estimativa:** [horas ou pontos]
+**Type:** Backend | Frontend | Infra | Design | QA
+**Estimate:** [hours or points]
 
-**O que fazer:**
-[Descrição específica e inequívoca do que implementar]
+**What to do:**
+[Specific and unambiguous description of what to implement]
 
-**Input esperado:** [dados, estado ou condição inicial]
-**Output esperado:** [resultado observável após implementação]
+**Expected input:** [data, state, or initial condition]
+**Expected output:** [observable result after implementation]
 
-**Referências:**
-- Spec: [seção do PRD]
-- Design: [link Figma]
-- API: [endpoint ou schema]
+**References:**
+- Spec: [PRD section]
+- Design: [Figma link]
+- API: [endpoint or schema]
 
-**Critério de conclusão:**
-- [ ] [Verificação objetiva 1]
-- [ ] [Verificação objetiva 2]
+**Completion criterion:**
+- [ ] [Objective verification 1]
+- [ ] [Objective verification 2]
 ```
 
-> **Dica SDD:** cada task deve caber num único PR e ser revisável sem precisar entender
-> o sistema inteiro. Se a task parece grande demais, divida.
+> **SDD tip:** each task should fit in a single PR and be reviewable without needing to understand
+> the entire system. If the task seems too large, split it.
 
 ---
 
-## Boas Práticas SDD para PMs
+## Best Practices for SDD
 
-### Escrevendo PRDs orientados a agentes de IA
-- **Seja explícito no contexto** — agentes de IA não inferem intenção; documente o *porquê* de cada decisão
-- **Especifique padrões técnicos existentes** — mencione bibliotecas, componentes e convenções que devem ser seguidos
-- **Inclua exemplos concretos** — "retornar erro 422 com body `{error: 'email_invalid'}`" é melhor que "tratar erros de validação"
-- **Documente o que não deve ser feito** — guardrails negativos são tão valiosos quanto requisitos positivos
+### Writing PRDs for AI agents
+- **Be explicit about context** — AI agents don't infer intent; document the *why* behind each decision
+- **Specify existing technical patterns** — mention libraries, components, and conventions that must be followed
+- **Include concrete examples** — "return 422 error with body `{error: 'email_invalid'}`" is better than "handle validation errors"
+- **Document what should NOT be done** — negative guardrails are as valuable as positive requirements
 
-### Critérios de Aceite de Qualidade
-- Testável sem ambiguidade: quem for testar sabe exatamente o que verificar
-- Um cenário = uma condição + uma ação + um resultado
-- Máximo de 4-5 cenários por story — se precisar de mais, divida a história
-- Inclua sempre: happy path, pelo menos um caminho alternativo e pelo menos um cenário de erro
+### Quality Acceptance Criteria
+- Testable without ambiguity: whoever is testing knows exactly what to verify
+- One scenario = one condition + one action + one result
+- Maximum 4–5 scenarios per story — if more are needed, split the story
+- Always include: happy path, at least one alternative path, and at least one error scenario
 
-### Spec como Documento Vivo
-- Versione a spec junto com o código (ex: `SPEC.md` no repositório)
-- Atualize sempre que houver decisões ou mudanças de requisito
-- Registre decisões com contexto — não apenas "o que", mas "por quê"
-- Marque seções desatualizadas antes de removê-las
+### Spec as a Living Document
+- Version the spec alongside the code (e.g., `SPEC.md` in the repository)
+- Update whenever there are decisions or requirement changes
+- Record decisions with context — not just "what" but "why"
+- Mark outdated sections before removing them
 
-### Gherkin (Dado / Quando / Então)
-- **Dado que** (Given): estado inicial, pré-condição, contexto
-- **Quando** (When): ação do usuário ou evento do sistema
-- **Então** (Then): resultado observável e verificável
-- **E** (And): condição ou resultado adicional na mesma etapa
+### Gherkin (Given / When / Then)
+- **Given:** initial state, precondition, context
+- **When:** user action or system event
+- **Then:** observable and verifiable result
+- **And:** additional condition or result in the same step
 
 ---
 
-## Adaptações Contextuais
+## Contextual Adaptations
 
-| Contexto | Adaptação |
+| Context | Adaptation |
 |---|---|
-| **Usuário deu pouco contexto** | Execute Fase 0 — faça até 3 perguntas essenciais antes de escrever |
-| **MVP / time pequeno** | PRD simplificado: seções 1, 3, 4, 5 e 8 apenas |
-| **Feature para agentes de IA** | Reforce constraints técnicos e exemplos concretos de input/output |
-| **Feature regulada (LGPD, PCI etc.)** | Adicione seção de compliance em RF-NF e na DoD |
-| **Usuário escreve em inglês** | Gere toda a documentação em inglês |
-| **Contexto já bem definido** | Pule Fase 0 e gere diretamente — marque lacunas com `[A DEFINIR]` |
+| **User gave little context** | Run Phase 0 — ask up to 3 essential questions before writing |
+| **MVP / small team** | Simplified PRD: sections 1, 3, 4, 5, and 8 only |
+| **Feature for AI agents** | Reinforce technical constraints and concrete input/output examples |
+| **Regulated feature (GDPR, PCI, etc.)** | Add compliance section to NFRs and DoD |
+| **Context already well defined** | Skip Phase 0 and generate directly — mark gaps with `[TO DEFINE]` |
 
 ---
 
-## Handoff para Engenharia
+## Handoff to Engineering
 
-Quando o PRD está aprovado, o próximo passo no fluxo SDD é:
+When the PRD is approved, the next step in the SDD flow is:
 
-1. **software-architect** — converta o PRD aprovado em spec técnica (API contracts, data model, delegation map)
-2. **spec-reviewer** — valide que a spec técnica está completa e sem ambiguidade antes de qualquer implementação
-3. Não avance para implementação sem que a spec técnica esteja aprovada pelo Architect SW
+1. **software-architect** — convert the approved PRD into a technical spec (API contracts, data model, delegation map)
+2. **software-architect (review mode)** — validate that the technical spec is complete and unambiguous before any implementation
+3. Do not advance to implementation without the technical spec approved by the Software Architect
 
-O PRD define **o quê e por quê**. A spec técnica define **como**. Essas são responsabilidades distintas — não as misture no mesmo documento.
+The PRD defines **what and why**. The technical spec defines **how**. These are distinct responsibilities — do not mix them in the same document.
 
 ---
 

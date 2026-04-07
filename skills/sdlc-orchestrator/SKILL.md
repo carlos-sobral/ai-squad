@@ -60,19 +60,21 @@ A module is **done** only when ALL of the following are true:
 ### For modules with user-facing UI (most feature modules):
 - [ ] `docs/design-system.md` exists (Design System Mode ran before this module)
 - [ ] Design artifacts produced by product-designer (UX Spec Mode)
-- [ ] Backend implemented, reviewed (security + pr-reviewer), and qa-engineer pass
+- [ ] Backend implemented, reviewed (security + software-architect code review mode), and qa-engineer pass
 - [ ] Frontend implemented — components + pages for the feature
 - [ ] CI green (build + type-check + lint + tests pass)
 - [ ] **Performance gate passed** — `performance-engineer` (gate mode) verdict is PASS or PASS WITH WARNINGS approved by Tech Lead
 - [ ] Tech Lead has seen the feature working in the UI (preview deploy or local)
 - [ ] Merged to main
+- [ ] **Post-deploy health check passed** — error rate, response times, and alerts monitored for 15 min after deploy; no regressions
 - [ ] **Retrospective gate run** — all blockers classified; skill/doc/ADR diffs proposed and approved by Tech Lead
 
 ### For backend-only modules (internal helpers, no UI surface):
-- [ ] Backend implemented, reviewed (security + pr-reviewer), and qa-engineer pass
+- [ ] Backend implemented, reviewed (security + software-architect code review mode), and qa-engineer pass
 - [ ] CI green
 - [ ] **Performance gate passed** — `performance-engineer` (gate mode) verdict is PASS or PASS WITH WARNINGS approved by Tech Lead
 - [ ] Merged to main
+- [ ] **Post-deploy health check passed** — error rate and response times monitored for 15 min after deploy; no regressions
 - [ ] **Retrospective gate run** — all blockers classified; skill/doc/ADR diffs proposed and approved by Tech Lead
 
 **The frontend is not optional for UI modules.** Running only `backend-engineer` and deferring the frontend creates invisible debt — the feature is not shippable until both halves exist. If you notice only backend-engineer has run for a module, flag it as incomplete before moving to the next module.
@@ -189,6 +191,36 @@ Use these consistently across all stages:
 - **Skip the retrospective gate** — even on "clean" modules. Absence of blockers is signal too (the module validated existing patterns).
 - **Propose project-specific details as skill additions** — householdId, specific library names, stack constraints belong in `docs/engineering-patterns.md`, not in skills that will be reused across projects.
 
+## Hotfix path — production bugs
+
+Use this abbreviated flow when a bug is confirmed in production and requires fast resolution. Skip `product-manager`, `product-designer`, `refactoring-engineer`, and the full spec cycle.
+
+```
+bug report → triage (severity + rollback decision)
+  ↓ if fix forward:
+  software-architect (inline spec — written directly in the task, not a full PRD)
+  ↓
+  backend-engineer and/or frontend-engineer (minimal fix, scoped to the bug)
+  ↓
+  [TEAM: software-architect (code review mode) + security-engineer]
+  ↓
+  qa-engineer (smoke test of affected ACs only)
+  ↓
+  deploy
+  ↓
+  [RETROSPECTIVE GATE] — classify as spec gap, implementation pattern, or guardrail miss
+```
+
+**Triage criteria:**
+- **Rollback** if: data corruption risk, security breach, or fix is estimated > 2h
+- **Fix forward** if: UI bug, logic error, no data at risk, fix is small and contained
+
+**Inline spec minimum:** even on hotfixes, write the acceptance criteria before any code. One sentence per criterion is enough — but it must exist. Agents must not guess the fix.
+
+**Rollback first, fix second:** if rollback is viable, do it before writing any code. A rollback buys time to fix correctly.
+
+---
+
 ## How to interact
 
 Be direct and structured. At each stage, tell the Tech Lead:
@@ -221,7 +253,9 @@ Before advancing to the next module, run this gate. Do not skip it on "clean" mo
    - **(c) Architectural decision** — a structural choice was made during implementation that deserves a permanent record. → Write an ADR.
    - **(d) Project-specific knowledge** — the pattern is too tied to this project's stack or domain to belong in a skill. → Propose an addition to the project's `docs/engineering-patterns.md`.
 3. Present proposed changes to the Tech Lead as plain text diffs. Do not modify skill files directly — the Tech Lead approves and applies.
-4. Only after this gate is complete, mark the module as done and advance.
+4. For each approved diff, instruct the Tech Lead to save a record to `docs/skill-evolution/YYYY-MM-DD-<skill>-<slug>.md` using the format in the **Diff record format** section below.
+5. Increment the affected skill's `version` field (minor bump for additions, major for behavioral changes).
+6. Only after this gate is complete, mark the module as done and advance.
 
 ### Output format
 
@@ -242,3 +276,28 @@ Before advancing to the next module, run this gate. Do not skip it on "clean" mo
 ### ADRs to write
 [list, or "none"]
 ```
+
+### Diff record format
+
+After Tech Lead approves a diff, save to `docs/skill-evolution/YYYY-MM-DD-<skill>-<slug>.md`:
+
+```markdown
+---
+skill: <skill-name>
+version_before: x.y
+version_after: x.z
+trigger: one-line description of the blocker that originated this diff
+approved_by: Tech Lead
+applied_on: YYYY-MM-DD
+---
+
+## Change
+
+[Exact text added or modified in the skill]
+
+## Rationale
+
+[Why this is a universal principle and not project-specific knowledge]
+```
+
+If `docs/skill-evolution/` does not exist in the project repo, create it.

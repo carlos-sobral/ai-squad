@@ -76,10 +76,27 @@ echo "  1. Fill in .env.local with your credentials (if not done yet)"
 echo "  2. Run: npm run dev"
 ```
 
+### 8. Performance tooling (required for `performance-engineer` gate)
+
+The `performance-engineer` skill requires CI-produced metrics to run. Without these, the ship-team's performance gate will block unconditionally. Configure both during Módulo 0:
+
+**Lighthouse CI:**
+- Install `@lhci/cli` as a dev dependency
+- Add a `lighthouserc.js` (or `.lighthouserc.json`) at the repo root with the project's thresholds from CLAUDE.md
+- Add a CI step that runs `lhci autorun` after the build step and uploads results
+
+**Load testing (k6 or artillery):**
+- Choose one based on what's in CLAUDE.md; if not specified, default to k6
+- Add a `tests/load/` directory with a baseline script covering the main API endpoints
+- Add a CI step that runs the load test and outputs a summary report
+
+Add both steps to the Módulo 0 checklist before marking setup complete.
+
 ### Setup mode rules
 - Use the CI/CD provider and hosting platform defined in CLAUDE.md
 - Never hardcode secrets — always use environment variable references
 - Preview environments: use the hosting platform's native PR preview feature if available
+- Performance tooling (Lighthouse CI + load test runner) must be configured before the first `ship-team` runs — without it, the performance gate will block unconditionally
 
 ---
 
