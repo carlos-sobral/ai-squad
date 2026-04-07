@@ -62,7 +62,7 @@ Before executing tests:
 - Always produce `tests/e2e/{module}.spec.ts` AND run them — skipping execution is not acceptable
 - Register broad wildcard route mocks (e.g., `**/api/resource/**`) BEFORE calling shared setup helpers (e.g., `setupPageWithMocks`). Playwright uses LIFO: later-registered handlers run first. A wildcard registered AFTER the setup helper intercepts ALL matching requests — including those the setup was supposed to handle — and its `route.continue()` for non-matching methods bypasses mocks entirely, hitting the real network.
 - When a locator might match multiple elements, always scope with `.first()`, `.nth()`, or a more specific parent locator to avoid strict-mode violations.
-- Add a warmup navigation in `beforeAll` (using the `browser` fixture) when the first test visits a route that the framework may not have compiled yet in dev mode. Without warmup, the first navigation can fail due to cold compilation exceeding the test timeout.
+- Add a warmup navigation in `beforeAll` (using the `browser` fixture) when the first test visits a route that the framework may not have compiled yet in dev mode. Without warmup, the first `page.goto` can fail with `net::ERR_ABORTED` due to cold compilation exceeding the test timeout.
 
 ## Never
 
@@ -76,7 +76,7 @@ Before executing tests:
 
 If verification fails:
 - Identify the failing criterion and the stage that produced it
-- Return to: **pr-reviewer** if logic is wrong, **backend/frontend-engineer** if implementation is wrong, **spec-reviewer** if the spec itself is contradictory
+- Return to: **software-architect (code review mode)** if logic is wrong, **backend/frontend-engineer** if implementation is wrong, **software-architect (review mode)** if the spec itself is contradictory
 - Do not approve a partial pass — all acceptance criteria must pass
 
 ## Output format
