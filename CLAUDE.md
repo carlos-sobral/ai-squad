@@ -13,7 +13,7 @@ ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. 
 
 ```
 ai-squad/
-├── skills/                  # Fonte das 14 skills
+├── skills/                  # Espelho das 14 skills para distribuição
 │   └── {nome}/SKILL.md
 ├── templates/
 │   └── CLAUDE.md            # Template de contexto para projetos que usam o framework
@@ -22,11 +22,36 @@ ai-squad/
 └── README.md
 ```
 
+## Fonte da verdade das skills
+
+**`~/.claude/skills/` é a fonte da verdade. O repo é o espelho de distribuição.**
+
+As skills evoluem continuamente via uso em projetos reais. Cada projeto que usa o framework pode melhorar uma skill — a melhoria vai para o global primeiro, depois é sincronizada para o repo antes de cada release.
+
+### Fluxo de evolução
+
+```
+projeto real descobre padrão novo
+  → skill global atualizada (~/.claude/skills/)
+  → ao preparar release: diff global vs repo
+  → conteúdo universal → repo/skills/
+  → conteúdo projeto-específico → docs/engineering-patterns.md do projeto
+  → commit + push
+```
+
+### Regras de sincronização
+
+- **Global → repo:** sempre antes de um release. Usar `diff -rq ~/.claude/skills/ skills/` para identificar diffs.
+- **Repo → global:** quando uma skill é reescrita com base em referências externas (como aconteceu com security-engineer e quality-architect). Copiar manualmente após revisão.
+- **Conteúdo projeto-específico** (nomes de bibliotecas, campos de domínio, stack particular) **nunca entra no repo** — fica no `docs/engineering-patterns.md` do projeto de origem.
+- Skills no repo **não têm** campo `version` no frontmatter — versionamento é responsabilidade do global.
+
 ## O que NÃO fazer
 
 - Não colocar contexto de projeto específico dentro das skills — elas devem ser universais
 - Não hardcodar caminhos absolutos no `install.sh`
 - Não remover a retrospective gate do sdlc-orchestrator — é o mecanismo de aprendizado
+- Não editar skills diretamente no repo sem verificar se o global está em sincronia
 
 ---
 
