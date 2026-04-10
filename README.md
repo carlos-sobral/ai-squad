@@ -2,7 +2,7 @@
 
 **Uma squad de engenharia virtual para o seu projeto — movida por IA.**
 
-ai-squad é um conjunto de "skills" para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
+ai-squad é um conjunto de **12 agentes especializados** e **1 skill orquestradora** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
 
 Em vez de mandar um prompt solto e torcer pelo melhor, você segue um fluxo: **escreva o que quer construir → deixe o arquiteto planejar → deixe os engenheiros implementar → deixe o QA validar**. Cada etapa tem critérios de qualidade. O resultado é mais consistente e menos retrabalho.
 
@@ -20,6 +20,7 @@ Em vez de mandar um prompt solto e torcer pelo melhor, você segue um fluxo: **e
 ## Pré-requisitos
 
 - **[Claude Code](https://claude.ai/code)** instalado (precisa de uma conta Claude — plano Pro ou acima)
+- **tmux** instalado (`brew install tmux` no macOS, `apt install tmux` no Linux) — necessário para agentes rodarem em paralelo
 - **Git** instalado
 - Algum projeto de software para trabalhar (pode ser um projeto novo ou existente)
 
@@ -27,7 +28,7 @@ Em vez de mandar um prompt solto e torcer pelo melhor, você segue um fluxo: **e
 
 ## Setup — 3 passos
 
-### 1. Clone e instale as skills
+### 1. Clone e instale
 
 ```bash
 git clone https://github.com/carlos-sobral/ai-squad.git
@@ -35,7 +36,7 @@ cd ai-squad
 bash install.sh
 ```
 
-O script copia as skills para `~/.claude/skills/`. Só isso.
+O script copia os agents para `~/.claude/agents/` e as skills para `~/.claude/skills/`.
 
 ### 2. Configure seu projeto
 
@@ -103,8 +104,14 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 │                                                             │
 │  backend-engineer   ──────────────────────────────┐         │
 │  frontend-engineer  → rodam em paralelo           │         │
-│  software-architect (refactor mode) → cleanup     │         │
 └───────────────────────────────────────────────────┼─────────┘
+                                                    ↓
+┌─────────────────────────────────────────────────────────────┐
+│  PÓS-IMPLEMENTAÇÃO (opcional)                               │
+│                                                             │
+│  software-architect (refactor mode) → cleanup sem mudar     │
+│                                       comportamento         │
+└─────────────────────────────────────────────────────────────┘
                                                     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │  REVISÃO                                                    │
@@ -128,7 +135,28 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 
 ---
 
-## Os agentes e seus modos
+## Os 12 agentes
+
+| Agente | O que faz | Modelo |
+|---|---|---|
+| `idea-researcher` | Pesquisa e estrutura ideias vagas antes do PRD | opus |
+| `product-manager` | Escreve PRDs e user stories com acceptance criteria | opus |
+| `product-designer` | Design system + UX specs por módulo | opus |
+| `software-architect` | Tech specs, code review, ADRs, refactor, diagramas | opus |
+| `backend-engineer` | Implementa backend a partir de tech spec | sonnet |
+| `frontend-engineer` | Implementa UI a partir de tech spec + UX spec | sonnet |
+| `security-engineer` | Revisão de segurança (OWASP, CWE, ASVS) | sonnet |
+| `quality-architect` | Estratégia de testes e quality gates | sonnet |
+| `cloud-architect` | CI/CD setup e revisão de infra/IaC | sonnet |
+| `qa-engineer` | Testes e2e, verificação antes do merge | sonnet |
+| `performance-engineer` | Gate de performance e auditorias periódicas | sonnet |
+| `tech-writer` | Documentação de APIs, CLAUDE.md, changelog | haiku |
+
+E **1 skill orquestradora:** `sdlc-orchestrator` — guia o Tech Lead pelo fluxo completo, decide quais agentes rodar e quando.
+
+---
+
+## Modos dos agentes
 
 Alguns agentes têm **modos diferentes** dependendo do momento do projeto. É importante entender isso para saber o que pedir.
 
@@ -205,7 +233,7 @@ O Design System Mode só precisa rodar uma vez. Depois disso, todos os módulos 
 
 ---
 
-## TeamMode — agentes em paralelo com tmux (opcional, recomendado)
+## TeamMode — agentes em paralelo com tmux
 
 Quando o `sdlc-orchestrator` roda dois agentes ao mesmo tempo (ex: backend + frontend), eles aparecem como **painéis divididos no terminal** — você vê o progresso de cada um em tempo real.
 
@@ -253,10 +281,10 @@ Algum background técnico ajuda bastante — entender o que está sendo gerado, 
 Sim. Coloque o `CLAUDE.md` na raiz, preencha com o contexto do projeto, e o `/sdlc-orchestrator` vai se adaptar ao que já existe.
 
 **Funciona com qualquer linguagem/framework?**
-Sim. As skills são instruções em linguagem natural — não são específicas para nenhum stack. O `CLAUDE.md` é onde você define qual stack o projeto usa.
+Sim. Os agentes são instruções em linguagem natural — não são específicos para nenhum stack. O `CLAUDE.md` é onde você define qual stack o projeto usa.
 
 **Quanto custa?**
-As skills são gratuitas (este repositório é open source). Você precisa de uma assinatura Claude Pro ou acima para usar o Claude Code com volume razoável de trabalho.
+Os agentes são gratuitos (este repositório é open source). Você precisa de uma assinatura Claude Pro ou acima para usar o Claude Code com volume razoável de trabalho.
 
 ---
 
@@ -264,14 +292,17 @@ As skills são gratuitas (este repositório é open source). Você precisa de um
 
 ```
 ai-squad/
-├── skills/              # As skills — uma pasta por agente
-│   ├── sdlc-orchestrator/
-│   ├── software-architect/
-│   ├── backend-engineer/
+├── agents/              # 12 agent definitions (.md) — modelo fixo por papel
+│   ├── software-architect.md
+│   ├── backend-engineer.md
+│   ├── frontend-engineer.md
 │   └── ...
+├── skills/              # Skill orchestrator + agent skill dirs
+│   └── sdlc-orchestrator/
 ├── templates/
-│   └── CLAUDE.md        # Template para o seu projeto
-├── install.sh           # Script de instalação
+│   └── CLAUDE.md        # Template de contexto para o seu projeto
+├── install.sh           # Instala agents + skills em ~/.claude/
+├── TEAMMODE.md          # Guia de TeamMode com tmux
 └── README.md
 ```
 
