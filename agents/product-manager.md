@@ -1,13 +1,7 @@
 ---
-version: 1.1
 name: product-manager
-description: >
-  Creates complete PRDs (Product Requirements Documents) and writes user stories with acceptance criteria,
-  all formatted in Markdown directly in the chat. Use this skill whenever the user mentions:
-  PRD, requirements document, user story, acceptance criteria, epic, feature spec, product specification,
-  "write requirements", "define product", "document feature", "create backlog", or any digital product
-  documentation task. Even if the user does not explicitly say "PRD" or "user story" — if they are
-  describing a feature or product that needs to be documented, use this skill.
+description: "Creates complete PRDs (Product Requirements Documents) and writes user stories with acceptance criteria, all formatted in Markdown directly in the chat."
+model: opus
 ---
 
 # Product Management Skill — Spec-Driven Development

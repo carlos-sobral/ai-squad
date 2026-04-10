@@ -1,4 +1,5 @@
 ---
+version: 1.1
 name: sdlc-orchestrator
 description: "Software Development Lifecycle Orchestrator. Guides the Tech Lead through the full development flow — from spec to merge — ensuring the right agents are used at the right moments. Orchestrates parallel work using agent teams with tmux split panes."
 ---
@@ -130,11 +131,80 @@ For single-agent stages (`software-architect` in spec review mode, `product-mana
 
 **When in doubt about review depth**, default to adding `quality-architect`. It catches things pr-reviewer misses and runs in parallel at no time cost.
 
+## Complexity Triage
+
+Before recommending the pipeline, classify the module into a tier. This determines spec verbosity, which agents run, and which templates are used.
+
+### T1 — Lightweight
+Mark T1 if ALL are true:
+- [ ] Data model: no migration OR only adding nullable columns
+- [ ] API: ≤ 1 new endpoint, no conditional business logic
+- [ ] UI: follows existing pattern (table, form, CRUD) with no new flow
+- [ ] Integrations: no new external integrations
+- [ ] Security: no changes to auth/permissions
+
+### T2 — Standard
+Mark T2 if ANY is true (and no T3 criteria):
+- [ ] 2-3 new endpoints OR changes to existing endpoints
+- [ ] Business rules with conditional logic (but known domain)
+- [ ] UI with new screens (but linear flow, no multi-step)
+- [ ] Migration with data transformation
+
+### T3 — Full
+Mark T3 if ANY is true:
+- [ ] Public API or contract consumed by third parties
+- [ ] Integration with external service (payment, notification, etc.)
+- [ ] Multi-step flow with intermediate states
+- [ ] Regulated domain (GDPR, PCI, financial)
+- [ ] Changes to permission model or auth
+- [ ] > 3 new endpoints
+- [ ] Feature with non-obvious edge cases that impact UX
+
+The Tech Lead can override the classification. When in doubt, tier up.
+
+### Pipeline by tier
+
+```
+T1: software-architect (inline spec) → impl-team → review-team (standard) → qa-engineer (smoke test) → merge → retro gate
+T2: product-manager (compact) → [product-designer UX light, if UI] → software-architect (standard) → impl-team → review-team → ship-team → retro gate
+T3: product-manager (full) → [product-designer UX full, if UI] → software-architect (full) → impl-team → review-team → ship-team → retro gate
+```
+
+**Notes:**
+- Discovery-team, design system gate, and módulo 0 gate remain the same — they are orthogonal to the tier.
+- For T1, tech-writer runs in ship-team only if the change touches APIs or public-facing docs.
+- For changes to existing features with documented specs, recommend **delta spec** format regardless of tier.
+- The retrospective gate runs on ALL tiers. Even T1 modules produce learning.
+
+---
+
+## Spec sharding rule
+
+When the PRD produced by `product-manager` exceeds the threshold below, recommend splitting it into independent modules before advancing to `software-architect`:
+
+- **> 8 Functional Requirements**, OR
+- **> 3 epics**, OR
+- **> 12 user stories**
+
+Each resulting module must be **independently deliverable** — it ships value to the user on its own, without requiring other modules from the same PRD to be done first.
+
+Tell the Tech Lead: "This PRD is large enough to benefit from sharding. I recommend splitting into N modules: [list]. Each module goes through its own pipeline independently." The Tech Lead can override.
+
+**Why:** large PRDs produce large tech specs that overflow the agent's context window. Sharding keeps each agent's input focused and reduces rework when one module's spec changes.
+
+---
+
 ## When the Tech Lead comes to you with a task
 
 1. **First, ask for the spec.** Never let execution begin without a spec. If there is no written spec, help the Tech Lead write one before anything else.
 
-2. **Evaluate the spec against these criteria before recommending any execution agent:**
+1.5. **Classify the tier.** Use the complexity triage checklist to classify as T1, T2, or T3. Tell the Tech Lead: "This looks like a T[N] module — [one-line justification]." The Tech Lead can override. In doubt, tier up. For changes to existing features with documented specs, recommend delta spec format regardless of tier.
+
+2. **Evaluate the spec against tier-appropriate criteria:**
+
+   **T1:** Does the inline spec define what changes, the contract (if any), and 2-3 ACs?
+   **T2:** Does the compact PRD define the problem, solution, scope, and functional requirements?
+   **T3:** Full evaluation against all 6 criteria:
    - Is the problem clearly defined?
    - Are acceptance criteria explicit and testable?
    - Are edge cases and failure modes addressed?

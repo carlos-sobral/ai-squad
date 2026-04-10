@@ -15,33 +15,35 @@ ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. 
 ai-squad/
 ├── skills/                  # Espelho das 14 skills para distribuição
 │   └── {nome}/SKILL.md
+├── agents/                  # Custom agents (.md) — modelo fixo por papel
+│   └── {nome}.md
 ├── templates/
 │   └── CLAUDE.md            # Template de contexto para projetos que usam o framework
-├── install.sh               # Instala skills em ~/.claude/skills/
+├── install.sh               # Instala skills + agents em ~/.claude/
 ├── TEAMMODE.md              # Guia de paralelismo com tmux
 └── README.md
 ```
 
-## Fonte da verdade das skills
+## Fonte da verdade das skills e agents
 
-**`~/.claude/skills/` é a fonte da verdade. O repo é o espelho de distribuição.**
+**`~/.claude/skills/` e `~/.claude/agents/` são a fonte da verdade. O repo é o espelho de distribuição.**
 
-As skills evoluem continuamente via uso em projetos reais. Cada projeto que usa o framework pode melhorar uma skill — a melhoria vai para o global primeiro, depois é sincronizada para o repo antes de cada release.
+As skills e agents evoluem continuamente via uso em projetos reais. Cada projeto que usa o framework pode melhorar uma skill/agent — a melhoria vai para o global primeiro, depois é sincronizada para o repo antes de cada release.
 
 ### Fluxo de evolução
 
 ```
 projeto real descobre padrão novo
-  → skill global atualizada (~/.claude/skills/)
+  → skill/agent global atualizado (~/.claude/skills/ ou ~/.claude/agents/)
   → ao preparar release: diff global vs repo
-  → conteúdo universal → repo/skills/
+  → conteúdo universal → repo/skills/ e repo/agents/
   → conteúdo projeto-específico → docs/engineering-patterns.md do projeto
   → commit + push
 ```
 
 ### Regras de sincronização
 
-- **Global → repo:** sempre antes de um release. Usar `diff -rq ~/.claude/skills/ skills/` para identificar diffs.
+- **Global → repo:** sempre antes de um release. Usar `diff -rq ~/.claude/skills/ skills/` e `diff -rq ~/.claude/agents/ agents/` para identificar diffs.
 - **Repo → global:** quando uma skill é reescrita com base em referências externas (como aconteceu com security-engineer e quality-architect). Copiar manualmente após revisão.
 - **Conteúdo projeto-específico** (nomes de bibliotecas, campos de domínio, stack particular) **nunca entra no repo** — fica no `docs/engineering-patterns.md` do projeto de origem.
 - Skills no repo **não têm** campo `version` no frontmatter — versionamento é responsabilidade do global.
@@ -61,19 +63,9 @@ Diagnóstico feito em abril/2026. Implementar as melhorias abaixo em ordem de pr
 
 ---
 
-## 1. Custom Agents (`.claude/agents/`) — Alta prioridade
+## ~~1. Custom Agents (`.claude/agents/`) — FEITO~~
 
-**Problema:** Hoje os agentes são criados via skill-como-persona. Não há restrição de ferramentas nem modelo fixo por agente.
-
-**O que fazer:**
-- Criar `.claude/agents/` no repo com um arquivo `.md` por agente
-- Cada arquivo deve ter frontmatter com `model`, `tools` permitidas e `description`
-- Os agentes devem espelhar as skills existentes, mas usando a estrutura nativa do Claude Code
-- Adicionar ao `install.sh` a cópia desses arquivos para `~/.claude/agents/`
-
-**Resultado esperado:** Modelo roteado automaticamente (Opus/Sonnet/Haiku) sem depender do prompt; ferramentas restritas por papel; mais confiável para outros devs.
-
-**Referência:** [Custom agents — Claude Code docs](https://docs.anthropic.com/en/docs/claude-code/agents)
+13 agents criados em `agents/` com frontmatter (`name`, `description`, `model`). `install.sh` atualizado para copiar para `~/.claude/agents/`. Modelo roteado automaticamente por papel (Opus/Sonnet/Haiku).
 
 ---
 

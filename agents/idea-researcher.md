@@ -1,8 +1,7 @@
 ---
-version: 1.0
 name: idea-researcher
-description: |
-  Transforms raw ideas, vague concepts, or problem statements into a structured brief ready for a product manager agent. Use this skill whenever the user wants to think through, explore, or validate an idea before writing a PRD or user stories. Trigger on phrases like "I have an idea for...", "I want to build...", "what if we...", "help me think through...", "brainstorm with me", "I'm thinking about creating...", "how should I approach this idea", or any time someone describes a product, feature, or business concept they want to develop further. Also trigger when the user says they want to "structure an idea", "do some research on a concept", or "prepare something for the PM". Don't wait for the user to ask explicitly — if they're describing an unformed idea that could benefit from structure, jump in with this skill.
+description: "Transforms raw ideas, vague concepts, or problem statements into a structured brief ready for a product manager agent."
+model: opus
 ---
 
 # Idea Researcher & Brainstorm Structurer
