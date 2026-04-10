@@ -160,17 +160,13 @@ E **1 skill orquestradora:** `sdlc-orchestrator` — guia o Tech Lead pelo fluxo
 
 Alguns agentes têm **modos diferentes** dependendo do momento do projeto. É importante entender isso para saber o que pedir.
 
-### `software-architect` — 7 modos
+### `software-architect` — 3 modos
 
-| Modo | Quando usar | O que produz |
+| Modo | Quando | O que produz |
 |---|---|---|
-| **Spec mode** (T1/T2/T3) | Antes da implementação | Especificação técnica: API contracts, modelo de dados, decisões arquiteturais. Formato varia por tier. |
-| **Delta spec mode** | Alteração de feature existente | Spec incremental (ADDED/MODIFIED/REMOVED) referenciando a spec original |
-| **Code review mode** | Depois da implementação | Revisão do código contra a spec original: bugs, desvios, problemas de qualidade |
-| **ADR mode** | Decisão arquitetural estrutural | Architecture Decision Record: contexto, decisão, alternativas, consequências |
-| **Architecture diagram mode** | T2+ specs (obrigatório) | Diagramas Mermaid em `docs/architecture.md`: componentes, sequências, ER |
-| **Refactor mode** | Depois da implementação | Cleanup de código sem mudança de comportamento: simplificar, renomear, remover dead code |
-| **Delegation assessment** | Ao planejar o que delegar | Classificação de tarefas: seguro para agente vs. requer humano |
+| **Spec** | Antes da implementação | Tech spec (T1/T2/T3 ou delta), API contracts, diagramas Mermaid (`docs/architecture.md`), ADRs, mapa de delegação. Tudo que é pré-implementação. |
+| **Code review** | Depois da implementação | Revisão do código contra a spec original: bugs, desvios, problemas de qualidade. |
+| **Refactor** | Pós-implementação (opcional) | Cleanup de código sem mudança de comportamento: simplificar, renomear, remover dead code. |
 
 ```
 # spec mode (o orchestrator define o tier)
@@ -181,9 +177,6 @@ Alguns agentes têm **modos diferentes** dependendo do momento do projeto. É im
 
 # refactor mode
 /software-architect faz cleanup do código do módulo X
-
-# ADR
-/software-architect escreve um ADR sobre a decisão Y
 ```
 
 ---
