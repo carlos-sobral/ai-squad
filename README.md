@@ -51,8 +51,16 @@ Abra o arquivo e preencha as seções: qual é o projeto, qual é o stack, quais
 
 ```bash
 cd /caminho/do/seu/projeto
-claude
+tmux new-session -s meu-projeto
+claude --dangerously-skip-permissions
 ```
+
+**Sobre os argumentos de lançamento:**
+
+- **tmux** — obrigatório para os agentes rodarem em painéis paralelos (TeamMode). Sem ele, funciona mas roda em sequência.
+- **`--dangerously-skip-permissions`** — pula as confirmações de permissão a cada tool call. Sem isso, o fluxo para dezenas de vezes pedindo aprovação manual para ler arquivos, rodar comandos, etc. Na prática, é inviável rodar o fluxo completo sem essa flag — os agentes fazem centenas de operações por módulo.
+
+> **Nota:** use `--dangerously-skip-permissions` apenas em projetos pessoais ou de desenvolvimento. Em ambientes compartilhados ou de produção, avalie o risco. A flag desliga **todas** as confirmações de segurança.
 
 Dentro do Claude Code, digite:
 
@@ -207,11 +215,11 @@ Para ativar, você precisa do **tmux** instalado e dois ajustes no `~/.claude/se
 Depois, sempre que for usar o Claude Code, abra dentro de uma sessão tmux:
 
 ```bash
-tmux
-claude
+tmux new-session -s meu-projeto
+claude --dangerously-skip-permissions
 ```
 
-Sem o tmux, os agentes ainda funcionam — rodam em sequência, sem os painéis. O TeamMode é opcional mas muda bastante a experiência.
+Sem o tmux, os agentes ainda funcionam — rodam em sequência, sem os painéis. O TeamMode é opcional mas muda bastante a experiência. A flag `--dangerously-skip-permissions` é necessária para o fluxo rodar de forma autônoma — sem ela, cada operação de cada agente pede confirmação manual.
 
 → **Guia completo de instalação e configuração:** [TEAMMODE.md](./TEAMMODE.md)
 

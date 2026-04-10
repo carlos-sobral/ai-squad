@@ -54,16 +54,33 @@ Se o arquivo já existe com outras configurações, adicione apenas as chaves qu
 
 ---
 
+## Comando de lançamento recomendado
+
+```bash
+tmux new-session -s meu-projeto
+claude --dangerously-skip-permissions
+```
+
+### Por que `--dangerously-skip-permissions`?
+
+O fluxo SDLC completo envolve dezenas de agentes fazendo centenas de operações: leitura de arquivos, execução de builds, escrita de specs, criação de testes. Sem essa flag, o Claude para em **cada operação** pedindo confirmação manual — tornando o fluxo inviável.
+
+Com a flag, os agentes trabalham de forma autônoma. O Tech Lead supervisiona pelos outputs e gates de qualidade, não aprovando cada `cat` ou `npm test`.
+
+> **Nota de segurança:** use apenas em projetos pessoais ou de desenvolvimento. A flag desliga todas as confirmações — incluindo operações destrutivas como `rm` ou `git push --force`. Em ambientes compartilhados, avalie o risco.
+
+---
+
 ## Como verificar que está funcionando
 
 1. Abra o terminal
 2. Inicie uma sessão tmux:
    ```bash
-   tmux
+   tmux new-session -s meu-projeto
    ```
 3. Abra o Claude Code dentro do tmux:
    ```bash
-   claude
+   claude --dangerously-skip-permissions
    ```
 4. Chame o orquestrador em uma situação que roda agentes em paralelo (ex: uma feature com backend + frontend). Os painéis devem aparecer automaticamente divididos na tela.
 
@@ -128,8 +145,8 @@ Uma forma confortável de trabalhar:
 # Abrir tmux com uma sessão nomeada
 tmux new-session -s projeto
 
-# Dentro do tmux, abrir Claude Code
-claude
+# Dentro do tmux, abrir Claude Code com permissões automáticas
+claude --dangerously-skip-permissions
 
 # Quando terminar, desanexar (mantém tudo rodando)
 # Ctrl+B + D
