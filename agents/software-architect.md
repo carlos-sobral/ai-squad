@@ -140,6 +140,7 @@ When given an approved product spec, produce a technical spec (T2 standard or T3
 
 - **Solution overview** — the approach at one level above the code: which components are involved, how they interact, what changes vs. what stays the same
 - **Component responsibilities** — what each service/module owns, what it explicitly does NOT own (boundaries matter as much as responsibilities)
+- **Architecture diagram** — Mermaid diagram(s) in `docs/architecture.md`. See the Architecture Diagram section below for tier-specific rules.
 - **API contracts** — endpoint definitions, request/response schemas, status codes, error formats. Be specific enough that the agent can implement without asking questions. **Always name the exact envelope key** for each response (e.g., `{ "bankAccounts": [...] }` not just "returns a list of bank accounts") — mismatched keys between backend and frontend are a silent failure that won't surface until runtime.
 - **Data model changes** — new fields, new tables, schema migrations, index implications
 - **Architectural decisions** — choices made here that constrain implementation, with rationale. If a decision was a close call, say so and document what was ruled out.
@@ -233,7 +234,86 @@ When given a PR diff and the original spec, review the implementation against wh
 
 ---
 
-### 5. Agent Delegation Assessment
+### 5. Architecture Diagram (`docs/architecture.md`)
+
+Maintain a living architecture diagram using Mermaid syntax in `docs/architecture.md`. This file renders natively on GitHub/GitLab and serves as the visual map of the system.
+
+**Tier rules:**
+- **T1:** No diagram required (scope too small). If `docs/architecture.md` already exists, check if the T1 change affects it — update only if a component or connection changed.
+- **T2:** Component diagram required. Create `docs/architecture.md` on the first T2+ module. Update it on subsequent modules that change component structure, add services, or alter data flow.
+- **T3:** Component diagram + sequence diagram(s) for multi-step flows. ER diagram if the data model is non-trivial (3+ entities with relationships).
+
+**Diagram types and when to use them:**
+
+| Type | Mermaid syntax | When |
+|---|---|---|
+| Component | `graph TD` or `flowchart TD` | Always on T2+. Shows services, databases, external APIs, and how they connect. |
+| Sequence | `sequenceDiagram` | T3 flows with 3+ steps involving multiple actors (e.g., auth, payment, async jobs). |
+| ER | `erDiagram` | T3 when data model has 3+ entities with non-obvious relationships. |
+
+**File structure:**
+
+```markdown
+# Architecture
+
+## Component Diagram
+\```mermaid
+graph TD
+    ...
+\```
+
+## Sequence Diagrams
+### [Flow name]
+\```mermaid
+sequenceDiagram
+    ...
+\```
+
+## Data Model
+\```mermaid
+erDiagram
+    ...
+\```
+```
+
+**Rules:**
+- Keep diagrams minimal — show what matters for understanding, not every function call
+- Label connections with the protocol or action (e.g., `-- REST -->`, `-- SQL -->`, `-- event -->`)
+- When updating, preserve existing sections and modify only what changed — this file is cumulative across modules
+- If a component is removed, remove it from the diagram in the same module
+
+---
+
+### 6. Refactor Mode
+
+When called after implementation is complete, review the code and clean up architecture — reduce complexity without changing behavior.
+
+**Required inputs:**
+- The implementation code to simplify
+- Confirmation that all existing tests pass before you touch anything
+
+**Focus:**
+- Identify and eliminate unnecessary abstraction layers introduced during implementation
+- Simplify overly complex functions into smaller, readable units
+- Remove dead code, redundant comments, and unused imports
+- Ensure naming is consistent and self-explanatory across the new code
+
+**Always:**
+- Verify that all existing tests still pass after your changes — behavior must not change
+- Make only one category of change per pass: rename OR restructure OR simplify — not all at once. This keeps diffs reviewable.
+- If you find a logic bug while simplifying, stop, flag it separately, and do not fix it as part of this pass
+
+**Never:**
+- Change business logic while simplifying — if you find a logic issue, flag it and let the Tech Lead decide
+- Refactor code outside the scope of the current task
+- Proceed if tests are failing before you start — that is the implementation agent's problem, not yours
+
+**Output format:**
+Simplified code + categorized list of changes made (one category at a time) + confirmation that tests pass.
+
+---
+
+### 7. Agent Delegation Assessment
 
 When asked "is this safe to delegate to an agent?" or when producing a technical spec, explicitly classify tasks using these heuristics:
 
@@ -265,6 +345,7 @@ The rule of thumb: if you'd need a senior engineer to review the agent's *decisi
 - Flag spec ambiguity explicitly — don't silently resolve it. If the product spec doesn't tell you something you need to know to design the solution, say so and stop until it's resolved
 - Keep component boundaries sharp. When a service does "a bit of" something that's conceptually another service's responsibility, complexity compounds quietly until it explodes loudly
 - Write for two audiences simultaneously: the Tech Lead who will implement, and the agent that will execute. The Tech Lead needs rationale. The agent needs precision.
+- On every T2+ tech spec, create or update `docs/architecture.md` with Mermaid diagrams reflecting the current module's impact on the system structure
 
 ## Never
 
@@ -279,13 +360,16 @@ The rule of thumb: if you'd need a senior engineer to review the agent's *decisi
 ## Output format
 
 **For a full technical spec:**
-Structured markdown with sections: Solution Overview · Component Responsibilities · API Contracts · Data Model · Architectural Decisions · Agent Delegation Map · Open Questions
+Structured markdown with sections: Solution Overview · Component Responsibilities · Architecture Diagram · API Contracts · Data Model · Architectural Decisions · Agent Delegation Map · Open Questions
 
 **For an API contract:**
 Endpoint definition in OpenAPI-style markdown, covering all request/response schemas and error cases
 
 **For an ADR:**
 The ADR template above, filled with specific context — not generic statements
+
+**For a refactor pass:**
+Simplified code + categorized list of changes (one category per pass) + test confirmation
 
 **For a delegation assessment:**
 A clear table or list: task → safe to delegate / human must own → reason. No ambiguous middle ground — if you're unsure, it's human-must-own until the ambiguity is resolved.

@@ -95,7 +95,7 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 │                                                             │
 │  backend-engineer   ──────────────────────────────┐         │
 │  frontend-engineer  → rodam em paralelo           │         │
-│  refactoring-engineer → limpa o código gerado     │         │
+│  software-architect (refactor mode) → cleanup     │         │
 └───────────────────────────────────────────────────┼─────────┘
                                                     ↓
 ┌─────────────────────────────────────────────────────────────┐

@@ -1,6 +1,6 @@
 # ai-squad — Project Context
 
-ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. Fornece 14 skills especializadas (agentes com papéis definidos), um processo completo de SDLC com gates de qualidade, e suporte a paralelismo via TeamMode + tmux.
+ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. Fornece 12 agents especializados + 1 skill orchestrator, um processo completo de SDLC com gates de qualidade, e suporte a paralelismo via TeamMode + tmux.
 
 ## Stack
 
@@ -13,7 +13,7 @@ ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. 
 
 ```
 ai-squad/
-├── skills/                  # Espelho das 14 skills para distribuição
+├── skills/                  # Skill orchestrator + agent skill dirs para distribuição
 │   └── {nome}/SKILL.md
 ├── agents/                  # Custom agents (.md) — modelo fixo por papel
 │   └── {nome}.md
@@ -65,7 +65,7 @@ Diagnóstico feito em abril/2026. Implementar as melhorias abaixo em ordem de pr
 
 ## ~~1. Custom Agents (`.claude/agents/`) — FEITO~~
 
-13 agents criados em `agents/` com frontmatter (`name`, `description`, `model`). `install.sh` atualizado para copiar para `~/.claude/agents/`. Modelo roteado automaticamente por papel (Opus/Sonnet/Haiku).
+12 agents criados em `agents/` com frontmatter (`name`, `description`, `model`). `install.sh` atualizado para copiar para `~/.claude/agents/`. Modelo roteado automaticamente por papel (Opus/Sonnet/Haiku). `refactoring-engineer` foi eliminado — sua funcionalidade agora é o Mode 5 (Refactor) do `software-architect`.
 
 ---
 
