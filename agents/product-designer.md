@@ -31,7 +31,7 @@ Run **once**, before the first UI module is implemented. This is the "Módulo 0 
 
 Read:
 - The **approved PRD** (or product brief) — to understand the product's users, goals, and emotional context
-- The **CLAUDE.md** — to understand the tech stack (Next.js, shadcn/ui, Tailwind CSS, TypeScript)
+- The **CLAUDE.md** — to understand the declared frontend stack (framework, component library, styling approach, language)
 - Any existing screens or components already built — to stay consistent with what exists
 
 ## What you produce: `docs/design-system.md`
@@ -44,71 +44,77 @@ Then explain the design rationale: why these traits fit the product's users and 
 
 ### 2. Color System
 
-Define the full color palette using shadcn/ui's CSS variable architecture. Every color must be named with semantic intent — never raw hex as the primary reference.
+Define the full color palette using a semantic-token architecture native to the stack declared in CLAUDE.md (e.g. CSS variables, design-token files, theme objects). Every color must be named with semantic intent — never raw hex as the primary reference.
 
 **Required tokens (map each to a specific value):**
 
 ```
---background        Page background
---foreground        Default text on background
---card              Card / surface background
---card-foreground   Text on cards
---primary           Primary action color (buttons, links, active states)
---primary-foreground Text on primary
---secondary         Secondary actions, tags, badges
---secondary-foreground
---muted             Subtle backgrounds (empty states, disabled zones)
---muted-foreground  Deemphasized text (captions, hints, placeholders)
---accent            Hover states, highlights
---accent-foreground
---destructive       Errors, delete actions, critical alerts
---destructive-foreground
---border            Default border color
---input             Input border color
---ring              Focus ring color
---success           (custom) Confirmations, positive feedback
---warning           (custom) Caution states
+background          Page background
+foreground          Default text on background
+card                Card / surface background
+card-foreground     Text on cards
+primary             Primary action color (buttons, links, active states)
+primary-foreground  Text on primary
+secondary           Secondary actions, tags, badges
+secondary-foreground
+muted               Subtle backgrounds (empty states, disabled zones)
+muted-foreground    Deemphasized text (captions, hints, placeholders)
+accent              Hover states, highlights
+accent-foreground
+destructive         Errors, delete actions, critical alerts
+destructive-foreground
+border              Default border color
+input               Input border color
+ring                Focus ring color
+success             (custom) Confirmations, positive feedback
+warning             (custom) Caution states
 ```
 
 For each token, provide:
 - The semantic name
-- Light mode value (HSL preferred — shadcn/ui convention)
+- Light mode value (use the format idiomatic to the stack — e.g. hex, RGB, HSL)
 - Dark mode value
 - One-line usage rule (when to use this token, when NOT to)
+
+**If the stack is React + shadcn/ui + Tailwind (check CLAUDE.md):** prefer HSL values and expose the tokens as CSS variables (`--background`, `--foreground`, etc.) following shadcn/ui conventions. For other stacks, use the equivalent token/theming mechanism.
 
 ### 3. Typography
 
 Define the type system:
 
 **Font family:**
-- Primary (body + UI): specify the font and the `next/font` or CDN import
+- Primary (body + UI): specify the font and the loading mechanism idiomatic to the stack (e.g. framework-native font loader, CDN import, local files)
 - Monospace (code, numbers): if applicable
 
-**Type scale** — for each level, define: font-size, line-height, font-weight, Tailwind class, and when to use it:
+**Type scale** — for each level, define: font-size, line-height, font-weight, and when to use it. If the stack uses a utility-class system (e.g. Tailwind), include the corresponding class name in a final column; otherwise reference the token name defined above.
 
-| Level | Size | Weight | Line Height | Class | Usage |
-|---|---|---|---|---|---|
-| Display | 36px | 700 | 1.2 | `text-4xl font-bold` | Hero headings only |
-| H1 | 30px | 700 | 1.25 | `text-3xl font-bold` | Page titles |
-| H2 | 24px | 600 | 1.3 | `text-2xl font-semibold` | Section headings |
-| H3 | 20px | 600 | 1.35 | `text-xl font-semibold` | Card titles, subsections |
-| H4 | 16px | 600 | 1.4 | `text-base font-semibold` | Labels, table headers |
-| Body | 14px | 400 | 1.5 | `text-sm` | Default body text |
-| Caption | 12px | 400 | 1.4 | `text-xs` | Metadata, timestamps |
-| Label | 12px | 500 | 1 | `text-xs font-medium` | Form labels, tags |
+| Level | Size | Weight | Line Height | Usage |
+|---|---|---|---|---|
+| Display | 36px | 700 | 1.2 | Hero headings only |
+| H1 | 30px | 700 | 1.25 | Page titles |
+| H2 | 24px | 600 | 1.3 | Section headings |
+| H3 | 20px | 600 | 1.35 | Card titles, subsections |
+| H4 | 16px | 600 | 1.4 | Labels, table headers |
+| Body | 14px | 400 | 1.5 | Default body text |
+| Caption | 12px | 400 | 1.4 | Metadata, timestamps |
+| Label | 12px | 500 | 1 | Form labels, tags |
+
+**If the stack is Tailwind-based:** add class mappings such as `text-4xl font-bold`, `text-3xl font-bold`, `text-2xl font-semibold`, etc. For other stacks, map each level to the project's token names.
 
 ### 4. Spacing System
 
-Base unit: 4px (Tailwind default). Define the spacing scale used in this product and when to apply each step:
+Base unit: 4px. Define the spacing scale used in this product and when to apply each step:
 
-| Token | Value | Tailwind | Usage |
-|---|---|---|---|
-| xs | 4px | `gap-1`, `p-1` | Icon padding, tight inline spacing |
-| sm | 8px | `gap-2`, `p-2` | Between related elements |
-| md | 16px | `gap-4`, `p-4` | Default component internal padding |
-| lg | 24px | `gap-6`, `p-6` | Section padding, card padding |
-| xl | 32px | `gap-8`, `p-8` | Page section separation |
-| 2xl | 48px | `gap-12`, `p-12` | Major layout zones |
+| Token | Value | Usage |
+|---|---|---|
+| xs | 4px | Icon padding, tight inline spacing |
+| sm | 8px | Between related elements |
+| md | 16px | Default component internal padding |
+| lg | 24px | Section padding, card padding |
+| xl | 32px | Page section separation |
+| 2xl | 48px | Major layout zones |
+
+**If the stack is Tailwind-based:** the scale above maps to `gap-1/p-1`, `gap-2/p-2`, `gap-4/p-4`, `gap-6/p-6`, `gap-8/p-8`, `gap-12/p-12`. For other stacks, add a column mapping each token to the project's spacing utilities or theme keys.
 
 ### 5. Border Radius and Shadows
 

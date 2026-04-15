@@ -43,10 +43,10 @@ For T1 modules, do not produce a separate document. Write the spec inline in the
 
 Example:
 ```
-Add `notes` field (string, nullable) to `transactions` table.
+Add `notes` field (string, nullable) to `resources` table.
 - Migration: add column, no default
-- API: PATCH /api/transactions/:id accepts { notes: string | null }
-- Response: returns the complete transaction including notes
+- API: PATCH /api/resources/:id accepts { notes: string | null }
+- Response: returns the complete resource including notes
 - Frontend: textarea field in edit form, below description
 - Does NOT change: listing, filters, reports
 
@@ -124,8 +124,8 @@ When the module alters a feature that already has a documented spec, do NOT rewr
 **Where to save:** delta specs live alongside the original spec:
 ```
 docs/agents/software-architect/
-  2026-03-15-transaction-api.md           ← original spec
-  2026-04-10-transaction-api-delta-01.md  ← delta spec
+  2026-03-15-{resource}-api.md           ← original spec
+  2026-04-10-{resource}-api-delta-01.md  ← delta spec
 ```
 
 **Consolidation rule:** after 3+ deltas on the same spec, the sdlc-orchestrator will recommend consolidating into a new unified spec.
@@ -148,7 +148,7 @@ When given an approved product spec, produce a technical spec (T1 inline, T2 sta
 
 - **Solution overview** — the approach at one level above the code: which components are involved, how they interact, what changes vs. what stays the same
 - **Component responsibilities** — what each service/module owns, what it explicitly does NOT own (boundaries matter as much as responsibilities)
-- **API contracts** — endpoint definitions, request/response schemas, status codes, error formats. Be specific enough that the agent can implement without asking questions. **Always name the exact envelope key** for each response (e.g., `{ "bankAccounts": [...] }` not just "returns a list of bank accounts") — mismatched keys between backend and frontend are a silent failure that won't surface until runtime. For each endpoint, include: path + HTTP method, auth requirements, request body schema (types, required/optional, constraints, examples), response body schemas (success + all error cases), status codes, idempotency behavior, rate limiting. Use OpenAPI-style structure in plain markdown.
+- **API contracts** — endpoint definitions, request/response schemas, status codes, error formats. Be specific enough that the agent can implement without asking questions. **Always name the exact envelope key** for each response (e.g., `{ "resources": [...] }` not just "returns a list of resources") — mismatched keys between backend and frontend are a silent failure that won't surface until runtime. For each endpoint, include: path + HTTP method, auth requirements, request body schema (types, required/optional, constraints, examples), response body schemas (success + all error cases), status codes, idempotency behavior, rate limiting. Use OpenAPI-style structure in plain markdown.
 - **Data model changes** — new fields, new tables, schema migrations, index implications
 - **Architectural decisions** — choices made here that constrain implementation, with rationale. If a decision was a close call, say so and document what was ruled out. When a decision is structural, hard to reverse, or will affect future engineers, write a formal ADR (see template below).
 - **Agent delegation map** — classify each task: safe to delegate to agent vs. human must own. Rule of thumb: if you'd need a senior engineer to review the agent's *decisions* (not just its code), it shouldn't be delegated. Delegate: well-defined algorithms, tests for designed components, endpoints against existing contracts, boilerplate following established patterns, documentation from code. Human must own: structural interaction changes, architectural pattern choices, first-time auth/security, production schema migrations with data loss risk, ambiguous specs.
@@ -354,8 +354,8 @@ Before marking a technical spec as ready to delegate, every API endpoint must sa
 - [ ] Edge cases that change the response shape documented (empty collection, soft-deleted records in time-range queries, etc.)
 - [ ] For endpoints that return computed fields (totals, metrics, durations): verify the response includes the recomputed value after mutation — not just the mutated fields. A PATCH that doesn't return computed fields forces the frontend to reload the full resource to stay consistent.
 - [ ] For boolean mode flags derived from array length (e.g., `isPeriod = data.length > 1`), the spec explicitly defines the boundary behavior: what renders with 0 items, 1 item, and N items. Ambiguity here causes silent fallbacks that differ from the intended UX.
-- [ ] For POST endpoints that return the created resource, the response must include all ID fields needed by the frontend to link the resource to its parent (e.g., `investmentId` on an entry, `orderId` on an order item). Missing parent ID fields force an extra GET.
-- [ ] When an ADR defines that a data type bypasses the normal flow (e.g., "proventos don't create Transaction records"), the spec must explicitly list every query/endpoint that aggregates that data type and describe how the alternative source is included. Missing this produces silent data gaps in aggregate views.
-- [ ] When a new UI component replaces an existing one (e.g., a Sheet replacing a Dialog as the drill-down entry point), the spec must explicitly state which component is REPLACED and that it must be removed from all call sites in JSX. Without this instruction, agents implement the new component alongside the old one — both compile, but the user encounters two divergent flows depending on where they click.
-- [ ] For every query param a frontend component sends to an existing API endpoint (e.g., `?type=ANNUAL&containsCycleId=X`), the spec must explicitly define those params in the backend API contract — even if the endpoint already exists. Frontend agents write the fetch call; backend agents implement the handler. Without the spec linking both sides, the params are sent but silently ignored, producing wrong behavior that compiles cleanly.
+- [ ] For POST endpoints that return the created resource, the response must include all ID fields needed by the frontend to link the resource to its parent (e.g., a `parentId` on a child entity, an `orderId` on an order item). Missing parent ID fields force an extra GET. Concrete parent/child field names for this project live in `docs/engineering-patterns.md`.
+- [ ] When an ADR defines that a data type bypasses the normal flow (e.g., a derived record type that does not create rows in the main transactional table), the spec must explicitly list every query/endpoint that aggregates that data type and describe how the alternative source is included. Missing this produces silent data gaps in aggregate views. Project-specific examples belong in `docs/engineering-patterns.md`.
+- [ ] When a new UI component replaces an existing one (e.g., a Sheet replacing a Dialog as the drill-down entry point), the spec must explicitly state which component is REPLACED and that it must be removed from all call sites. Without this instruction, agents implement the new component alongside the old one — both compile, but the user encounters two divergent flows depending on where they click.
+- [ ] For every query param a frontend component sends to an existing API endpoint, the spec must explicitly define those params in the backend API contract — even if the endpoint already exists. Frontend agents write the fetch call; backend agents implement the handler. Without the spec linking both sides, the params are sent but silently ignored, producing wrong behavior that compiles cleanly.
 - [ ] For every endpoint with conditional business logic (state transitions, hierarchy validation, permission gates): include an explicit table enumerating ALL cases — including cases that are blocked with an error — not just the happy path. Pseudocode buried in prose causes agents to implement only the cases they see near the top; a named table forces completeness.

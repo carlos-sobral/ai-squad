@@ -52,7 +52,7 @@ For every module that ships new or changed API endpoints, create or update `docs
 # {Module Name} API
 
 ## POST /api/{resource}
-**Auth:** aal2 required
+**Auth:** {auth-requirement declared in CLAUDE.md}
 
 **Request**
 \`\`\`json
@@ -72,7 +72,7 @@ For every module that ships new or changed API endpoints, create or update `docs
 ```
 
 Rules:
-- One file per module (e.g. `docs/api/bank-accounts.md`, `docs/api/transactions.md`)
+- One file per module (e.g. `docs/api/{module}.md`)
 - Include every endpoint, every response code, and one example request/response per endpoint
 - Write for a developer with no prior context — they should be able to call the API from this doc alone
 - Keep in sync with the spec: if the spec changes, this file changes in the same PR

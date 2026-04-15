@@ -73,6 +73,8 @@ Before starting, confirm you have:
 | GET /api/transactions | 45ms | 120ms | 280ms | ✅ |
 | POST /api/import/csv | 380ms | 890ms | 1400ms | ⚠️ |
 
+(Endpoints above are illustrative — substitute with the actual endpoints of your project.)
+
 ### Findings
 [Critical / Warning / Observation list with specific fix recommendations]
 

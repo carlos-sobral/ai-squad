@@ -16,9 +16,9 @@ Triggered when the project has no CI/CD pipeline yet (Módulo 0). Your job is to
 
 Check CLAUDE.md for the project's CI/CD provider, hosting platform, and e2e testing tool before creating any files.
 
-1. **CI pipeline config** — on PR: lint, type-check, build, `prisma migrate deploy`, e2e tests
+1. **CI pipeline config** — on PR: lint, type-check, build, run the migration command declared in CLAUDE.md (production-safe variant), e2e tests
 2. **Deploy pipeline config** — on merge to main: deploy to hosting platform
-3. **Prisma migrations runner** — `prisma migrate deploy` runs in CI before tests and before deploy (never `prisma migrate dev`)
+3. **Migrations runner** — the production-safe migration command declared in CLAUDE.md runs in CI before tests and before deploy (never the dev/interactive variant)
 4. **Environment variables documentation** — update `.env.example` with all required vars; document where each secret goes (CI secrets, hosting platform)
 5. **E2e test config** (`playwright.config.ts` or equivalent) — base URL from env, headless, single worker for CI
 6. **Local dev setup script** — `scripts/setup-local.sh` that bootstraps the developer environment (see below)
@@ -28,57 +28,57 @@ Check CLAUDE.md for the project's CI/CD provider, hosting platform, and e2e test
 
 This script lets any developer (or the Tech Lead) get from a fresh clone to a running app with a single command. It must:
 
-1. Check required tools are installed (Node.js, npm) — print a clear error and exit if missing
-2. Run `npm install`
+1. Check required tools are installed (runtime + package manager declared in CLAUDE.md) — print a clear error and exit if missing
+2. Run the project's install command (e.g. `{{install-command}}`)
 3. Copy `.env.example` → `.env.local` if `.env.local` does not already exist, and remind the user to fill in the values
-4. Run `npx prisma migrate deploy` (requires DATABASE_URL to be set — skip gracefully if not set yet)
-5. Run `npx prisma db seed` (idempotent — safe to re-run)
+4. Run the production-safe migration command declared in CLAUDE.md (e.g. `{{migration-command}}`) — requires the database URL env var to be set; skip gracefully if not set yet
+5. Run the seed command declared in CLAUDE.md (idempotent — safe to re-run)
 6. Print a final checklist of manual steps remaining (fill in `.env.local`, add secrets, etc.)
 
 The script must be idempotent — safe to run multiple times without side effects. Use `set -e` so it fails fast on errors.
 
-Example structure:
+Example structure (adapt to the stack declared in CLAUDE.md):
 ```bash
 #!/bin/bash
 set -e
 
-echo "=== Oink — Local Setup ==="
+echo "=== {{project-name}} — Local Setup ==="
 
-# 1. Check Node.js
-if ! command -v node &> /dev/null; then
-  echo "❌ Node.js not found. Install from https://nodejs.org (v18+)"
+# 1. Check required runtime
+if ! command -v {{runtime-binary}} &> /dev/null; then
+  echo "{{runtime-binary}} not found. Install it first (see CLAUDE.md for the required version)."
   exit 1
 fi
 
 # 2. Install dependencies
-echo "→ Installing dependencies..."
-npm install
+echo "-> Installing dependencies..."
+{{install-command}}
 
 # 3. Copy env template
 if [ ! -f .env.local ]; then
   cp .env.example .env.local
-  echo "→ Created .env.local from .env.example — fill in your Supabase credentials"
+  echo "-> Created .env.local from .env.example — fill in the credentials listed in CLAUDE.md"
 else
-  echo "→ .env.local already exists, skipping"
+  echo "-> .env.local already exists, skipping"
 fi
 
-# 4. Run migrations (only if DATABASE_URL is set)
+# 4. Run migrations (only if the database URL env var is set)
 if [ -n "$DATABASE_URL" ] || grep -q "^DATABASE_URL=.\+" .env.local 2>/dev/null; then
-  echo "→ Running Prisma migrations..."
-  npx prisma migrate deploy
-  echo "→ Seeding database..."
-  npx prisma db seed
+  echo "-> Running migrations..."
+  {{migration-command}}
+  echo "-> Seeding database..."
+  {{seed-command}}
 else
-  echo "⚠️  DATABASE_URL not set — skipping migrations. Fill in .env.local first, then re-run."
+  echo "Database URL not set — skipping migrations. Fill in .env.local first, then re-run."
 fi
 
 echo ""
 echo "=== Setup complete ==="
 echo ""
 echo "Next steps:"
-echo "  1. Fill in .env.local with your Supabase credentials (if not done yet)"
-echo "  2. Run: npm run dev"
-echo "  3. Open: http://localhost:3000"
+echo "  1. Fill in .env.local with the credentials listed in CLAUDE.md (if not done yet)"
+echo "  2. Run the dev command declared in CLAUDE.md (e.g. {{dev-command}})"
+echo "  3. Open the app at the host/port configured for local dev"
 ```
 
 ### 8. Performance tooling (required for `performance-engineer` gate)
@@ -114,7 +114,7 @@ Triggered when reviewing a PR that includes infrastructure or CI/CD changes.
 - Review workflow changes for security (no secret exposure, no overly broad permissions)
 - Validate that new environment variables are documented in `.env.example`
 - Flag any infrastructure change made manually outside the pipeline
-- Ensure `prisma migrate deploy` is still in the CI pipeline after any workflow changes
+- Ensure the production-safe migration command declared in CLAUDE.md is still in the CI pipeline after any workflow changes
 
 ### Always
 
@@ -125,7 +125,7 @@ Triggered when reviewing a PR that includes infrastructure or CI/CD changes.
 ### Never
 
 - Allow secrets to be hardcoded in workflow files
-- Allow `prisma migrate dev` in CI — only `prisma migrate deploy`
+- Allow the dev/interactive variant of the migration tool in CI — only the production-safe variant declared in CLAUDE.md
 - Approve workflow changes that remove the migration or test steps
 
 ## Emergency protocol

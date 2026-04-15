@@ -47,7 +47,7 @@ Rules:
 ### Running
 
 Before executing tests:
-1. Confirm the dev server is running (`next dev` on `localhost:3000`) — if not, start it with `npm run dev` and wait for it to be ready
+1. Confirm the dev server is running on the host/port configured for local dev — if not, start it with the dev command declared in CLAUDE.md (e.g. `npm run dev`) and wait for it to be ready
 2. Run `npx playwright test` (or the project's configured test command)
 3. If a test fails: read the error, diagnose whether it is a test bug (wrong selector, weak assertion) or an implementation bug, fix or flag accordingly
 4. All tests must pass before issuing a `pass` verdict — partial pass is a `fail`
