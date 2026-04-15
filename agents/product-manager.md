@@ -348,7 +348,11 @@ must be able to verify its acceptance criterion without ambiguity.
 
 ### Acceptance Criteria
 
-> Use Gherkin format. Each scenario must be independently testable.
+> Use **Gherkin** for user-flow stories with a clear persona and multi-step interaction.
+> Use **EARS** (Easy Approach to Requirements Syntax) for event-driven, system-level, or state-triggered requirements where Gherkin's Given/When/Then is overkill or ambiguous.
+> Each criterion must be independently testable. Mix formats when appropriate — one story can use Gherkin for user scenarios and EARS for non-functional rules.
+
+#### Option A — Gherkin (user-flow scenarios)
 
 **Scenario 1: [Happy Path — descriptive name]**
 \`\`\`gherkin
@@ -371,6 +375,31 @@ Given [error condition or invalid data]
 When [attempted action]
 Then [clear error message or expected fallback]
 \`\`\`
+
+#### Option B — EARS (event- and state-driven rules)
+
+Use one of the five EARS patterns per requirement. Each pattern produces one testable assertion.
+
+- **Ubiquitous (always true):**
+  `The <system> shall <response>.`
+  Example: *The payment service shall reject any amount ≤ 0.*
+- **Event-driven:**
+  `When <trigger>, the <system> shall <response>.`
+  Example: *When a webhook arrives with an unknown event type, the system shall log it at WARN and return 204.*
+- **State-driven:**
+  `While <state>, the <system> shall <response>.`
+  Example: *While a user is locked out, the system shall reject login attempts with 423.*
+- **Optional feature:**
+  `Where <feature is enabled>, the <system> shall <response>.`
+  Example: *Where the `TWO_FACTOR` flag is enabled, the system shall require a TOTP code on login.*
+- **Unwanted behavior:**
+  `If <trigger>, then the <system> shall <response>.`
+  Example: *If the database connection drops mid-request, then the system shall return 503 and emit a `db_down` metric.*
+
+**When to prefer EARS over Gherkin:**
+- Criteria are about system events, state transitions, or timing (no human persona)
+- The "Given" in Gherkin would be empty or trivial
+- The requirement is a non-functional invariant (auth, rate limit, error shape)
 
 ---
 

@@ -1,5 +1,4 @@
 ---
-version: 1.1
 name: sdlc-orchestrator
 description: "Software Development Lifecycle Orchestrator. Guides the Tech Lead through the full development flow — from spec to merge — ensuring the right agents are used at the right moments. Orchestrates parallel work using agent teams with tmux split panes."
 ---
@@ -32,9 +31,10 @@ product-designer (design system mode) — runs ONCE before first UI module
 
 [TEAM: idea-researcher + software-architect] (discovery, optional)
   → product-manager (PRD)
+  → [CLARIFY GATE]                          ← T2/T3 only: resolve top-5 ambiguities before tech-spec
   → product-designer (UX spec mode)         ← UI modules only: flows, screens, copy, accessibility
                                                requires docs/design-system.md to exist first
-  → software-architect (review mode)        ← consumes PRD + design artifacts → tech spec
+  → software-architect (review mode)        ← consumes PRD + clarifications + design artifacts → tech spec
   → (if approved) → [TEAM: backend-engineer + frontend-engineer]  ← ALWAYS both if module has UI
   → software-architect (refactor mode)      ← optional cleanup, no behavior change
   → [TEAM: software-architect (code review mode) + security-engineer]   ← always
@@ -43,6 +43,7 @@ product-designer (design system mode) — runs ONCE before first UI module
   → [TEAM: qa-engineer + tech-writer]              ← qa-engineer leads; tech-writer runs in parallel
       qa-engineer: writes AND runs Playwright tests if CI is configured
   → CI green
+  → [CONSISTENCY CHECK GATE]                ← pre-merge: PRD ↔ spec ↔ diff alignment; undocumented deltas become ADR/delta
   → Tech Lead approves → merge → auto deploy
   → [RETROSPECTIVE GATE] ← classify blockers → propose agent-def/doc/ADR diffs → Tech Lead approves
   → [NEXT MODULE only starts after this gate]
@@ -65,6 +66,7 @@ A module is **done** only when ALL of the following are true:
 - [ ] Frontend implemented — components + pages for the feature
 - [ ] CI green (build + type-check + lint + tests pass)
 - [ ] **Performance gate passed** — `performance-engineer` (gate mode) verdict is PASS or PASS WITH WARNINGS approved by Tech Lead
+- [ ] **Cross-artifact consistency check passed** — PRD ↔ tech spec ↔ diff ↔ tests aligned; any undocumented deltas resolved as ADR or delta-spec
 - [ ] Tech Lead has seen the feature working in the UI (preview deploy or local)
 - [ ] Merged to main
 - [ ] **Post-deploy health check passed** — error rate, response times, and alerts monitored for 15 min after deploy; no regressions
@@ -74,6 +76,7 @@ A module is **done** only when ALL of the following are true:
 - [ ] Backend implemented, reviewed (security + software-architect code review mode), and qa-engineer pass
 - [ ] CI green
 - [ ] **Performance gate passed** — `performance-engineer` (gate mode) verdict is PASS or PASS WITH WARNINGS approved by Tech Lead
+- [ ] **Cross-artifact consistency check passed** — PRD ↔ tech spec ↔ diff ↔ tests aligned; undocumented deltas resolved as ADR or delta-spec
 - [ ] Merged to main
 - [ ] **Post-deploy health check passed** — error rate and response times monitored for 15 min after deploy; no regressions
 - [ ] **Retrospective gate run** — all blockers classified; agent-def/doc/ADR diffs proposed and approved by Tech Lead
@@ -107,7 +110,7 @@ Always pass `model` explicitly on every Agent call — never rely on the default
 | Tier | Model | Agents |
 |---|---|---|
 | **opus** | Deep reasoning, open-ended | `idea-researcher`, `software-architect`, `product-manager`, `product-designer` |
-| **sonnet** | Implementation and structured review | `backend-engineer`, `frontend-engineer`, `pr-reviewer`, `security-engineer`, `quality-architect`, `cloud-architect`, `qa-engineer`, `performance-engineer` |
+| **sonnet** | Implementation and structured review | `backend-engineer`, `frontend-engineer`, `security-engineer`, `quality-architect`, `cloud-architect`, `qa-engineer`, `performance-engineer` |
 | **haiku** | Pattern-based, templated output | `tech-writer` |
 
 The `sdlc-orchestrator` itself always runs at **opus** — orchestration decisions require full reasoning capacity.
@@ -119,7 +122,7 @@ The `sdlc-orchestrator` itself always runs at **opus** — orchestration decisio
 | Discovery | `discovery-team` | `idea-researcher`, `software-architect` | When idea is vague or needs technical framing before PRD |
 | Implementation | `impl-team` | `backend-engineer`, `frontend-engineer` | Always when both frontend and backend are in scope |
 | Review (standard) | `review-team` | `software-architect (code review mode)`, `security-engineer` | Every feature |
-| Review (critical) | `review-team` | `software-architect (code review mode)`, `security-engineer`, `quality-architect` | When quality guardrails are at risk or a quality escape happened |
+| Review (critical) | `review-team` | `software-architect (code review mode)`, `security-engineer`, `quality-architect` (strategy mode — validates coverage/mutation gates) | When quality guardrails are at risk or a quality escape happened |
 | Review (infra) | `review-team` | `software-architect (code review mode)`, `security-engineer`, `cloud-architect` | When IaC or infrastructure changes are included |
 | Review (full) | `review-team` | `software-architect (code review mode)`, `security-engineer`, `quality-architect`, `cloud-architect` | Critical features touching infra + quality |
 | Ship (standard) | `ship-team` | `qa-engineer`, `tech-writer` | After implementation; qa-engineer owns the gate, tech-writer documents in parallel |
@@ -129,7 +132,7 @@ For single-agent stages (`software-architect` in spec review / refactor mode, `p
 
 **Performance audit (biweekly):** `performance-engineer` in audit mode runs on a scheduled cron job every 2 weeks across the full application — independent of any module flow. Set this up via `/schedule`. This is separate from the gate mode that runs in `ship-team` on first module delivery.
 
-**When in doubt about review depth**, default to adding `quality-architect`. It catches things pr-reviewer misses and runs in parallel at no time cost.
+**When in doubt about review depth**, default to adding `quality-architect`. It catches gaps that `software-architect (code review mode)` and `security-engineer` do not — test coverage, mutation score, flakiness — and runs in parallel at no time cost.
 
 ## Complexity Triage
 
@@ -307,6 +310,80 @@ At each stage, provide:
 - **Status:** ready to proceed / blocked / needs input
 - **Next action:** what the Tech Lead should do now (including which agent to invoke)
 - **Watch for:** what to pay attention to in the next agent's output
+
+---
+
+## Clarify gate — after PRD, before tech spec
+
+Run this gate on **T2 and T3** modules after `product-manager` delivers the PRD and before `software-architect` enters review mode. Skip for T1 (inline specs are short enough to catch ambiguity in one pass).
+
+### Purpose
+
+Kill ambiguity before it becomes an architectural bet. A PRD that reads fine to a human often leaves undefined behaviors that a tech-spec will silently invent. Forcing the top-5 questions to be asked and answered here prevents late rework.
+
+### Steps
+
+1. Run `software-architect` in review mode with the PRD. Prompt it to produce **up to 5 top-impact clarification questions** that, if left unanswered, would force an arbitrary decision during tech-spec writing. Each question must:
+   - Be answerable in ≤2 sentences by the Tech Lead or PM
+   - Be blocking (not cosmetic)
+   - Point at a specific PRD section or functional requirement
+2. Tech Lead answers each question inline.
+3. Answers are appended to the PRD as a **Clarifications** section (or to the compact PRD as a closing block).
+4. If any answer surfaces a new functional requirement or changes scope, return to `product-manager` for a PRD revision before proceeding.
+
+### Output format
+
+```
+## Clarifications — Module N
+
+Q1: [question] (ref: PRD §X.Y)
+A1: [Tech Lead answer]
+
+Q2: ...
+```
+
+### Skip conditions
+
+- T1 modules
+- Delta specs for well-documented existing features where the change is purely mechanical (e.g., rename, extract)
+- Hotfix path
+
+---
+
+## Consistency-check gate — pre-merge
+
+Run this gate **after CI goes green and before Tech Lead merge approval** on T2 and T3 modules. Skip for T1 (the surface is small enough for human review to catch drift).
+
+### Purpose
+
+Catch silent drift between what was specified (PRD + tech spec) and what was implemented (diff + tests). Drift is not necessarily a bug — sometimes the implementation discovered a better approach — but it must be documented, not swallowed.
+
+### Steps
+
+1. Run `software-architect` in review mode with three inputs:
+   - Approved PRD (with clarifications appendix)
+   - Approved tech spec
+   - `git diff <base>...HEAD` and list of test files changed
+2. The agent produces a **Consistency Report** listing every divergence found, classified:
+   - **(a) Documented delta** — the change was already captured in an ADR or delta-spec. No action.
+   - **(b) Undocumented improvement** — implementation is better than spec; retroactively update the spec or add a delta-spec. Not a blocker but must be resolved.
+   - **(c) Undocumented deviation** — implementation contradicts spec with no justification. Blocker: either revert to match spec or justify + document as (b).
+   - **(d) Spec not implemented** — spec item missing from diff. Blocker: implement or remove from scope with Tech Lead approval.
+3. Tech Lead resolves all (c) and (d) items before merge.
+
+### Output format
+
+```
+## Module N — Consistency Check
+
+| Divergence | Classification | Location (PRD § / spec § / file:line) | Resolution |
+|---|---|---|---|
+| ... | (c) deviation | spec §3.2 vs src/api/x.ts:42 | revert to spec OR add ADR |
+```
+
+### Relationship to retrospective gate
+
+This gate catches *what happened*. The retrospective gate classifies *why it happened* and updates the system to prevent repeat. Both are required — they are not redundant.
 
 ---
 
