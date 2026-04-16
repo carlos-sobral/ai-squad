@@ -1,6 +1,6 @@
 # ai-squad — Project Context
 
-ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. Fornece 12 agents especializados + 1 skill orchestrator, um processo completo de SDLC com gates de qualidade, e suporte a paralelismo via TeamMode + tmux.
+ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. Fornece 12 agents especializados + 2 skills (sdlc-orchestrator + onboard-brownfield), um processo completo de SDLC com gates de qualidade, suporte a paralelismo via TeamMode + tmux, e onboarding automático de codebases pré-existentes.
 
 ## Stack
 
@@ -13,12 +13,18 @@ ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. 
 
 ```
 ai-squad/
-├── skills/                  # Skill orchestrator + agent skill dirs para distribuição
+├── skills/                  # 2 skills (sdlc-orchestrator + onboard-brownfield)
 │   └── {nome}/SKILL.md
-├── agents/                  # Custom agents (.md) — modelo fixo por papel
+├── agents/                  # 12 custom agents (.md) — modelo fixo por papel
 │   └── {nome}.md
+├── scripts/
+│   └── metrics/             # collect.sh — coleta DORA + engineering metrics
 ├── templates/
-│   └── CLAUDE.md            # Template de contexto para projetos que usam o framework
+│   ├── CLAUDE.md            # Template de contexto para projetos que usam o framework
+│   └── docs/
+│       └── maturity-assessment.md  # Rubrica 5×4 de maturidade SDLC
+├── docs/
+│   └── integrations/        # Recipes de engineering-metrics providers
 ├── install.sh               # Instala skills + agents em ~/.claude/
 ├── TEAMMODE.md              # Guia de paralelismo com tmux
 └── README.md
@@ -69,23 +75,16 @@ Diagnóstico feito em abril/2026. Implementar as melhorias abaixo em ordem de pr
 
 ---
 
-## 2. Template de projeto com `.claude/` pré-configurado — Alta prioridade
+## 2. Template de projeto com `.claude/` pré-configurado — Aguardando priorização
 
 **Problema:** O `install.sh` instala as skills globalmente, mas não configura o projeto do dev com `settings.json`, TeamMode ou `.claude/` adequado.
 
-**O que fazer:**
-- Criar `templates/project/.claude/settings.json` com TeamMode habilitado:
-  ```json
-  {
-    "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" },
-    "Preferences": { "tmuxSplitPanes": true },
-    "teammateMode": "tmux"
-  }
-  ```
-- Atualizar o `install.sh` para perguntar se quer inicializar um projeto novo e copiar o template
-- Ou criar um comando separado: `bash init-project.sh /caminho/do/projeto`
+**Status:** Parcialmente coberto por `/onboard-brownfield` em brownfield. Para greenfield, ainda é manual — copiar `templates/CLAUDE.md` e editar `~/.claude/settings.json` manualmente.
 
-**Resultado esperado:** Dev clona o ai-squad, roda o init, abre o Claude no projeto e já tem TeamMode funcionando.
+**O que fazer (opcional):**
+- Criar `init-project.sh` que pergunte greenfield vs brownfield
+- Se greenfield: copiar template + guiar pré-requisitos
+- Se brownfield: recomendar `/onboard-brownfield` e validar pré-reqs
 
 ---
 
@@ -105,18 +104,19 @@ Diagnóstico feito em abril/2026. Implementar as melhorias abaixo em ordem de pr
 
 ---
 
-## 4. Onboarding aprimorado — Média prioridade
+## 4. Onboarding greenfield aprimorado — Média prioridade (substitui item anterior)
 
 **Problema:** O README explica o que é o framework, mas não guia o dev no primeiro uso de forma prática.
 
+**Status:** `/onboard-brownfield` cobre 100% do case brownfield. Para greenfield, falta guia step-by-step de setup + primeiro módulo.
+
 **O que fazer:**
-- Criar `QUICKSTART.md` com fluxo do zero:
+- Criar `QUICKSTART.md` com fluxo do zero (greenfield):
   1. Instalar ai-squad
-  2. Inicializar projeto
-  3. Abrir Claude + `/sdlc-orchestrator`
-  4. Primeiro módulo passo a passo
+  2. Copiar template CLAUDE.md + preencher seções chave
+  3. Validar pré-requisitos (tmux, settings.json, git init)
+  4. Abrir Claude + `/sdlc-orchestrator` → primeiro módulo passo a passo
 - Adicionar checklist de "pré-requisitos" (tmux, modelo configurado, CLAUDE.md preenchido)
-- Considerar um comando `/ai-squad-setup` como skill de onboarding que valida o ambiente
 
 **Resultado esperado:** Dev novo consegue rodar o primeiro módulo em menos de 30 minutos.
 
@@ -135,3 +135,11 @@ Diagnóstico feito em abril/2026. Implementar as melhorias abaixo em ordem de pr
 - Retorna relatório com o que está OK e o que precisa corrigir
 
 **Resultado esperado:** Dev roda `/setup-validator` e sabe exatamente o que falta antes de começar.
+
+---
+
+## Agent Outputs
+
+Log de trabalho executado por agents especializados.
+
+- [tech-writer — README + CLAUDE.md sync para brownfield + new skills + gates](docs/agents/tech-writer/2026-04-15-readme-claude-sync.md) — 2026-04-15
