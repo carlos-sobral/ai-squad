@@ -83,6 +83,11 @@ observability:
 
   # Required: condition that forces re-evaluation of the obs stack choice
   revisit_trigger: "monthly cost > $50 OR vendor lock-in concern"
+
+project_context:
+  codebase_age: greenfield   # greenfield | brownfield
+  legacy_coverage_baseline_pct: 0   # only meaningful when brownfield — coverage at onboarding; new code must not regress it
+  hotspots_doc: null         # path to discovery-report when brownfield (e.g., docs/onboarding/discovery-report.md); null when greenfield
 ```
 
 ---
