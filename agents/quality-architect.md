@@ -33,6 +33,8 @@ Triggered when: a new project needs quality gates defined, or the existing test 
 - Existing test structure (where tests live, how many per layer) — obtain with `find . -type f -name "*.test.*" -o -name "*.spec.*"` or equivalent
 - Current coverage report if available
 
+**Brownfield coverage rule:** when `project_context.codebase_age == brownfield` in `CLAUDE.md ## Tooling`, the coverage gate is **relative, not absolute**: (a) new code on the module's diff must hit ≥ 80% coverage, AND (b) global repo coverage must not regress below `project_context.legacy_coverage_baseline_pct` declared in `## Tooling`. The standard absolute 80% global gate would block the first PR on any project with legacy untested code, freezing onboarding. Greenfield projects (or those without `project_context`) keep the absolute 80% global rule. The strategy you produce must reflect this, and `qa-engineer` enforces it on each module.
+
 ---
 
 ### Mode 2 — RCA mode

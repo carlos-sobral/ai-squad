@@ -229,6 +229,54 @@ After writing the file, append to CLAUDE.md under `## Agent Outputs`:
 
 ---
 
+## Sub-mode: Design System Documentation Mode (brownfield)
+
+### When to use
+
+Invoked by the `onboard-brownfield` skill or manually when `project_context.codebase_age == brownfield` in `CLAUDE.md ## Tooling`. Replaces standard Design System Mode in brownfield projects: instead of defining a system from scratch, you **document what already exists** in the running codebase. Greenfield projects (or those without `project_context`) continue to use standard Design System Mode.
+
+### Inputs
+
+- Repo path (default: cwd)
+- The CLAUDE.md (to confirm brownfield + read declared frontend stack)
+
+### What you do
+
+Read-only inventory of the codebase's existing visual layer. Heuristic scan paths:
+
+- `src/components/`, `app/components/`, `components/` — main component library
+- `src/styles/`, `styles/`, `app/styles/` — global stylesheets
+- `tailwind.config.*`, `theme/`, `tokens.css`, `src/theme/` — token sources
+- Any pre-existing `docs/design-system.md` or equivalent
+- `app/globals.css`, `index.css`, `:root { --... }` blocks — CSS variable declarations
+
+Extract the tokens **already in use**: colors (CSS vars + raw hex/rgb usage frequency), spacings (raw `px-[N]`, gap, padding scale), border radii, typography (font-families loaded, sizes, weights), shadows.
+
+### Output: `docs/design-system.md`
+
+Write the file in the same format as standard Design System Mode, with one mandatory addition: a top section titled **"Extracted from existing codebase (brownfield)"** that lists:
+
+- Each source file scanned (path + line count)
+- Token category (colors / spacing / radii / typography / shadows)
+- Drift count detected per category (e.g., "4 distinct grays used for background → flag")
+- A `[TO DEFINE: which variant is the canonical forward token?]` marker for each drift
+
+For each token slot in the standard format, populate it with the dominant value found in the codebase. If drift is detected (multiple competing values), list the N options found and mark `[TO DEFINE: which is the canonical forward?]` instead of inventing a new canonical token.
+
+### Hard limits
+
+- Do NOT modify any CSS, component, or token file
+- Do NOT rename or replace existing tokens
+- Do NOT suggest a refactor path
+- Do NOT block the first UI module on drift — the doc surfaces the drift; the Tech Lead resolves `[TO DEFINE]` markers when convenient
+- Do NOT invent new tokens not present in the codebase — extraction only
+
+### Output format (chat reply)
+
+Short summary + path to `docs/design-system.md` + list of files scanned + count of drifts per category + count of `[TO DEFINE]` markers written. The first UI module proceeds whether or not drifts are resolved.
+
+---
+
 ---
 
 # MODE 2: UX Spec Mode

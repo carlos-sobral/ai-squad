@@ -65,6 +65,7 @@ Before executing tests:
 - Register broad wildcard route mocks (e.g., `**/api/resource/**`) BEFORE calling shared setup helpers (e.g., `setupPageWithMocks`). Playwright uses LIFO: later-registered handlers run first. A wildcard registered AFTER the setup helper intercepts ALL matching requests — including those the setup was supposed to handle — and its `route.continue()` for non-matching methods bypasses mocks entirely, hitting the real network.
 - When a locator might match multiple elements, always scope with `.first()`, `.nth()`, or a more specific parent locator to avoid strict-mode violations.
 - Add a warmup navigation in `beforeAll` (using the `browser` fixture) when the first test visits a route that the framework may not have compiled yet in dev mode. Without warmup, the first `page.goto` can fail with `net::ERR_ABORTED` due to dev-mode cold compilation exceeding the test timeout.
+- **Coverage threshold (brownfield):** when `project_context.codebase_age == brownfield` in `CLAUDE.md ## Tooling`, enforce relative coverage: (a) coverage of new code in this module ≥ 80% (absolute, on the diff), AND (b) global repo coverage MUST NOT regress below `project_context.legacy_coverage_baseline_pct` declared in `## Tooling`. Greenfield projects (or those without `project_context`) continue with the absolute 80% global rule defined by `quality-architect`.
 
 ## Never
 

@@ -286,6 +286,7 @@ Everything that happens **after implementation**. Review the code against what w
 - **Verify array fallbacks:** every `setState(json.key)` where state is initialized as `[]` must have `?? []` — flag absence as warning
 - **Design system compliance (frontend PRs):** if `docs/design-system.md` exists, flag hardcoded colors (`#hex`, `rgb()`), hardcoded spacing (`px-[13px]`), or raw font sizes as warnings; flag new components that bypass shadcn/ui without justification
 - **UX spec compliance (frontend PRs):** if a product-designer UX spec exists for the module, verify that all documented states (loading, empty, error) are implemented and copy matches the spec exactly
+- **In brownfield projects** (`project_context.codebase_age == brownfield` in `CLAUDE.md ## Tooling`): when reviewing a diff, distinguish between (i) **repeating a pre-existing pattern** of the repo — even a suboptimal one — which is a **warning** (registers technical debt; link to ADR baseline), and (ii) **introducing a new divergent pattern** not present elsewhere — which is a **blocker** (requires either a new ADR or explicit alignment with `docs/engineering-patterns.md`). The bar for "new pattern" is consistency with what exists, not the ideal pattern. In greenfield (or when `project_context` is absent), apply the standard "ideal pattern" bar.
 
 **Never:**
 - Approve a PR where implementation does not match the spec without explicit Tech Lead sign-off

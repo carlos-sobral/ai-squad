@@ -39,6 +39,25 @@ A rubric-driven view of how the squad executes the SDLC. It is not a performance
 
 ---
 
+## Brownfield baseline
+
+If this project was onboarded via `/onboard-brownfield`, the initial Status above was auto-claimed from observable evidence in the existing codebase. Auto-claim rules:
+
+| Dimension | Auto-claim possible | Evidence required |
+|---|---|---|
+| Spec Discipline | **L1 always** | Reviews/PRDs predating ai-squad don't follow the framework format. Starts from zero — honest. |
+| Review Coverage | **L1 always** | Same reason. |
+| Learning Loop | **L1 always** | No retrospective gates pre-onboarding to baseline against. |
+| Delivery Stability | **L2 or L3** | L2: CI ran 90d with >100 PRs merged AND <20% commits matching `^(revert\|hotfix\|fix:)`. L3: also p95 PR open→merge ≤5 days. Cite the exact `git log` / `gh pr list` command output. |
+| Observability Maturity | **L2 or L3** | L2: an obs stack is detected in deps + env vars configured. L3: also alerts configured (e.g., `pagerduty.yml`, `alerts/` dir present). Cite the file. |
+
+**Rules:**
+- Anything auto-claimed above L1 must cite the module/command/file that proved it. No claim without evidence.
+- Spec Discipline / Review Coverage / Learning Loop assessments are **not retroactive** — they only count modules shipped after onboarding.
+- The first `performance-engineer` audit biweekly validates auto-claimed levels above L1. If evidence doesn't hold, regress immediately (exception to the 2-consecutive rule).
+
+---
+
 ## Histórico de transições
 
 | Date | Dimension | From | To | Trigger module(s) | Evidence ref |

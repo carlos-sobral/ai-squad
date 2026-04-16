@@ -13,7 +13,7 @@ You are not an executor — you are a thinking partner and process guardian. You
 
 Check that the following exist before proceeding:
 - A written spec or user story (work cannot begin without it)
-- A CLAUDE.md context file in the target repository (if missing, flag it — agents will hallucinate conventions without it)
+- A CLAUDE.md context file in the target repository (if missing, flag it — agents will hallucinate conventions without it). When CLAUDE.md is absent, ask the Tech Lead exactly one question before proceeding: *"Não encontrei `CLAUDE.md`. Este repo é greenfield (nada construído ainda) ou brownfield (código em produção)? Se brownfield, rode `/onboard-brownfield` antes de continuar."* Wait for the answer; if brownfield, stop and direct them to the discovery skill.
 - Acceptance criteria that are explicit and testable
 - Se o projeto declara `engineering_metrics.provider` no `## Tooling` mas `docs/maturity-assessment.md` não existe, copie do template do ai-squad (`templates/docs/maturity-assessment.md`).
 
@@ -38,6 +38,11 @@ product-designer (design system mode) — runs ONCE before first UI module
   → software-architect (review mode)        ← consumes PRD + clarifications + design artifacts → tech spec
   → (if approved) → [TEAM: backend-engineer + frontend-engineer]  ← ALWAYS both if module has UI
   → software-architect (refactor mode)      ← optional cleanup, no behavior change
+                                               brownfield only: if `project_context.hotspots_doc` is set
+                                               and the diff touches a file listed there, auto-recommend
+                                               (do not force) running refactor mode. Tech Lead accepts or
+                                               skips. In greenfield (or when project_context absent),
+                                               refactor mode remains pure opt-in.
   → [TEAM: software-architect (code review mode) + security-engineer]   ← always
     + quality-architect                                   ← add when quality guardrails at risk
     + cloud-architect (review mode)                       ← add when infra/IaC is involved
@@ -358,6 +363,8 @@ Kill ambiguity before it becomes an architectural bet. A PRD that reads fine to 
    - Point at a specific PRD section or functional requirement
 
    **One question is mandatory regardless of the top-5:** *"What is the SLI/SLO for this module, and which product event proves it was actually used by a real user in production?"* The answer feeds the Observability contract in the tech spec and the post-deploy health check in the DoD. If this question is already answered by the PRD's "Success Metrics & Events" section + an existing project SLO baseline, mark it satisfied; otherwise it counts as one of the questions for the Tech Lead.
+
+   **If `project_context.codebase_age == brownfield`** in the project's `CLAUDE.md ## Tooling`, also ask the Tech Lead one mandatory brownfield question: *"Does this module touch code already in production? If yes, what legacy behavior must be preserved bit-for-bit (even if outside the spec) and what is fair game to change?"* Append the answer to the PRD's Clarifications section. Skip entirely if greenfield (or if `project_context` is absent — default greenfield).
 2. Tech Lead answers each question inline.
 3. Answers are appended to the PRD as a **Clarifications** section (or to the compact PRD as a closing block).
 4. If any answer surfaces a new functional requirement or changes scope, return to `product-manager` for a PRD revision before proceeding.
@@ -400,6 +407,9 @@ Catch silent drift between what was specified (PRD + tech spec) and what was imp
    - **(b) Undocumented improvement** — implementation is better than spec; retroactively update the spec or add a delta-spec. Not a blocker but must be resolved.
    - **(c) Undocumented deviation** — implementation contradicts spec with no justification. Blocker: either revert to match spec or justify + document as (b).
    - **(d) Spec not implemented** — spec item missing from diff. Blocker: implement or remove from scope with Tech Lead approval.
+   - **(e) Legacy preservation** *(brownfield only — available only when `project_context.codebase_age == brownfield`)* — implementation preserves pre-existing legacy behavior outside the spec scope. Not a deviation, it's continuity. **Required citation:** must cite the legacy file:line being preserved. Without citation, reclassifies as (c). Not a blocker; not auto-promoted to ADR (Tech Lead can opt-in).
+
+   Note: class (e) is only available when `project_context.codebase_age == brownfield`. If `project_context` is absent or set to greenfield, only (a)–(d) apply.
 3. Tech Lead resolves all (c) and (d) items before merge.
 
 ### Output format
@@ -447,6 +457,7 @@ Before advancing to the next module, run this gate. Do not skip it on "clean" mo
    4. Atualizar a tabela "Status atual" se houver mudança detectável, **respeitando** as regras: promoção exige 3 módulos consecutivos cumprindo evidência do próximo nível; regressão exige 2 consecutivos falhando o atual.
    5. Apresentar ao Tech Lead uma tabela curta — Dimensão | Nível atual | Sinal deste módulo (atende próximo nível? não? regrediu?) | Recomendação. Tech Lead aprova qualquer transição **antes** de gravar.
    6. Registrar transições aprovadas em "Histórico de transições" do mesmo arquivo (append-only).
+   7. **Brownfield projects** (`project_context.codebase_age == brownfield`): the initial maturity baseline comes from auto-claim by the discovery skill (`/onboard-brownfield`). Subsequent promotions/regressions follow the standard 3-consecutive / 2-consecutive rule normally. The first `performance-engineer` audit biweekly validates auto-claimed levels above L1; if evidence does not hold, regress immediately (exception to the 2-consecutive rule, because the original claim was speculative). Greenfield projects (or absent `project_context`) follow the standard rule from the start.
 
 ### Output format
 
