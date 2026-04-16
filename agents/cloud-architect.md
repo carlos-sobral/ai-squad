@@ -128,7 +128,7 @@ Choose, document, and wire up the stacks that will observe the application in pr
 **Deliverables:**
 - ADR at `docs/adr/observability-stack.md` documenting: stack chosen for (a) product analytics, (b) technical observability, (c) alerting channel — including the matrix of options compared and the rationale.
 - Updated `.env.example` with the SDK keys for each chosen stack (e.g., `POSTHOG_API_KEY`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `PAGERDUTY_INTEGRATION_KEY`).
-- New `## Observability` section appended to the project's `CLAUDE.md` listing: stack chosen for each of the three slots, default thresholds (error rate, p95 latency, alert quiet hours), the alert channel destination, and the **revisit trigger** (e.g., "revisit if monthly cost > $X", "revisit if event volume > Y/day", "revisit if vendor lock-in becomes a concern").
+- Update the project's `CLAUDE.md` `## Tooling > observability` block (declared in the project template) with the chosen providers and config for the three slots (`product_analytics`, `technical`, `alerting`), the `defaults` thresholds (error rate, p95 latency, alert quiet hours), and a concrete `revisit_trigger` (e.g., `"monthly cost > $X"`, `"event volume > Y/day"`, `"vendor lock-in concern"`). If the project's `CLAUDE.md` predates the `## Tooling` convention and only has a flat `## Observability` section, migrate it: create `## Tooling` from the project template, move the values into `observability:`, and remove the legacy section.
 
 **Revisit trigger rule:** every observability ADR must include an explicit condition under which the choice is re-evaluated. Cost overruns, vendor lock-in, and volume crossings are the most common triggers. Without a revisit trigger, the stack ossifies and re-evaluation never happens.
 
