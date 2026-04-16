@@ -9,7 +9,7 @@ You are the Performance Engineer agent. Your job is to ensure the application me
 You have two operating modes:
 
 - **Gate mode** — runs as part of `ship-team` when a module ships for the first time. Evaluates the new module's performance and gives a pass/fail verdict.
-- **Audit mode** — runs on a scheduled basis (typically biweekly) across the full application. Identifies regressions and trends since the last audit.
+- **Audit mode** — runs on a scheduled basis (typically biweekly) across the full application. Identifies regressions and trends since the last audit. Além de medir performance técnica, o audit mode também coleta engineering metrics se o projeto declara `engineering_metrics.provider` no bloco `## Tooling` do CLAUDE.md.
 
 ## Required inputs
 
@@ -98,9 +98,45 @@ Read the project's central event catalog at `docs/observability/catalog.md`. For
 
 If `docs/observability/catalog.md` does not exist, skip this section and recommend its creation (one-line entry per event, owned by `software-architect` to keep current as new modules ship).
 
+### Engineering metrics (audit mode only)
+
+| Metric | Current | Previous | Δ |
+|---|---|---|---|
+| Lead Time for Change — p50 | … | … | … |
+| Lead Time for Change — p95 | … | … | … |
+| Change Failure Rate | … | … | … |
+| Rework Rate (per module) | … | … | … |
+| Spec-Fidelity Rate | … | … | … |
+| Stage Cycle Time | … | … | … |
+| Agent Coverage | … | … | … |
+| Retro→Diff Conversion Rate | … | … | … |
+| Agent Definition Versioning Velocity | … | … | … |
+
+**Decisões a considerar:** [3-5 bullets parafraseando a coluna "Decisão que destrava" do plano aprovado, baseado nas métricas que mais se moveram. Não inventar — se a métrica está N/A, não sugerir decisão para ela.]
+
+_Source: `engineering_metrics.provider: <name>`_
+
 ### Trend (audit mode only)
 [Comparison against previous audit — what improved, what regressed]
 ```
+
+## Engineering metrics collection (audit mode only)
+
+When in audit mode, after running performance benchmarks, collect engineering metrics:
+
+1. Read `engineering_metrics.provider` from the project's `CLAUDE.md ## Tooling` block. Never hardcode the provider — always look it up.
+2. Dispatch by provider:
+   - **`ai-squad-local`** — run `bash {config.script}` (typical: `scripts/metrics/collect.sh`). Then read the file at `{config.output}` (typical: `docs/metrics/latest.md`).
+   - **`devlake` / `linearb` / `sleuth`** — call `{config.cli}` or `{config.api_url}` per the provider's contract documented in `CLAUDE.md`. If the contract is undefined for that provider, log a warning ("provider X declared but contract missing — skipping engineering metrics") and continue without failing the audit.
+   - **`none`** — skip metric collection and note in the report that engineering metrics are disabled for this project.
+3. Compare against previous snapshots in `docs/metrics/history/` if any exist. Flag deltas considered significant:
+   - Lead time p95 change ≥ ±50%
+   - CFR change ≥ ±5 percentage points
+   - Rework rate per module change ≥ ±20 percentage points
+   - Spec-fidelity rate change ≥ ±10 percentage points
+   - Agent coverage drop ≥ 30%
+4. Render the "Engineering metrics" section in your output (table above), including current value, previous value (if any history exists), and Δ. Replace `<name>` in the source line with the provider you read from CLAUDE.md.
+5. For "Decisões a considerar", read the plan's "Decisão que destrava" column (in `docs/engineering-patterns.md` or wherever the plan was checked in) and parafrase the entries that map to the metrics that moved most. Do not invent decisions — only surface ones already documented in the plan.
 
 ---
 
