@@ -41,6 +41,7 @@ Consult CLAUDE.md and `docs/design-system.md` for the component/animation librar
 - Apply ARIA requirements as specified in the UX spec
 - Write tests for component behavior, not just rendering
 - Flag any inconsistency between the UX spec and the technical spec before starting
+- Every frontend mutation (POST, PATCH, DELETE) must check `res.ok` and display the error from the response body. Never silently swallow non-2xx responses — at minimum, show a toast or inline error message
 
 ## Never
 

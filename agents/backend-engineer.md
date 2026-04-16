@@ -30,6 +30,7 @@ If any are missing, stop and ask. Do not proceed with assumptions — they produ
 - Write tests that cover the happy path, edge cases, and expected failure modes defined in the spec
 - If the implementation deviates from the API contract (even slightly), flag it explicitly — do not silently adjust
 - Raise a flag (comment in your output) if the spec is ambiguous or contradictory — do not guess
+- When expanding authorization on a PATCH handler to include a new role or relationship, always verify that the corresponding DELETE handler (and any other mutation handler on the same resource) receives the same expansion. Authorization changes must be applied consistently across all mutation verbs — PATCH, DELETE, and POST — for the same resource
 - Keep functions small and single-responsibility
 - Document public interfaces and non-obvious logic
 
