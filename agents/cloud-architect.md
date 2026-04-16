@@ -81,9 +81,9 @@ echo "  2. Run the dev command declared in CLAUDE.md (e.g. {{dev-command}})"
 echo "  3. Open the app at the host/port configured for local dev"
 ```
 
-### 8. Performance tooling (required for `performance-engineer` gate)
+### 8. Synthetic observability (required for `performance-engineer` gate)
 
-The `performance-engineer` skill requires CI-produced metrics to run. Without these, the ship-team's performance gate will block unconditionally. Configure both during Módulo 0:
+These tools produce performance signals from synthetic, CI-driven runs — not from real user traffic. They are distinct from production observability (section 9), which observes real users in production. The `performance-engineer` skill requires CI-produced metrics to run. Without these, the ship-team's performance gate will block unconditionally. Configure both during Módulo 0:
 
 **Lighthouse CI:**
 - Install `@lhci/cli` as a dev dependency
@@ -97,11 +97,47 @@ The `performance-engineer` skill requires CI-produced metrics to run. Without th
 
 Add both steps to the Módulo 0 checklist before marking setup complete.
 
+### 9. Production observability stack choice
+
+Choose, document, and wire up the stacks that will observe the application in production. Three stacks must be decided in Módulo 0 — separately, because each one solves a different problem and the right vendor for one is rarely the right vendor for another.
+
+**Three stacks to choose:**
+
+1. **Product analytics** — what users do (events, funnels, retention). Default candidates:
+   - **PostHog** — open source, self-hostable, generous free tier. Good default for early-stage.
+   - **Mixpanel** — mature funnels and cohort analysis, generous free tier under 1M events/month.
+   - **Amplitude** — strongest behavioral analytics, free tier under 10M events/month but pricier above.
+
+2. **Technical observability** — metrics, traces, logs from the running system. Default candidates:
+   - **OpenTelemetry SDK + Grafana Cloud** — vendor-neutral instrumentation, generous free tier.
+   - **OpenTelemetry SDK + Honeycomb** — best-in-class trace exploration, opinionated on high-cardinality.
+   - **Datadog** — full-stack APM with the broadest integration catalog; expensive at scale.
+   - **New Relic** — similar surface to Datadog, free tier up to 100GB/month ingest.
+   - Always emit instrumentation through the **OpenTelemetry SDK** regardless of vendor — keeps swap cost low.
+
+3. **Alerting channel** — where on-call humans receive symptoms. Default candidates:
+   - **PagerDuty** — rotation, escalation, postmortems; standard for serious on-call.
+   - **Opsgenie** — same category, often cheaper.
+   - **Slack/Discord webhook** — acceptable for squads of 1-3 with no formal rotation; revisit when team grows.
+
+**Decision criteria — answer these three before choosing:**
+- **Estimated monthly budget** — what is the project willing to spend across all three stacks combined?
+- **Expected volume** — events/day for analytics; req/s and traces/day for technical obs.
+- **Product analytics separated from APM?** — default: yes, separated. APM tools rarely have first-class funnel/cohort analysis; analytics tools rarely have first-class trace exploration. Combine only if the budget cannot support two vendors and product team accepts degraded analytics.
+
+**Deliverables:**
+- ADR at `docs/adr/observability-stack.md` documenting: stack chosen for (a) product analytics, (b) technical observability, (c) alerting channel — including the matrix of options compared and the rationale.
+- Updated `.env.example` with the SDK keys for each chosen stack (e.g., `POSTHOG_API_KEY`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `PAGERDUTY_INTEGRATION_KEY`).
+- New `## Observability` section appended to the project's `CLAUDE.md` listing: stack chosen for each of the three slots, default thresholds (error rate, p95 latency, alert quiet hours), the alert channel destination, and the **revisit trigger** (e.g., "revisit if monthly cost > $X", "revisit if event volume > Y/day", "revisit if vendor lock-in becomes a concern").
+
+**Revisit trigger rule:** every observability ADR must include an explicit condition under which the choice is re-evaluated. Cost overruns, vendor lock-in, and volume crossings are the most common triggers. Without a revisit trigger, the stack ossifies and re-evaluation never happens.
+
 ### Setup mode rules
 - Use the CI/CD provider and hosting platform defined in CLAUDE.md
 - Never hardcode secrets — always use environment variable references
 - Preview environments: use the hosting platform's native PR preview feature if available
-- Performance tooling (Lighthouse CI + load test runner) must be configured before the first `ship-team` runs — without it, the performance gate will block unconditionally
+- Synthetic observability tooling (Lighthouse CI + load test runner) must be configured before the first `ship-team` runs — without it, the performance gate will block unconditionally
+- Production observability stacks must be chosen and wired before the first production deploy — without them, the post-deploy health check in the orchestrator's DoD cannot run
 
 ---
 

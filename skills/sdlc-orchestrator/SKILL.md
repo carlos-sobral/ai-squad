@@ -69,7 +69,7 @@ A module is **done** only when ALL of the following are true:
 - [ ] **Cross-artifact consistency check passed** — PRD ↔ tech spec ↔ diff ↔ tests aligned; any undocumented deltas resolved as ADR or delta-spec
 - [ ] Tech Lead has seen the feature working in the UI (preview deploy or local)
 - [ ] Merged to main
-- [ ] **Post-deploy health check passed** — error rate, response times, and alerts monitored for 15 min after deploy; no regressions
+- [ ] **Post-deploy health check passed** — concrete checks against the production observability stacks declared in the project's `CLAUDE.md ## Observability` section: (a) query the product analytics stack to confirm that the happy-path event(s) declared in the PRD emitted in production at least once after the deploy; (b) verify that none of the module's proposed alerts (defined in the tech spec's Observability contract) fired in the 15 minutes following the deploy; (c) confirm error rate and p95 latency for the affected endpoints are within the SLO declared in the spec. The exact query/command for each check must be documented in the project's `CLAUDE.md` so the check is reproducible without guesswork.
 - [ ] **Retrospective gate run** — all blockers classified; agent-def/doc/ADR diffs proposed and approved by Tech Lead
 
 ### For backend-only modules (internal helpers, no UI surface):
@@ -78,7 +78,7 @@ A module is **done** only when ALL of the following are true:
 - [ ] **Performance gate passed** — `performance-engineer` (gate mode) verdict is PASS or PASS WITH WARNINGS approved by Tech Lead
 - [ ] **Cross-artifact consistency check passed** — PRD ↔ tech spec ↔ diff ↔ tests aligned; undocumented deltas resolved as ADR or delta-spec
 - [ ] Merged to main
-- [ ] **Post-deploy health check passed** — error rate and response times monitored for 15 min after deploy; no regressions
+- [ ] **Post-deploy health check passed** — concrete checks against the production observability stacks declared in the project's `CLAUDE.md ## Observability` section: (a) query the product analytics or telemetry stack to confirm that the happy-path event(s) declared in the PRD emitted in production at least once after the deploy; (b) verify that none of the module's proposed alerts (defined in the tech spec's Observability contract) fired in the 15 minutes following the deploy; (c) confirm error rate and p95 latency for the affected endpoints are within the SLO declared in the spec. The exact query/command for each check must be documented in the project's `CLAUDE.md` so the check is reproducible without guesswork.
 - [ ] **Retrospective gate run** — all blockers classified; agent-def/doc/ADR diffs proposed and approved by Tech Lead
 
 **The frontend is not optional for UI modules.** Running only `backend-engineer` and deferring the frontend creates invisible debt — the feature is not shippable until both halves exist. If you notice only backend-engineer has run for a module, flag it as incomplete before moving to the next module.
@@ -336,6 +336,8 @@ Kill ambiguity before it becomes an architectural bet. A PRD that reads fine to 
    - Be answerable in ≤2 sentences by the Tech Lead or PM
    - Be blocking (not cosmetic)
    - Point at a specific PRD section or functional requirement
+
+   **One question is mandatory regardless of the top-5:** *"What is the SLI/SLO for this module, and which product event proves it was actually used by a real user in production?"* The answer feeds the Observability contract in the tech spec and the post-deploy health check in the DoD. If this question is already answered by the PRD's "Success Metrics & Events" section + an existing project SLO baseline, mark it satisfied; otherwise it counts as one of the questions for the Tech Lead.
 2. Tech Lead answers each question inline.
 3. Answers are appended to the PRD as a **Clarifications** section (or to the compact PRD as a closing block).
 4. If any answer surfaces a new functional requirement or changes scope, return to `product-manager` for a PRD revision before proceeding.
@@ -408,6 +410,7 @@ Before advancing to the next module, run this gate. Do not skip it on "clean" mo
    - **(b) Spec gap** — the spec was ambiguous or missing a concrete example. → Propose an addition to the `software-architect` spec completeness checklist.
    - **(c) Architectural decision** — a structural choice was made during implementation that deserves a permanent record. → Write an ADR.
    - **(d) Project-specific knowledge** — the pattern is too tied to this project's stack or domain to belong in an agent definition. → Propose an addition to the project's `docs/engineering-patterns.md`.
+   - **(e) Observability gap** — a blocker, regression, or post-deploy surprise that would have been caught earlier if the Observability contract had defined the right SLI, alert, or event. → Propose destination: an addition to the `software-architect` Observability contract section, an update to the project's observability ADR, or a new entry in the project's central event catalog (`docs/observability/catalog.md`).
 3. Present proposed changes to the Tech Lead as plain text diffs. Do not modify agent definition files directly — the Tech Lead approves and applies.
 4. For each approved diff, instruct the Tech Lead to save a record to `docs/agent-evolution/YYYY-MM-DD-<agent>-<slug>.md` using the format in the **Diff record format** section below.
 5. Increment the affected agent definition's `version` field (minor bump for additions, major for behavioral changes).
@@ -422,6 +425,7 @@ Before advancing to the next module, run this gate. Do not skip it on "clean" mo
 |---|---|---|---|
 | B1: ... | (a) implementation pattern | backend-engineer agent definition | "..." |
 | B2: ... | (d) project-specific | docs/engineering-patterns.md | "..." |
+| B3: ... | (e) observability gap | software-architect Observability contract / observability ADR / docs/observability/catalog.md | "..." |
 
 ### Agent definition diffs proposed
 [exact text to append to each agent definition file]

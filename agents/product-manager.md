@@ -117,11 +117,19 @@ When the sdlc-orchestrator classifies the module as T2 — features with moderat
 ### FR-02: [Name]
 (repeat)
 
-## Success Metrics
+## Success Metrics & Events
 
 | Metric | Baseline | Target |
 |---|---|---|
 | [metric] | [current] | [goal] |
+
+### Events required
+
+| Event name | Fires when | Required properties | Privacy class |
+|---|---|---|---|
+| [snake_case_event] | [user/system action that triggers it] | [list, 1-2 props] | public / PII-free / sensitive |
+
+> PM defines WHAT to measure and WHEN it fires. The technical schema (types, dispatcher location, transport) is the software-architect's job in the tech spec.
 
 ## Open Questions
 - [ ] [pending question]
@@ -244,11 +252,26 @@ When documenting a feature, product, or initiative with high complexity: public 
 
 ---
 
-## 8. Success Metrics
+## 8. Success Metrics & Events
+
+### Metrics
 
 | Metric | Current Baseline | Target | Deadline | Measurement Method |
 |---|---|---|---|---|
-| [e.g., Onboarding conversion rate] | [X%] | [Y%] | [Date] | [Mixpanel / SQL] |
+| [e.g., Onboarding conversion rate] | [X%] | [Y%] | [Date] | [stack declared in CLAUDE.md / SQL] |
+
+### Events required
+
+Every metric above is computed from product events. List the events that must fire for these metrics to be measurable. PM owns WHAT and WHEN; software-architect owns HOW (technical event schema, dispatcher location, transport) — see the tech-spec "Observability contract" section.
+
+| Event name | Fires when | Required properties | Privacy class |
+|---|---|---|---|
+| [snake_case_event] | [user/system action that triggers it] | [list of props with brief descriptions] | public / PII-free / sensitive |
+
+**Privacy class definitions:**
+- **public** — the event itself and its properties are safe to expose in dashboards shared broadly
+- **PII-free** — no personal identifiers in properties (use hashed/anonymized IDs only)
+- **sensitive** — contains regulated data (financial, health, identity) — must be routed only to compliant destinations as documented in the observability ADR
 
 ---
 

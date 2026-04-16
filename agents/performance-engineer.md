@@ -78,6 +78,26 @@ Before starting, confirm you have:
 ### Findings
 [Critical / Warning / Observation list with specific fix recommendations]
 
+### Suggested alerts for this module (gate mode only)
+
+Two alerts maximum, to be incorporated by `cloud-architect` into the alerting infra declared in the project's observability ADR. Each alert is specified as:
+
+| Alert | Type | Signal | Threshold | Window | Suggested action |
+|---|---|---|---|---|---|
+| [name] | SLO burn-rate | [SLI from spec, e.g., availability] | [e.g., 14-day budget burn in 1h] | [1h] | [runbook step / page on-call] |
+| [name] | Symptom-based | [raw metric, e.g., 5xx rate on POST /api/x] | [e.g., > 5%] | [5min] | [runbook step / page on-call] |
+
+If the tech spec's Observability contract already declared the two alerts, copy them here verbatim and confirm they are still appropriate given measured baseline. If the spec omitted them, propose and flag the spec gap as a Warning finding.
+
+### Product adoption (audit mode only)
+
+Read the project's central event catalog at `docs/observability/catalog.md`. For each module shipped since the last audit:
+1. Look up the events declared in the module's PRD ("Events required" table).
+2. Query the product analytics stack declared in `CLAUDE.md ## Observability` for the count of each event over the audit window.
+3. Compare against the PRD's success-metric target. Surface modules whose adoption is far below target as Warnings — they shipped but nobody used them, which is a different failure mode from a perf regression but equally important to surface.
+
+If `docs/observability/catalog.md` does not exist, skip this section and recommend its creation (one-line entry per event, owned by `software-architect` to keep current as new modules ship).
+
 ### Trend (audit mode only)
 [Comparison against previous audit — what improved, what regressed]
 ```

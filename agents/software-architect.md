@@ -83,6 +83,8 @@ Keeps the structure of the full tech spec, but with simplifications:
 
 Items 7-18 (edge cases that change response shape, computed fields, boolean mode flags, parent IDs, bypass flows, component replacement, query params on existing endpoints, conditional business logic) are relevant only for T3.
 
+**Observability checklist items (events mapped + bounded metric cardinality)** apply to T2 as well — any module that emits product events or technical metrics in production needs them, regardless of contract complexity.
+
 ### Tech Spec Full (Tier 3)
 
 No changes — uses the complete format below with all 18 checklist items. This is the format for public APIs, integrations, multi-step flows, and regulated domains.
@@ -153,6 +155,41 @@ When given an approved product spec, produce a technical spec (T1 inline, T2 sta
 - **Architectural decisions** — choices made here that constrain implementation, with rationale. If a decision was a close call, say so and document what was ruled out. When a decision is structural, hard to reverse, or will affect future engineers, write a formal ADR (see template below).
 - **Agent delegation map** — classify each task: safe to delegate to agent vs. human must own. Rule of thumb: if you'd need a senior engineer to review the agent's *decisions* (not just its code), it shouldn't be delegated. Delegate: well-defined algorithms, tests for designed components, endpoints against existing contracts, boilerplate following established patterns, documentation from code. Human must own: structural interaction changes, architectural pattern choices, first-time auth/security, production schema migrations with data loss risk, ambiguous specs.
 - **Open questions for Tech Lead** — anything that needs a decision before implementation can begin
+
+#### Observability contract (T2+ only)
+
+Every T2+ tech spec must include an **Observability contract** section. It is the technical counterpart to the PRD's "Success Metrics & Events" — PM defines what to measure and when; you define how it is measured, what guarantees the system makes about it, and what alerts it fires.
+
+The section must contain:
+
+- **SLIs (Service Level Indicators)** — each with a precise mathematical definition. Examples:
+  - `availability = count(2xx + 3xx responses) / count(non-5xx total responses)`
+  - `latency_p95 = 95th percentile of request_duration_ms over the last 5 minutes`
+  - Avoid vague phrasing like "uptime" or "fast" — the formula must be unambiguous enough that two different engineers querying the metrics store would produce the same number.
+- **SLOs (Service Level Objectives)** — each SLI gets a target and a window. Examples:
+  - `availability ≥ 99.5% over 28-day rolling window`
+  - `latency_p95 ≤ 300ms over 7-day rolling window`
+  - The window matters as much as the target — a daily SLO and a 28-day SLO with the same number have very different burn behavior.
+- **Event schema (technical)** — for every event listed in the PRD's "Events required" table, define the technical schema. For each event include: exact event name (snake_case), JSON schema of properties (name, type, required/optional, allowed values), the code location (file or component) that dispatches it, and any transport metadata (e.g., destination stack, sampling rate).
+
+  ```json
+  {
+    "event": "checkout_completed",
+    "properties": {
+      "order_id": { "type": "string", "required": true },
+      "amount_cents": { "type": "integer", "required": true },
+      "currency": { "type": "string", "enum": ["BRL", "USD"], "required": true },
+      "user_tier": { "type": "string", "enum": ["free", "pro", "enterprise"], "required": true }
+    },
+    "dispatched_from": "src/checkout/complete-order.ts",
+    "destination": "stack declared in CLAUDE.md ## Observability"
+  }
+  ```
+- **Allowed dimensions for technical metrics** — list the dimensions/labels each metric can be tagged with. Cardinality must be **bounded** (rule of thumb: ≤100 distinct values per dimension across the whole system). Hard rule: `user_id`, `email`, `tenant_id`, account numbers, or any unbounded identifier **NEVER** appear as labels on technical metrics — they explode time-series cardinality and bankrupt the bill. They are fine as **event properties** (product analytics handles high cardinality) but never as metric labels. For metrics that need user segmentation, use bounded buckets (e.g., `user_tier ∈ {free, pro, enterprise}`, not `user_id`).
+- **Proposed alerts** — maximum **2 alerts per module**. Pick one of each:
+  - **1 SLO burn-rate alert** — fires when error budget is being consumed faster than the SLO allows (e.g., "burning 14-day budget in 1 hour")
+  - **1 symptom-based alert** — fires on a user-visible symptom (e.g., 5xx rate > 5% over 5 min, p95 latency > 2x SLO over 10 min)
+  Each alert must declare: signal (which SLI or raw metric), threshold, evaluation window, suggested action (runbook step or owner). The `cloud-architect` will incorporate these into the alerting infra.
 
 The spec should be complete enough that the Tech Lead can write the agent context file (CLAUDE.md) directly from it. If the Tech Lead still has to make structural decisions after reading your spec, it isn't done.
 
@@ -359,3 +396,5 @@ Before marking a technical spec as ready to delegate, every API endpoint must sa
 - [ ] When a new UI component replaces an existing one (e.g., a Sheet replacing a Dialog as the drill-down entry point), the spec must explicitly state which component is REPLACED and that it must be removed from all call sites. Without this instruction, agents implement the new component alongside the old one — both compile, but the user encounters two divergent flows depending on where they click.
 - [ ] For every query param a frontend component sends to an existing API endpoint, the spec must explicitly define those params in the backend API contract — even if the endpoint already exists. Frontend agents write the fetch call; backend agents implement the handler. Without the spec linking both sides, the params are sent but silently ignored, producing wrong behavior that compiles cleanly.
 - [ ] For every endpoint with conditional business logic (state transitions, hierarchy validation, permission gates): include an explicit table enumerating ALL cases — including cases that are blocked with an error — not just the happy path. Pseudocode buried in prose causes agents to implement only the cases they see near the top; a named table forces completeness.
+- [ ] Every product event listed in the PRD's "Events required" table is mapped to an emission point in the codebase (file/component) in the Observability contract section. An event documented in the PRD without a corresponding dispatch site in the spec means it will not exist in production.
+- [ ] Every dimension/label declared for technical metrics has bounded cardinality (≤100 distinct values per dimension). No `user_id`, `email`, `tenant_id`, or unbounded identifier appears as a metric label. High-cardinality identifiers belong only in product event properties, never in technical metric labels.
