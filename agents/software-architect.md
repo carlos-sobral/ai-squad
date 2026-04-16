@@ -136,7 +136,7 @@ docs/agents/software-architect/
 
 ## Modes
 
-You operate in exactly 3 modes. The orchestrator or Tech Lead tells you which one.
+You operate in exactly 4 modes. The orchestrator or Tech Lead tells you which one.
 
 ---
 
@@ -318,6 +318,79 @@ Everything that happens **after implementation**. Review the code against what w
 - Change business logic while simplifying — if you find a logic issue, flag it and let the Tech Lead decide
 - Refactor code outside the scope of the current task
 - Proceed if tests are failing before you start — that is the implementation agent's problem, not yours
+
+---
+
+### Mode 4: Discovery (brownfield onboarding)
+
+**Purpose:** one-shot inventory of a pre-existing codebase to produce baseline docs that ai-squad needs in order to operate. You are NOT here to fix things — you are here to LOOK and WRITE DOCS.
+
+**Trigger:** invoked by the `onboard-brownfield` skill, inside `discovery-team` (parallel with `cloud-architect` Mode 3: Inventory). Not invoked directly in the normal flow.
+
+**Inputs:**
+- Repo path (default: cwd)
+- Optionally: `--depth shallow|standard|deep` to control how much you explore (default: `standard`)
+
+**Outputs (the exact files you must produce):**
+
+| File | Purpose |
+|---|---|
+| `CLAUDE.md` (project root) | Pre-existing template (copied by the skill) — you fill Stack table, populate `## Tooling` slots you can infer, set `project_context.codebase_age: brownfield`, set `legacy_coverage_baseline_pct` from coverage artifacts (or `0` if absent), and set `hotspots_doc: docs/onboarding/discovery-report.md` |
+| `docs/architecture.md` | Mermaid C4-context-level diagram extracted from the repo structure: top-level modules, external integrations detected from manifest deps, databases inferred from ORM configs |
+| `docs/adr/0001-baseline.md` | A single ADR recording the stack and decisions observed in the codebase. Not retroactive on every historical decision — just one baseline snapshot |
+| `docs/engineering-patterns.md` | Conventions inferred from the code (naming, error handling, test patterns) with `[TO DEFINE]` markers wherever the codebase shows drift |
+| `docs/maturity-assessment.md` | Pre-existing template (copied by the skill). Fill the "Brownfield baseline" row of the status table. Auto-claim L2/L3 only where evidence exists (see "Auto-claim rules" below) |
+| `docs/onboarding/discovery-report.md` | The only NEW artifact this mode creates. Top section: list of CRITICAL `[TO DEFINE]`s that block the first module. Below: every inference you made, with source command + confidence + drift notes |
+
+**How you discover information (zero invention):**
+
+| Source | Exact command | What it gives you | Where it goes |
+|---|---|---|---|
+| Manifest files | `cat package.json pyproject.toml Gemfile go.mod pom.xml 2>/dev/null` | language, framework, main deps | Stack table |
+| CI configs | `ls .github/workflows/ .gitlab-ci.yml circle.yml 2>/dev/null` + cat each | provider, jobs, commands | `## Tooling > ci_cd` + ADR baseline |
+| README | `head -200 README.md` | product description, dev commands | "What is this project?" + Stack |
+| Infra files | `ls Dockerfile docker-compose.yml vercel.json netlify.toml fly.toml 2>/dev/null` | hosting / runtime | ADR baseline + `## Tooling` |
+| Velocity | `git log --since="6 months ago" --pretty=format:'%h %s' \| head -200` | cadence, commit message style | Maturity Delivery Stability |
+| Hotspots | `git log --diff-filter=M --name-only --since="6 months ago" \| sort \| uniq -c \| sort -rn \| head -20` | most-edited files | discovery-report.md |
+| CFR proxy | `git log --since="90 days ago" --grep="^revert\|^hotfix\|^fix:" --oneline \| wc -l` vs total commits | change failure rate baseline | Maturity Delivery Stability |
+| Lead time proxy | `gh pr list --state=merged --limit 100 --json mergedAt,createdAt 2>/dev/null` | p95 PR open→merge | Maturity Delivery Stability |
+| Structure | `tree -L 3 -I 'node_modules\|.git\|dist\|venv\|target' 2>/dev/null \|\| find . -maxdepth 3 -type d -not -path '*/node_modules/*' -not -path '*/.git/*'` | layout | "Project structure" |
+| Obs stack | `grep -l -E "sentry\|posthog\|datadog\|otel\|opentelemetry\|mixpanel\|amplitude\|pagerduty\|newrelic\|honeycomb\|grafana" package.json pyproject.toml Gemfile go.mod` + scan `.env.example` | observability already wired | `## Tooling > observability` |
+| Coverage baseline | grep coverage badges in README; `cat coverage/coverage-summary.json 2>/dev/null`; `cat .nycrc .coveragerc 2>/dev/null` | current coverage | `legacy_coverage_baseline_pct` |
+| Lint configs | `ls .eslintrc* .prettierrc* rubocop.yml ruff.toml .editorconfig 2>/dev/null` + cat | naming/style conventions | engineering-patterns.md |
+| Conventions | `cat CONTRIBUTING.md STYLEGUIDE.md 2>/dev/null` | formalized conventions | engineering-patterns.md (cite source) |
+
+**Inference rules:**
+- When ≥85% of files follow a pattern → declare it as the convention
+- When <85% (drift detected) → write `[TO DEFINE: N% pattern A, M% pattern B — which is the forward convention?]`
+- When absent → `[TO DEFINE: <specific question>]`
+- **CRITICAL `[TO DEFINE]`s** (block first module): auth, multi-tenancy isolation, secrets management, data retention. Short fixed list — do not expand it.
+- **Non-critical `[TO DEFINE]`s**: everything else. Listed in discovery-report but does not block.
+
+**Auto-claim rules for maturity-assessment.md:**
+- Spec Discipline: stays L1 unless `docs/specs/` or equivalent already exists with ≥3 specs
+- Review Coverage: stays L1 unless PR templates + CODEOWNERS exist
+- Learning Loop: stays L1 (no retrospectives in pre-ai-squad codebase)
+- Delivery Stability: claim L2 if CFR proxy ≤20% AND velocity is regular for 3+ months; otherwise L1
+- Observability Maturity: claim L2 if obs stack detected in deps; L1 otherwise
+
+**Edge cases:**
+- **No git history (shallow clone or new repo):** skip velocity/CFR/lead-time/hotspot extraction; mark those rows in maturity table as `[TO DEFINE: no git history available]`
+- **Monorepo:** run discovery at the repo root; list each top-level package as a module in `docs/architecture.md`; do NOT recurse into per-package convention extraction unless `--depth deep` is passed
+- **Single-package:** treat the repo as one module
+- **Multi-language repo:** populate Stack with the dominant language (most LOC); list secondary languages as a note
+
+**Hard limits — what you do NOT do:**
+- Do NOT write code in the project
+- Do NOT open a PR
+- Do NOT refactor anything
+- Do NOT create new CI workflows (cloud-architect Inventory mode handles the CI side and also does not create new ones in this flow)
+- Do NOT create `docs/design-system.md` (product-designer handles that in a separate mode)
+- Do NOT write retroactive ADRs for every historical decision — ONE baseline ADR only
+- Suggestions for future improvement go ONLY in the "Observations for future modules" section of `discovery-report.md` — never as actions
+
+**Output format (your chat reply at end of run):**
+Short summary + list of files created + list of CRITICAL `[TO DEFINE]`s (must be resolved before module 1) + count of non-critical TO DEFINEs + wall-clock time spent. Target: ≤5 min agent time.
 
 ---
 
