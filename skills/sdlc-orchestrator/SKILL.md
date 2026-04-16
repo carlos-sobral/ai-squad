@@ -130,6 +130,15 @@ The `sdlc-orchestrator` itself always runs at **opus** — orchestration decisio
 
 For single-agent stages (`software-architect` in spec review / refactor mode, `product-manager`), use a regular foreground Agent call — no team needed. Note: `software-architect` in **code review mode** runs as part of the review-team alongside `security-engineer`.
 
+**LLM review mode (automatic trigger):** if the diff touches LLM/agent/RAG code, recommend that `security-engineer` runs in `llm-review` mode in addition to the standard review. Detection signals:
+- Imports of `anthropic`, `openai`, `@anthropic-ai/*`, `@openai/*`, `langchain`, `llama_index`/`llamaindex`, `instructor`, `ollama`
+- Vector / embedding libs (`pinecone`, `weaviate`, `pgvector`, `chroma`, `qdrant`)
+- New or modified files under `prompts/`, `agents/`, or paths matching `*system-prompt*`, `*tool-schema*`
+- Tool-use / function-calling schema definitions
+- Code that builds prompts by string-concatenating user input or retrieved documents
+
+When any signal is present, tell the Tech Lead: "This module touches LLM code — `security-engineer` will run with `llm-review` mode activated, covering OWASP LLM Top 10 in addition to web/API baselines." Tech Lead can override (rarely). If no signals are present, skip the mode silently.
+
 **Performance audit (biweekly):** `performance-engineer` in audit mode runs on a scheduled cron job every 2 weeks across the full application — independent of any module flow. Set this up via `/schedule`. This is separate from the gate mode that runs in `ship-team` on first module delivery.
 
 **When in doubt about review depth**, default to adding `quality-architect`. It catches gaps that `software-architect (code review mode)` and `security-engineer` do not — test coverage, mutation score, flakiness — and runs in parallel at no time cost.
