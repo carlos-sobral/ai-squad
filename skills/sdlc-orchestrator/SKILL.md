@@ -15,6 +15,7 @@ Check that the following exist before proceeding:
 - A written spec or user story (work cannot begin without it)
 - A CLAUDE.md context file in the target repository (if missing, flag it — agents will hallucinate conventions without it)
 - Acceptance criteria that are explicit and testable
+- Se o projeto declara `engineering_metrics.provider` no `## Tooling` mas `docs/maturity-assessment.md` não existe, copie do template do ai-squad (`templates/docs/maturity-assessment.md`).
 
 If any are missing, stop and tell the Tech Lead exactly what is needed before you proceed.
 
@@ -240,6 +241,21 @@ Tell the Tech Lead: "This PRD is large enough to benefit from sharding. I recomm
 
 6. **Keep a running log** of decisions made during the session — the Tech Lead can use this to update the CLAUDE.md at the end.
 
+## Silent gate instrumentation
+
+Ao **entrar e sair de cada gate** (clarify, consistency-check, retrospective, e cada chamada de agent rastreável), append uma linha em `docs/metrics/timeline.log` no formato:
+
+```
+[YYYY-MM-DDTHH:MM:SSZ] gate=<name> module=<slug> event=enter|exit [agent=<name>]
+```
+
+Regras:
+- Append-only, nunca editar linhas anteriores.
+- Se `docs/metrics/` não existir, criar com `mkdir -p`.
+- ISO timestamp UTC; sem espaços extras.
+- O que não for fácil instrumentar não precisa ser carimbado — não criar atrito; melhor menos eventos consistentes que muitos eventos lacunados.
+- Esta é instrumentação **silenciosa** — não comentar com o Tech Lead; logs vivem para o `scripts/metrics/collect.sh` e analytics futuros.
+
 ## Severity definitions
 
 Use these consistently across all stages:
@@ -259,6 +275,8 @@ Use these consistently across all stages:
 - Always run `tech-writer` in parallel with `qa-engineer` via `ship-team` — documentation is not optional
 - **Run the retrospective gate after every module's ship-team.** Classify each blocker as (a) universal agent pattern, (b) spec gap, (c) ADR, or (d) project-specific knowledge. Propose diffs. This is how the squad learns — skipping it means the next module starts from the same baseline.
 - **Keep agent definitions universal.** When proposing additions to agent definitions, strip all project-specific context (library names, field names, config values). The principle goes in the agent definition; the instantiation goes in `docs/engineering-patterns.md`.
+- Carimbe timestamps de gate em `docs/metrics/timeline.log` (silent instrumentation).
+- No fim do retrospective gate, atualize `docs/maturity-assessment.md` se o projeto declara `engineering_metrics.provider` no `## Tooling`.
 
 ## Never
 
@@ -272,6 +290,8 @@ Use these consistently across all stages:
 - Count a module as done if the Tech Lead has not seen it working in the UI (for UI modules)
 - **Skip the retrospective gate** — even on "clean" modules. Absence of blockers is signal too (the module validated existing patterns).
 - **Propose project-specific details as agent definition additions** — householdId, specific library names, stack constraints belong in `docs/engineering-patterns.md`, not in agent definitions that will be reused across projects.
+- Punir uma falha isolada de critério de maturidade. Promoção/regressão exige 3 consecutivos / 2 consecutivos respectivamente.
+- Tratar L4 como meta. Squad pequeno mora confortável em L2-L3.
 
 ## Hotfix path — production bugs
 
@@ -415,6 +435,18 @@ Before advancing to the next module, run this gate. Do not skip it on "clean" mo
 4. For each approved diff, instruct the Tech Lead to save a record to `docs/agent-evolution/YYYY-MM-DD-<agent>-<slug>.md` using the format in the **Diff record format** section below.
 5. Increment the affected agent definition's `version` field (minor bump for additions, major for behavioral changes).
 6. Only after this gate is complete, mark the module as done and advance.
+7. **Update maturity assessment** (only if o projeto declara `engineering_metrics.provider` no `## Tooling`):
+   1. Se `docs/maturity-assessment.md` não existe, copiar do template do ai-squad (`templates/docs/maturity-assessment.md`).
+   2. Ler `docs/metrics/latest.md` (gerado pelo `scripts/metrics/collect.sh` rodado pelo `performance-engineer` em audit mode). Se não existir ou estiver stale (>7 dias), recomendar rodar audit antes de prosseguir.
+   3. Para cada uma das 5 dimensões da rubrica, avaliar se este módulo cumpriu a evidência objetiva do nível atual ou do próximo:
+      - **Spec Discipline** → clarify gate executado quando T2/T3? Spec-Fidelity rate (consistency-check sem itens (c)/(d) residuais)?
+      - **Review Coverage** → review-team apropriado rodou (standard/critical/infra/full)? LLM-review acionado quando signals presentes?
+      - **Learning Loop** → blockers viraram diff aprovado? Quantos arquivos `docs/agent-evolution/` foram criados?
+      - **Delivery Stability** → CFR e lead time deste módulo dentro do nível atual (ver `docs/metrics/latest.md`)?
+      - **Observability Maturity** → post-deploy health check executado? Stack declarada e funcional?
+   4. Atualizar a tabela "Status atual" se houver mudança detectável, **respeitando** as regras: promoção exige 3 módulos consecutivos cumprindo evidência do próximo nível; regressão exige 2 consecutivos falhando o atual.
+   5. Apresentar ao Tech Lead uma tabela curta — Dimensão | Nível atual | Sinal deste módulo (atende próximo nível? não? regrediu?) | Recomendação. Tech Lead aprova qualquer transição **antes** de gravar.
+   6. Registrar transições aprovadas em "Histórico de transições" do mesmo arquivo (append-only).
 
 ### Output format
 
@@ -435,6 +467,9 @@ Before advancing to the next module, run this gate. Do not skip it on "clean" mo
 
 ### ADRs to write
 [list, or "none"]
+
+### Maturity assessment update
+[Tabela 5 dimensões com sinal deste módulo, ou "no change" se nada mudou]
 ```
 
 ### Diff record format
