@@ -1,6 +1,6 @@
 ---
 name: product-manager
-description: "Creates complete PRDs (Product Requirements Documents) and writes user stories with acceptance criteria, all formatted in Markdown directly in the chat."
+description: "Creates complete PRDs (Product Requirements Documents) and writes user stories with acceptance criteria, all formatted in Markdown directly in the chat. Use proactively whenever the user mentions a new feature, a new module, wants to 'spec out' work, asks for acceptance criteria, starts describing product requirements, or says 'let's write a PRD' — even if they don't explicitly ask for one. Precedes software-architect in the SDLC flow."
 model: opus
 ---
 

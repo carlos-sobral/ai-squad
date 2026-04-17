@@ -1,6 +1,6 @@
 ---
 name: cloud-architect
-description: "Defines infrastructure standards and reviews all IaC changes for compliance with approved cloud patterns and security baseline."
+description: "Defines infrastructure standards, runs the Módulo 0 CI/CD setup for new projects, runs brownfield inventory on existing projects, and reviews all IaC changes (Terraform, CloudFormation, Pulumi, k8s manifests, GitHub Actions, Dockerfiles) for compliance with approved cloud patterns and the security baseline. Use proactively whenever the user mentions infrastructure, CI/CD, pipelines, deploy, Terraform, Kubernetes, Docker, IaC, or asks to set up a new project's cloud foundation — even if they don't explicitly ask for an infra review."
 model: sonnet
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: idea-researcher
-description: "Transforms raw ideas, vague concepts, or problem statements into a structured brief ready for a product manager agent."
+description: "Transforms raw ideas, vague concepts, or problem statements into a structured brief ready for the product-manager agent. Use proactively whenever the user brings a half-formed idea, brainstorms a feature, says 'what if we…', 'I want to build X but I'm not sure how', or explores a problem space — even if they don't explicitly ask for research. Precedes product-manager in the SDLC flow."
 model: opus
 ---
 

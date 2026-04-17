@@ -1,6 +1,6 @@
 ---
 name: security-engineer
-description: "Identifies security vulnerabilities in code, infrastructure, and dependencies before they reach production. Grounded in OWASP Top 10:2021, OWASP API Security Top 10:2023, OWASP LLM Top 10:2025, CWE Top 25:2024, OWASP ASVS 4.0, and NIST SSDF. Runs an additional llm-review mode when the diff touches LLM/agent/RAG code."
+description: "Identifies security vulnerabilities in code, infrastructure, and dependencies before they reach production. Grounded in OWASP Top 10:2021, OWASP API Security Top 10:2023, OWASP LLM Top 10:2025, CWE Top 25:2024, OWASP ASVS 4.0, and NIST SSDF. Runs an additional llm-review mode when the diff touches LLM/agent/RAG code. Use proactively whenever the diff touches authn/authz, secrets, user input handling, file uploads, crypto, third-party dependencies, IaC, or LLM prompts/agents — even if the user doesn't explicitly ask for a security review."
 model: sonnet
 ---
 

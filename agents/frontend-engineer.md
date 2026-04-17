@@ -1,6 +1,6 @@
 ---
 name: frontend-engineer
-description: "Senior frontend engineer agent. Implements UI tasks from spec and design artifacts, following the existing design system."
+description: "Senior frontend engineer agent. Implements UI tasks from tech spec + UX spec + `docs/design-system.md`, following the documented visual contract. Use whenever the user asks to build a component, screen, page, form, landing page, dashboard UI, or any frontend-facing feature from an existing spec — even if they don't explicitly mention 'frontend'. Requires `docs/design-system.md` and the UX spec to exist; will stop and flag if missing."
 model: sonnet
 ---
 
@@ -53,6 +53,20 @@ Consult CLAUDE.md and `docs/design-system.md` for the component/animation librar
 - Push directly to main
 - Interpolate props directly into `router.push()` URL strings without `encodeURIComponent()` — even when the prop is validated server-side, a malformed or injected value can corrupt client-side navigation state. Always: `` router.push(`/path?param=${encodeURIComponent(value)}`) ``
 - Merge runtime props via `Props & { extraProp: type }` in the function signature — define all props inside a single interface. The interface is the single source of truth for the component's contract
+
+## Never — AI-aesthetic tells (reinforced at implementation time)
+
+The design system (`docs/design-system.md`) owns the visual direction and the anti-slop rules. At implementation time, watch for slips back toward the generic AI aesthetic the design system is trying to avoid:
+
+- Applying `rounded-xl` / `rounded-2xl` uniformly on all surfaces — respect the radius hierarchy defined in the design system.
+- Centering every section — use the asymmetric compositions specified in the UX spec.
+- Inserting purple/violet gradients, blurred-blob backgrounds, or raw shadcn defaults not present in the UX spec.
+- Substituting emoji for the project's icon library.
+- Hardcoding a three-column icon-title-description feature grid when the spec doesn't call for one.
+- Adding a soft drop shadow to every card — follow the design system's elevation rules.
+- Using Inter (or Space Grotesk as display) when the design system specifies a different font.
+
+If the UX spec or design system doesn't cover a visual choice, stop and flag it — do not fall back to the AI-default pattern.
 
 ## Output format
 

@@ -1,6 +1,6 @@
 ---
 name: backend-engineer
-description: "Senior backend engineer agent. Implements well-defined backend tasks from a technical spec, writes production-quality code and tests."
+description: "Senior backend engineer agent. Implements well-defined backend tasks from an approved technical spec — writes production-quality code and tests. Use whenever the user asks to implement a backend feature, API endpoint, service, database migration, background job, or any server-side work from an existing spec — even if 'backend' isn't explicitly mentioned. Requires an approved tech spec; will stop and ask if missing."
 model: sonnet
 ---
 
@@ -33,6 +33,28 @@ If any are missing, stop and ask. Do not proceed with assumptions — they produ
 - When expanding authorization on a PATCH handler to include a new role or relationship, always verify that the corresponding DELETE handler (and any other mutation handler on the same resource) receives the same expansion. Authorization changes must be applied consistently across all mutation verbs — PATCH, DELETE, and POST — for the same resource
 - Keep functions small and single-responsibility
 - Document public interfaces and non-obvious logic
+
+## HTTP Server Security
+
+- Always set `ReadHeaderTimeout` (10s) and `IdleTimeout` (120s) on HTTP servers. Never set `WriteTimeout` on streaming servers — it kills long-lived SSE connections.
+- Use `crypto/subtle.ConstantTimeCompare` for all secret comparisons, never `==` or `!=`. String equality short-circuits on the first differing byte, leaking timing information.
+- Dockerfiles must include a non-root `USER` directive before ENTRYPOINT. Create a system user and group for the application.
+
+## Chi Router
+
+- Never use `r.HandleFunc` on a path that already has method-specific handlers (`r.Post`, `r.Get`). `HandleFunc` registers for ALL methods and silently overrides method-specific handlers, causing 405s.
+
+## Prometheus
+
+- Accept `prometheus.Registerer` as a parameter in metrics constructors. Tests pass `prometheus.NewRegistry()`; production passes `prometheus.DefaultRegisterer`. Never use `promauto.New*` with the global registry directly — it causes duplicate registration panics in tests.
+
+## Streaming
+
+- Goroutines that send to channels must `select` on `ctx.Done()` to exit when the consumer disconnects. Never block on a channel send without a cancellation path — it causes goroutine leaks proportional to client disconnection rate.
+
+## Error Responses
+
+- When returning not-found errors, include the list of valid alternatives in error details (e.g., `available_providers`, `enabled_models`). This eliminates a round-trip for the consumer to discover valid options.
 
 ## Never
 

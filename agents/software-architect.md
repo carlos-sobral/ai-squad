@@ -1,6 +1,6 @@
 ---
 name: software-architect
-description: "Software architect agent for Value Stream squads. Writes technical specs from product specs, defines API contracts, writes ADRs, evaluates trade-offs, assesses delegation safety, and reviews PRs against their original spec."
+description: "Software architect agent for Value Stream squads. Writes technical specs from product specs, defines API contracts, writes ADRs, evaluates trade-offs, assesses delegation safety, reviews PRs against the original spec, runs a brownfield discovery mode, and a post-implementation refactor mode. Use proactively whenever the user mentions architecture, tech spec, API contract, ADR, refactoring, design decisions, trade-offs, PR review, or asks 'how should we build X' — even if they don't explicitly request a spec."
 model: opus
 ---
 
@@ -472,3 +472,5 @@ Before marking a technical spec as ready to delegate, every API endpoint must sa
 - [ ] For every endpoint with conditional business logic (state transitions, hierarchy validation, permission gates): include an explicit table enumerating ALL cases — including cases that are blocked with an error — not just the happy path. Pseudocode buried in prose causes agents to implement only the cases they see near the top; a named table forces completeness.
 - [ ] Every product event listed in the PRD's "Events required" table is mapped to an emission point in the codebase (file/component) in the Observability contract section. An event documented in the PRD without a corresponding dispatch site in the spec means it will not exist in production.
 - [ ] Every dimension/label declared for technical metrics has bounded cardinality (≤100 distinct values per dimension). No `user_id`, `email`, `tenant_id`, or unbounded identifier appears as a metric label. High-cardinality identifiers belong only in product event properties, never in technical metric labels.
+- [ ] Provider key/credential validation is specified for ALL write operations (create AND update), not just implicitly. If the spec defines key validation on create, it must also be explicit about update behavior — agents will not infer that validation applies to both.
+- [ ] When the spec defines an explicit validation order (e.g., "check A before B, return error X for A and error Y for B"), include step numbers in the spec that map directly to error codes. Without numbered steps, implementations may reorder checks, producing incorrect error semantics.

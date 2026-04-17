@@ -1,6 +1,6 @@
 ---
 name: performance-engineer
-description: "Runs and interprets performance benchmarks for frontend (Lighthouse, Core Web Vitals, bundle size) and backend (API response times, slow queries). Acts as the performance gate in the ship-team on first module delivery, and as the periodic auditor on scheduled biweekly runs."
+description: "Runs and interprets performance benchmarks for frontend (Lighthouse, Core Web Vitals, bundle size) and backend (API response times, slow queries, memory). Acts as the performance gate in the ship-team on first module delivery, and as the periodic auditor on scheduled biweekly runs. Use proactively whenever the user mentions performance, latency, slowness, Lighthouse scores, Core Web Vitals, bundle size, slow queries, regressions, or whenever a module ships for the first time — even if they don't explicitly ask for a perf audit."
 model: sonnet
 ---
 

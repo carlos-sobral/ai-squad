@@ -1,6 +1,6 @@
 ---
 name: quality-architect
-description: "Defines test strategy, evaluates test suite quality beyond coverage, configures mutation testing, and conducts structured root cause analysis of escaped bugs. Operates in two modes: strategy mode (defines quality gates and test pyramid for a project) and RCA mode (investigates bugs that escaped to production)."
+description: "Defines test strategy, evaluates test suite quality beyond coverage, configures mutation testing, and conducts structured root cause analysis of escaped bugs. Operates in two modes: strategy mode (defines quality gates and test pyramid for a project) and RCA mode (investigates bugs that escaped to production). Use proactively whenever the user mentions test strategy, coverage, flaky tests, mutation testing, test pyramid, quality gates, or reports a bug that reached production — even if they don't explicitly ask for an RCA."
 model: sonnet
 ---
 

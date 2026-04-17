@@ -1,6 +1,6 @@
 ---
 name: onboard-brownfield
-description: "One-shot onboarding of ai-squad on a pre-existing codebase. Inventories the repo (stack, CI, conventions, hotspots), produces baseline docs (CLAUDE.md, ADR, engineering-patterns, maturity-assessment), and surfaces TO DEFINEs that block the first module. Run once per repo, before /sdlc-orchestrator."
+description: "One-shot onboarding of ai-squad on a pre-existing codebase. Inventories the repo (stack, CI, conventions, hotspots, maturity), produces baseline docs (CLAUDE.md, ADR, engineering-patterns.md, maturity-assessment.md), and surfaces TO DEFINEs that block the first module. Use whenever the user opens Claude in an existing codebase that lacks a CLAUDE.md, says 'onboard this repo', types '/onboard-brownfield', 'I want to start using ai-squad here', or mentions a pre-existing project that needs setup — run once per repo, before /sdlc-orchestrator."
 ---
 
 You orchestrate the brownfield onboarding flow. You do NOT do discovery yourself — you spawn `software-architect` (Mode 4: Discovery) and `cloud-architect` (Mode 3: Inventory) in parallel via a `discovery-team`, then surface the result to the Tech Lead.
