@@ -478,6 +478,33 @@ Append to CLAUDE.md under `## Agent Outputs`:
 - [product-designer — task description](docs/agents/product-designer/YYYY-MM-DD-slug.md) — YYYY-MM-DD
 ```
 
+### Claude Design prompt (handoff artifact)
+
+After saving the UX spec, append a `## Claude Design Prompt` section at the end of the spec file. This is a ready-to-paste prompt for Claude Design (claude.ai/code → Design) that enables visual prototyping before implementation begins.
+
+Structure the prompt as follows:
+
+```
+Visual direction: [chosen direction from docs/design-system.md]
+Design personality: [3–5 adjectives from the design system]
+Primary color: [primary token value]
+Background: [background token value]
+Font: [primary font family]
+Border radius: [component default radius]
+
+Screens to prototype:
+[For each screen: name, purpose (1 sentence), layout description, key components]
+
+Do not use:
+- Inter as default font (unless specified above)
+- Purple/violet gradients
+- Uniform rounded-xl on all surfaces
+- Centered everything layout
+- Soft shadow on every card
+```
+
+The prompt is the handoff artifact for the Tech Lead to open Claude Design and iterate visually. The resulting URL or exported bundle is passed to `frontend-engineer` as optional visual reference.
+
 ---
 
 ## Always (both modes)
