@@ -92,8 +92,11 @@ product-designer (design system mode) — runs ONCE before first UI module
   → [TEAM: software-architect (code review mode) + security-engineer]   ← always
     + quality-architect                                   ← add when quality guardrails at risk
     + cloud-architect (review mode)                       ← add when infra/IaC is involved
-  → [TEAM: qa-engineer + tech-writer]              ← qa-engineer leads; tech-writer runs in parallel
+  → [TEAM: qa-engineer + tech-writer (+ product-marketing-manager when user-facing)]  ← qa leads; others parallel
       qa-engineer: writes AND runs Playwright tests if CI is configured
+      product-marketing-manager: runs ONLY when PRD declares user-facing: yes
+                                 AND module is shippable (refactors/infra/perf/tech-debt skip)
+                                 produces docs/marketing/launches/{date}-{module}.md
   → CI green
   → [CONSISTENCY CHECK GATE]                ← pre-merge: PRD ↔ spec ↔ diff alignment; undocumented deltas become ADR/delta
   → Tech Lead approves → merge → auto deploy
@@ -107,6 +110,8 @@ product-designer (design system mode) — runs ONCE before first UI module
 
 **Módulo 0 gate:** Before approving any merge to production, verify that Módulo 0 (CI/CD setup) has been completed. If not, block the deploy and recommend running `cloud-architect` in setup mode first. Code merges to main are fine without Módulo 0; production deploys are not.
 
+**PMM gate (per user-facing shippable module):** When the PRD declares `user-facing: yes` and the module ships new value to external audiences (not refactor / infra / perf / tech debt), `product-marketing-manager` runs in parallel with `qa-engineer` + `tech-writer`. PMM produces `docs/marketing/launches/{date}-{module}.md` (value prop diff, demo script, talking points, FAQ, JTBD served, positioning impact assessment) and flags whether the app's overall positioning needs refresh. If `docs/marketing/positioning.md` does not yet exist, PMM creates it in positioning-refresh mode using the template at `templates/docs/marketing/positioning.md`. Skipped silently for non-shippable modules. Triggered explicitly via the `user-facing` PRD field — if the field is absent on a feature module, ask the Tech Lead before proceeding (do not assume yes/no).
+
 ## Definition of Done (DoD)
 
 A module is **done** only when ALL of the following are true:
@@ -119,6 +124,7 @@ A module is **done** only when ALL of the following are true:
 - [ ] CI green (build + type-check + lint + tests pass)
 - [ ] **Performance gate passed** — `performance-engineer` (gate mode) verdict is PASS or PASS WITH WARNINGS approved by Tech Lead
 - [ ] **Cross-artifact consistency check passed** — PRD ↔ tech spec ↔ diff ↔ tests aligned; any undocumented deltas resolved as ADR or delta-spec
+- [ ] **PMM gate passed (when shippable):** if PRD declares `user-facing: yes` and the module ships new value to external audiences, `product-marketing-manager` ran in per-feature mode and produced `docs/marketing/launches/{date}-{module}.md`. If PMM flagged `positioning_impact: refresh-recommended` or `strategic-shift`, schedule a positioning-refresh run before the next launch. Skipped silently for refactors / infra / perf / tech debt.
 - [ ] Tech Lead has seen the feature working in the UI (preview deploy or local)
 - [ ] Merged to main
 - [ ] **Post-deploy health check passed** — concrete checks against the production observability stacks declared in the project's `CLAUDE.md ## Tooling > observability` block: (a) query the product analytics stack to confirm that the happy-path event(s) declared in the PRD emitted in production at least once after the deploy; (b) verify that none of the module's proposed alerts (defined in the tech spec's Observability contract) fired in the 15 minutes following the deploy; (c) confirm error rate and p95 latency for the affected endpoints are within the SLO declared in the spec. The exact query/command for each check must be documented in the project's `CLAUDE.md` so the check is reproducible without guesswork.
