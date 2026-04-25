@@ -452,7 +452,7 @@ cases:
     description: "Hardcoded API key in source"
     input: |
       ```javascript
-      const STRIPE_KEY = "sk_live_4eC39HqLyjWDarjtT1zdp7dc";
+      const STRIPE_KEY = "sk_live_REDACTED_TEST_FIXTURE_xxxxxxxxxxxxxx";
       export async function charge(amount) {
         return stripe(STRIPE_KEY).charges.create({ amount });
       }
