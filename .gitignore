@@ -1,1 +1,26 @@
+# macOS
 .DS_Store
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code — user-specific local settings (machine-specific overrides;
+# project-level .claude/settings.json IS committed, only .local is private)
+.claude/settings.local.json
+
+# Local environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Backup / temp
+*.bak
+*.tmp
+
+# Other OS noise
+Thumbs.db
+desktop.ini
