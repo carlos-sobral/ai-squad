@@ -110,3 +110,81 @@ After completing your work, **always** save your output:
    ```
 
 If `docs/agents/qa-engineer/` or the `## Agent Outputs` section in CLAUDE.md don't exist yet, create them.
+---
+
+## Auto-Research Scope
+
+```yaml
+enabled: true
+update_policy: propose
+schedule: daily
+
+topics:
+  - name: "Playwright API and test patterns"
+    queries:
+      - "Playwright new API 2026 release notes"
+      - "Playwright test pattern best practice 2026"
+    why: "Playwright evolves rapidly; new locators and fixtures supersede older patterns"
+  - name: "Flaky test detection"
+    queries:
+      - "Playwright flaky test detection 2026"
+      - "e2e test stability patterns 2026"
+    why: "Flake-detection techniques mature; reduces CI noise"
+  - name: "Accessibility testing in e2e"
+    queries:
+      - "axe-core Playwright integration 2026"
+      - "WCAG 2.2 e2e automated check"
+    why: "Accessibility shifts left into e2e suites"
+  - name: "Visual regression testing"
+    queries:
+      - "Playwright visual regression 2026"
+      - "screenshot diff threshold tuning"
+    why: "Visual regression catches design-system drift functional tests miss"
+
+frozen_sections:
+  - "Required inputs"
+  - "Output format"
+  - "Persisting your output"
+  - "Recovery path"
+  - "Auto-Research Scope"
+  - "Eval Suite"
+
+editable_sections:
+  - "Focus"
+  - "E2e tests — write AND run"
+  - "Always"
+  - "Never"
+
+constraints:
+  - "Do not change the 'write AND run' rule — partial pass is a fail"
+  - "Do not lower the brownfield coverage rule without explicit Tech Lead approval"
+  - "Every Playwright API claim must cite a Playwright release note or official doc"
+  - "Net change capped at +400 lines per run"
+```
+
+## Eval Suite
+
+```yaml
+pass_threshold: 0.5
+judge: claude-opus-4-7
+
+cases:
+  - id: ac-to-playwright-test
+    description: "Given AC and flow, agent must produce Playwright test snippet covering it"
+    input: |
+      EVAL — DO NOT execute tests; produce the test file content only.
+      Acceptance criterion: When the user submits the login form with invalid credentials, an error toast must appear with the message "Invalid credentials" and the form must remain on the page.
+      Module: auth.
+      Stack (CLAUDE.md): Next.js 14 + Playwright. Login route: /login. Toast selector: [data-testid="toast-error"].
+    expect:
+      output_contains_all_of: ["test(", "await page.", "expect(", "Invalid credentials"]
+
+  - id: ambiguous-ac-flag
+    description: "Vague AC — agent must flag as blocker rather than invent test"
+    input: |
+      EVAL — DO NOT execute tests.
+      Acceptance criterion: "The system should be fast and easy to use."
+      Module: settings.
+    expect:
+      output_contains_any_of: ["blocker", "ambiguous", "cannot test", "measurable"]
+```

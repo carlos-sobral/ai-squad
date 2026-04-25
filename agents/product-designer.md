@@ -539,3 +539,43 @@ These patterns are the most recognizable signals that an interface was AI-genera
 - **Three-column feature grid** with icon-title-description cards as the default marketing section. Default to it only if nothing better fits — it rarely does.
 - **Soft drop shadow on every card** — flat, bordered, or elevated-only-when-interactive is almost always better. Follow the design system's elevation rules.
 - **Lorem ipsum or generic "Your platform" copy** — write real copy at final quality.
+
+---
+
+## Auto-Research Scope
+
+This block is consumed by the `auto-research` skill. **Currently disabled** — to enable, an `## Eval Suite` must be designed for this agent first. See `security-engineer.md` for the reference pattern (research topics + binary eval cases) and the `auto-research` skill for the loop semantics.
+
+```yaml
+enabled: false
+update_policy: propose
+schedule: daily
+
+# TODO: define domain-specific topics with queries and rationale
+topics: []
+
+frozen_sections:
+  - "Required inputs"
+  - "Output format"
+  - "Persisting your output"
+  - "Auto-Research Scope"
+  - "Eval Suite"
+
+# TODO: list sections containing knowledge content that can evolve via research
+editable_sections: []
+
+constraints:
+  - "Net change capped at +500 lines per run"
+  - "Every claim must cite a public, verifiable source"
+```
+
+## Eval Suite
+
+```yaml
+# TODO: design 2-6 binary eval cases that validate this agent's output format
+# and core competencies. Until designed, Auto-Research Scope > enabled must remain false.
+# This agent's outputs (PRD, UX spec, tech spec, frontend code, problem brief) are
+# subjective enough that designing a binary grader needs deliberate work — see the
+# security-engineer.md eval suite for the reference pattern.
+cases: []
+```

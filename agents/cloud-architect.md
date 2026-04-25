@@ -242,3 +242,38 @@ After completing your work, **always** save your output:
    ```
 
 If `docs/agents/cloud-architect/` or the `## Agent Outputs` section in CLAUDE.md don't exist yet, create them.
+---
+
+## Auto-Research Scope
+
+This block is consumed by the `auto-research` skill. **Currently disabled** — to enable, an `## Eval Suite` must be designed for this agent first. See `security-engineer.md` for the reference pattern.
+
+```yaml
+enabled: false
+update_policy: propose
+schedule: daily
+
+# TODO: define domain-specific topics with queries and rationale
+topics: []
+
+frozen_sections:
+  - "Required inputs"
+  - "Output format"
+  - "Persisting your output"
+  - "Auto-Research Scope"
+  - "Eval Suite"
+
+# TODO: list sections containing knowledge content that can evolve via research
+editable_sections: []
+
+constraints:
+  - "Net change capped at +500 lines per run"
+  - "Every claim must cite a public, verifiable source"
+```
+
+## Eval Suite
+
+```yaml
+# TODO: design 2-6 binary eval cases. Until designed, Auto-Research Scope > enabled must remain false.
+cases: []
+```

@@ -402,3 +402,83 @@ If `docs/agents/quality-architect/` or the `## Agent Outputs` section in CLAUDE.
 - [Flaky Tests at Google — Google Testing Blog](https://testing.googleblog.com/2016/05/flaky-tests-at-google-and-how-we.html)
 - [Measuring Test Effectiveness Beyond Coverage — Codecov](https://about.codecov.io/blog/measuring-the-effectiveness-of-test-suites-beyond-code-coverage-metrics/)
 - [ISTQB Foundation Level Syllabus v4.0.1](https://www.istqb.org/certifications/certified-tester-foundation-level)
+
+---
+
+## Auto-Research Scope
+
+```yaml
+enabled: true
+update_policy: propose
+schedule: daily
+
+topics:
+  - name: "Mutation testing tooling"
+    queries:
+      - "Stryker JavaScript mutation testing 2026"
+      - "PITest Java mutation testing release 2026"
+      - "mutmut Python alternative 2026"
+    why: "Mutation testing tools add operators and improve performance regularly"
+  - name: "Test pyramid evolution"
+    queries:
+      - "test pyramid contract testing 2026"
+      - "trophy test model frontend 2026"
+    why: "Pyramid shape adapts as new test types mature"
+  - name: "Flaky test research"
+    queries:
+      - "flaky test root cause classification 2026"
+      - "flake quarantine policy SRE"
+    why: "Flake taxonomy and remediation evolve as suites scale"
+  - name: "Defect classification"
+    queries:
+      - "Orthogonal Defect Classification update 2026"
+      - "defect leakage measurement 2026"
+    why: "Classification frameworks anchor RCA quality"
+
+frozen_sections:
+  - "Operating modes"
+  - "Output format"
+  - "Persisting your output"
+  - "References"
+  - "Auto-Research Scope"
+  - "Eval Suite"
+
+editable_sections:
+  - "Test pyramid reference (Martin Fowler / Mike Cohn)"
+  - "Test quality metrics"
+  - "Mutation testing setup by language"
+  - "RCA methodology for escaped bugs"
+  - "CI quality gates — specification format"
+  - "Always"
+  - "Never"
+
+constraints:
+  - "Do not lower published thresholds (mutation score, flaky rate) without authoritative source"
+  - "Mutation tooling claims must cite vendor docs or release notes"
+  - "Do not change the brownfield coverage rule without Tech Lead approval"
+  - "Net change capped at +400 lines per run"
+```
+
+## Eval Suite
+
+```yaml
+pass_threshold: 0.5
+judge: claude-opus-4-7
+
+cases:
+  - id: strategy-ts-jest
+    description: "Strategy mode for TS+Jest project — must propose Stryker config and concrete gates"
+    input: |
+      EVAL — Strategy mode. Project: TypeScript + Jest, GitHub Actions CI, greenfield. Define test strategy and quality gates.
+    expect:
+      output_contains_all_of: ["Stryker", "mutation", "branch coverage"]
+      output_contains_any_of: ["80%", "60%"]
+
+  - id: rca-classification
+    description: "RCA mode — must produce ODC type, phase, and 5-Whys"
+    input: |
+      EVAL — RCA mode. Bug: Users could view other users' invoices via /api/invoices/:id by changing the path id. Affected file: routes/invoices.ts. Tests at the time: only happy-path with the same authenticated user. AC for the feature: "User can view their invoices."
+    expect:
+      output_contains_all_of: ["ODC", "5 Whys", "Checking"]
+      output_contains_any_of: ["Requirements", "Spec", "spec gap"]
+```

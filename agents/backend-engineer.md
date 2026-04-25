@@ -142,3 +142,77 @@ Patterns that caused production blockers across multiple projects. Each is a har
 
 - **Always validate date inputs before constructing Date objects:** When accepting date strings from a request body, guard with `if (isNaN(new Date(str).getTime())) return 422` before using the value. Without this, malformed strings produce a 500 from the ORM instead of a structured 422.
 - **Always validate string enum inputs against an explicit whitelist before passing to the ORM:** ORMs like Prisma throw a runtime error on invalid enum values, producing a 500 instead of a 422. Always check `if (value !== 'A' && value !== 'B') return 422` before using an enum field from a request body.
+### Multi-tenancy and status-gated middleware (from production blockers)
+
+- **Every list/collection query must be scoped by tenant_id:** ListAll-style helpers are prohibited on resources that have a `tenant_id` column. A query that returns resources across tenants is always a cross-tenant data leak, regardless of whether the caller intended it.
+- **Middleware status checks must run after the privileged-bypass check:** When a middleware enforces tenant/user status rules (suspended, deleted, locked), the super-admin or privileged-bypass check must run FIRST, before any status block. Failure to do so locks administrators out of recovery operations (e.g., a super-admin cannot reactivate a suspended tenant).
+- **External service status must be reflected dynamically in API responses:** When a resource references an external service (IdP, provider, webhook), the API response must reflect the actual runtime state of that integration (e.g., JWKS fetch status). Never hardcode a status constant — derive it from the in-memory manager or cached probe result.
+- **Validate and store external service URIs at registration time:** When accepting a URL that points to an external service (OIDC issuer, webhook, provider endpoint), perform discovery/validation at write time and store the resolved endpoint (e.g., `jwks_uri`). Do not construct the URL at request time from heuristics or vendor-specific defaults — these silently break non-standard implementations.
+
+### Pipeline hooks — completeness
+
+- **Implement ALL side effects a hook declares:** when a hook produces actions (block, mask, warn), every downstream consumer of those actions must be wired before the implementation is considered complete — headers, SSE events, audit records, and metrics. A hook that fires internally but never surfaces to the caller is a silent spec violation.
+- **Wired ≠ implemented:** when a streaming path and a non-streaming path share the same hook interface, both paths must call the hook. A stub `return chunk, nil` in `ProcessChunk` means streaming traffic bypasses all enforcement — the highest-impact gap possible.
+
+### HTTP and stream I/O
+
+- **`io.Reader.Read` is not guaranteed to return the full payload in one call.** Always use `io.ReadAll(io.LimitReader(body, max))` for HTTP request and response bodies. A single `Read` call is a latent truncation bug that only triggers under multi-packet TCP delivery, slow clients, or chunked transfer encoding — happy-path tests will not catch it.
+- **`bufio.Scanner` defaults to a 64 KiB token limit.** When scanning streamed bodies (SSE, NDJSON, line-delimited protocols), the default buffer silently breaks any line larger than 64 KiB. Always call `scanner.Buffer(make([]byte, 0, n), max)` with `max` aligned to the body-size cap used for the same payload elsewhere in the package.
+- **Outbound HTTP clients that dial admin-supplied URLs must validate the resolved IP at every dial, not only at registration.** Use a custom `net.Dialer.Control` (or transport hook) to call the SSRF guard against the post-DNS-resolution IP before completing each TCP handshake. Registration-time DNS validation is bypassed by DNS rebinding (attacker controls TTL).
+
+### Polymorphic channels and sentinel values
+
+- **Never smuggle structured payloads through a generic field using a magic sentinel value.** When a generic message/envelope type needs to carry a new variant, extend the type (add a typed field, add a discriminator) — do not encode the variant by setting an existing string field to a magic value the consumer is supposed to recognize. Sentinel-routing in a polymorphic channel fails silently the moment the consumer never branches on the sentinel, and the failure is invisible at compile time.
+- **An empty conditional branch with only a comment describing intent is a stub, not an implementation.** A code branch with no executable statements is incomplete unless explicitly marked `// intentional no-op:` followed by a justification. Self-review must reject any conditional whose body is just a comment.
+
+### Completeness checks before declaring done
+
+- **Every package-level constant must have at least one consumer.** Before declaring implementation complete, grep for every package-level `const` identifier and confirm at least one usage exists. An unused constant is a strong signal that an intended behavior was planned and never wired.
+- **Every registered metric must have at least one emit callsite.** Cross-check each metric variable name against grep — zero `Inc()` / `Observe()` / `Set()` callsites means the metric is dead and the dashboard backed by it will be permanently blank.
+- **When a shared type's signature changes (function arity, struct field, metric label set), grep every callsite before marking the fix done.** Runtime-only assertions — Prometheus `WithLabelValues`, reflective dispatchers, dynamic struct tags — will not surface arity mismatches at compile time; they panic in production.
+- **When the spec enumerates an integration test list, the implementation is not complete until each test has been written and runs against a real test harness.** A unit-test-only delivery against a spec that explicitly lists integration tests is a partial delivery, even if every unit test passes.
+
+### Wall-clock caps inside loops
+
+- **When the spec declares a wall-clock cap on a loop, enforce it via `context.WithDeadline` wrapping every blocking call inside the loop body — not via a manual `time.Now().After()` check at the loop top.** A loop-top-only check lets the last iteration overshoot by the duration of any single in-loop call (LLM call, downstream HTTP, DB write). Wrapping the loop's context propagates the cap to every blocking call automatically.
+
+### Header semantics
+
+- **When a new code path emits a header that already exists in another path, preserve the existing semantics or rename the header.** Silent overloading of a header consumed by dashboards or SDKs is a contract break — clients reading the header cannot tell which semantics they received. Either keep the original meaning or emit a new distinct header for the new path.
+- **Default numeric config values must match the spec exactly.** When a spec section defines a default threshold, TTL, or limit as a concrete number, that exact number must appear in code with a direct reference. When the implementation deviates, write an ADR before shipping — don't silently use a different default.
+
+---
+
+## Auto-Research Scope
+
+This block is consumed by the `auto-research` skill. **Currently disabled** — to enable, an `## Eval Suite` must be designed for this agent first. See `security-engineer.md` for the reference pattern.
+
+```yaml
+enabled: false
+update_policy: propose
+schedule: daily
+
+# TODO: define domain-specific topics with queries and rationale
+topics: []
+
+frozen_sections:
+  - "Required inputs"
+  - "Output format"
+  - "Persisting your output"
+  - "Auto-Research Scope"
+  - "Eval Suite"
+
+# TODO: list sections containing knowledge content that can evolve via research
+editable_sections: []
+
+constraints:
+  - "Net change capped at +500 lines per run"
+  - "Every claim must cite a public, verifiable source"
+```
+
+## Eval Suite
+
+```yaml
+# TODO: design 2-6 binary eval cases. Until designed, Auto-Research Scope > enabled must remain false.
+cases: []
+```

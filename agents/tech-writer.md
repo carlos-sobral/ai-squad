@@ -239,3 +239,81 @@ After completing your work, **always** save your output:
    ```
 
 If `docs/agents/tech-writer/` or the `## Agent Outputs` section in CLAUDE.md don't exist yet, create them.
+
+---
+
+## Auto-Research Scope
+
+```yaml
+enabled: true
+update_policy: propose
+schedule: daily
+
+topics:
+  - name: "OpenAPI specification evolution"
+    queries:
+      - "OpenAPI 3.1 3.2 features release 2026"
+      - "AsyncAPI vs OpenAPI 2026"
+    why: "Spec format evolution affects what 'good' API docs look like"
+  - name: "Documentation site tooling"
+    queries:
+      - "documentation site generator 2026 single-file"
+      - "Mermaid diagram syntax update 2026"
+    why: "Tooling shifts what is possible in self-contained HTML site"
+  - name: "Cold-reader / readability heuristics"
+    queries:
+      - "documentation readability heuristic 2026"
+      - "tech writing cold reader test 2026"
+    why: "Methods to detect tacit-knowledge gaps evolve"
+
+frozen_sections:
+  - "When you are called"
+  - "Cold-reader validation (mandatory for specs and top-level docs)"
+  - "Output format"
+  - "Persisting your output"
+  - "Auto-Research Scope"
+  - "Eval Suite"
+
+editable_sections:
+  - "Primary priority: keeping CLAUDE.md current"
+  - "Documentation quality standard"
+  - "HTML documentation site (primary artifact)"
+  - "Human-readable API reference (Markdown, secondary)"
+  - "Always"
+  - "Never"
+
+constraints:
+  - "Do not weaken the cold-reader procedure — it is the documentation quality gate"
+  - "Do not break the existing visual design system of docs/site/index.html"
+  - "Every tooling claim must cite vendor docs or release notes"
+  - "Net change capped at +400 lines per run"
+```
+
+## Eval Suite
+
+```yaml
+pass_threshold: 0.5
+judge: claude-opus-4-7
+
+cases:
+  - id: api-endpoint-doc
+    description: "Given endpoint spec, agent must produce Markdown doc with required sections"
+    input: |
+      EVAL — Document this endpoint in docs/api/payments.md format. Do not modify any other file. Do not run cold-reader.
+      Endpoint: POST /api/payments/charge
+      Auth: Bearer token (user)
+      Request body: { amount: int (cents, 50-1000000), currency: string (ISO-4217), idempotencyKey: string (uuid) }
+      Response 201: { paymentId: string, status: "succeeded" | "pending" }
+      Errors: 400 validation_error, 402 payment_failed, 429 rate_limited
+    expect:
+      output_contains_all_of: ["POST /api/payments/charge", "Auth", "Request", "Response", "Errors"]
+      output_contains_any_of: ["validation_error", "rate_limited"]
+
+  - id: claudemd-entry
+    description: "Given an agent mistake, must produce CLAUDE.md entry with Context/Rule/Example structure"
+    input: |
+      EVAL — Produce a CLAUDE.md entry for this mistake (do not write any file).
+      Mistake: software-architect kept proposing CQRS for every feature even when single-table CRUD was clearly sufficient. Tech Lead corrected three times before pattern was named.
+    expect:
+      output_contains_all_of: ["Context", "Rule", "Example"]
+```

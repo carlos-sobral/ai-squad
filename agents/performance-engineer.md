@@ -163,3 +163,97 @@ After completing your work, **always** save your output:
    ```
 
 If `docs/agents/performance-engineer/` or the `## Agent Outputs` section in CLAUDE.md don't exist yet, create them.
+
+---
+
+## Auto-Research Scope
+
+```yaml
+enabled: true
+update_policy: propose
+schedule: daily
+
+topics:
+  - name: "Core Web Vitals thresholds and definitions"
+    queries:
+      - "Core Web Vitals threshold update 2026"
+      - "INP Interaction to Next Paint stable threshold"
+      - "CLS threshold update 2025 2026"
+    why: "Google updates CWV definitions and thresholds; thresholds drive gate verdicts"
+  - name: "Lighthouse audit catalog evolution"
+    queries:
+      - "Lighthouse new audit 2026"
+      - "Lighthouse scoring weight changes 2025 2026"
+    why: "New audits surface previously invisible regressions and shift scores"
+  - name: "Database slow query patterns"
+    queries:
+      - "PostgreSQL slow query anti-pattern 2026"
+      - "N+1 query detection ORM 2026"
+    why: "Slow query taxonomy evolves with DB versions and ORM idioms"
+  - name: "Browser performance APIs"
+    queries:
+      - "Long Animation Frames API browser support"
+      - "browser performance observer API 2026"
+    why: "New web APIs enable better field-data diagnosis"
+
+frozen_sections:
+  - "Required inputs"
+  - "Severity definitions"
+  - "Output format"
+  - "Engineering metrics collection (audit mode only)"
+  - "Persisting your output"
+  - "Auto-Research Scope"
+  - "Eval Suite"
+
+editable_sections:
+  - "What you measure"
+  - "Always"
+  - "Never"
+
+constraints:
+  - "Do not change the CLAUDE.md threshold lookup pattern"
+  - "Do not alter severity definitions or verdict semantics"
+  - "Every threshold claim must cite an authoritative source (web.dev, Google docs, MDN, vendor docs)"
+  - "Net change capped at +400 lines per run"
+```
+
+## Eval Suite
+
+```yaml
+pass_threshold: 0.66
+judge: claude-opus-4-7
+
+cases:
+  - id: breaching-metrics-fail
+    description: "Lighthouse and bundle metrics breach thresholds — agent must FAIL"
+    input: |
+      Gate mode. Project thresholds (declared in CLAUDE.md): Lighthouse Performance >= 85, LCP < 2.5s, CLS < 0.1, Bundle initial JS < 200kb.
+      CI output for this PR (module: checkout):
+      - Lighthouse Performance: 42
+      - LCP: 5.8s
+      - CLS: 0.31
+      - Bundle initial JS: 920kb gzipped
+    expect:
+      verdict_contains: "FAIL"
+      output_contains_any_of: ["Critical", "LCP", "Bundle"]
+
+  - id: clean-pass
+    description: "All metrics within threshold — agent must PASS"
+    input: |
+      Gate mode. Project thresholds: Lighthouse >= 85, LCP < 2.5s, CLS < 0.1, Bundle < 200kb.
+      CI output (module: settings):
+      - Lighthouse Performance: 94
+      - LCP: 1.6s
+      - CLS: 0.04
+      - Bundle initial JS: 178kb
+    expect:
+      verdict_contains: "PASS"
+      severity_max: "Warning"
+
+  - id: missing-ci-blocker
+    description: "No CI output available — agent must flag as blocker, not invent metrics"
+    input: |
+      Gate mode. Project thresholds defined in CLAUDE.md. No Lighthouse report or load-test output is available for this module (invoices-export).
+    expect:
+      output_contains_any_of: ["blocker", "missing", "cannot evaluate", "no CI output"]
+```

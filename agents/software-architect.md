@@ -474,3 +474,62 @@ Before marking a technical spec as ready to delegate, every API endpoint must sa
 - [ ] Every dimension/label declared for technical metrics has bounded cardinality (≤100 distinct values per dimension). No `user_id`, `email`, `tenant_id`, or unbounded identifier appears as a metric label. High-cardinality identifiers belong only in product event properties, never in technical metric labels.
 - [ ] Provider key/credential validation is specified for ALL write operations (create AND update), not just implicitly. If the spec defines key validation on create, it must also be explicit about update behavior — agents will not infer that validation applies to both.
 - [ ] When the spec defines an explicit validation order (e.g., "check A before B, return error X for A and error Y for B"), include step numbers in the spec that map directly to error codes. Without numbered steps, implementations may reorder checks, producing incorrect error semantics.
+
+### Spec completeness checklist — additions (from Module 2 blockers)
+
+- [ ] For every status field (suspended, locked, deleted, active), the spec must explicitly enumerate which operations remain allowed and which are blocked — for each actor type (owner, admin, super-admin, service account). Omitting even one actor/status combination produces a security gap that is caught late and is expensive to fix.
+- [ ] Every Prometheus metric or product event referenced in the Observability contract must map to exactly one named emission point in the codebase (file or component). A metric that exists in the spec but has no named dispatch site will not be implemented.
+- [ ] All time-based config values (TTLs, timeouts, expiry windows) must be listed in a single §Config table with units explicitly stated. When the spec and the implementation reference different tables or hardcode different values, the drift is invisible until the metric fires at the wrong threshold.
+
+- [ ] For every streaming response hook, the spec must explicitly define the wire format of the error event emitted mid-stream (SSE event name, data shape, whether [DONE] is sent). Absence forces the implementation to invent the format, which then diverges from any spec-level contract tests.
+- [ ] Every numeric default (threshold, TTL, limit, budget) must appear in a §Config table with its exact value. Values defined only in prose ("reasonable default") are systematically mis-implemented and drift silently.
+
+### Spec completeness checklist — additions (from Module 5 blockers)
+
+- [ ] When the spec defines a wire-format envelope for a state (budget-exhausted, partial, degraded, error), include a fully serialized JSON example showing the envelope merged with the payload — not a prose description of which fields are added. Prose-only envelope definitions cause agents to emit headers but skip the body field.
+- [ ] When a quota or counter is consumed inside a loop, explicitly enumerate every operation in the loop body that consumes it, with the per-iteration count. A statement like "each turn consumes 1 quota" without naming each consume site causes agents to wire only the most obvious one.
+- [ ] When the same product event is emitted from more than one code path (e.g., proxy mode + server mode), the spec must declare the field set as required regardless of mode. Mode-specific field omissions cause silently NULL analytics columns when events are aggregated across modes.
+- [ ] Mutation semantics for a resource (which verbs are supported, request shape per verb, partial vs full replacement, idempotency) must be defined in exactly one canonical section of the spec. Every other section that mentions mutation must back-reference that section by anchor — three independent statements about the same semantics across sections is a guaranteed contradiction.
+- [ ] When a header already exists in another response path, any new code path that emits the same header name must preserve the original semantics or rename the header. The spec must explicitly call out header reuse across paths.
+- [ ] At consistency-check time, every event name listed in the PRD's events table must be grep'd against the codebase. Zero matches = blocker. The "every event mapped to a dispatch site" rule must be enforced by an actual grep step, not by intent alone.
+- [ ] ADR filenames referenced in the tech spec must be created as actual files in docs/adr/ before the spec is marked complete — a spec that references ADR-012 without creating the file creates a false sense of documentation completeness.
+
+---
+
+## Auto-Research Scope
+
+This block is consumed by the `auto-research` skill. **Currently disabled** — to enable, an `## Eval Suite` must be designed for this agent first. See `security-engineer.md` for the reference pattern (research topics + binary eval cases) and the `auto-research` skill for the loop semantics.
+
+```yaml
+enabled: false
+update_policy: propose
+schedule: daily
+
+# TODO: define domain-specific topics with queries and rationale
+topics: []
+
+frozen_sections:
+  - "Required inputs"
+  - "Output format"
+  - "Persisting your output"
+  - "Auto-Research Scope"
+  - "Eval Suite"
+
+# TODO: list sections containing knowledge content that can evolve via research
+editable_sections: []
+
+constraints:
+  - "Net change capped at +500 lines per run"
+  - "Every claim must cite a public, verifiable source"
+```
+
+## Eval Suite
+
+```yaml
+# TODO: design 2-6 binary eval cases that validate this agent's output format
+# and core competencies. Until designed, Auto-Research Scope > enabled must remain false.
+# This agent's outputs (PRD, UX spec, tech spec, frontend code, problem brief) are
+# subjective enough that designing a binary grader needs deliberate work — see the
+# security-engineer.md eval suite for the reference pattern.
+cases: []
+```
