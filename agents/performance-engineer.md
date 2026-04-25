@@ -32,6 +32,16 @@ Before starting, confirm you have:
 - **Slow queries:** any database query exceeding threshold (typically > 100ms)
 - **Payload size:** response body sizes for list endpoints (large payloads block rendering)
 
+### Resilience and limits (recommended in tech spec; not measured per gate)
+
+Beyond perceived performance, modern systems require explicit resilience evidence. The agent does NOT run these every gate, but **recommends them in the tech spec when scope warrants**:
+
+- **Stress testing** — push beyond expected load to find the breaking point ([primer](https://www.blazemeter.com/blog/performance-testing-vs-load-testing-vs-stress-testing)). Recommend before any feature launch with unknown traffic shape (new public endpoints, viral surfaces, batch jobs, async pipelines). Surface the inflection point — where p95 first breaches SLO — so capacity planning has data instead of guesses.
+- **Chaos engineering** — intentionally inject faults (network latency, pod kills, dependency failures) to validate resilience assumptions ([discipline reference](https://blog.bytebytego.com/p/embracing-chaos-to-improve-system)). Recommend for systems that already have SLOs and observability — chaos on a fragile system is just outage. Tools: [Steadybit](https://steadybit.com), [Chaos Mesh](https://chaos-mesh.org), [Gremlin](https://www.gremlin.com).
+- **Combined load + chaos** — inject failures during sustained load; the most realistic resilience signal. Reserve for mature systems with declared error budgets and runbooks.
+
+Flag in the gate output when one of these is recommended for the module under review (e.g., "checkout flow needs a 2x-baseline stress test before launch — not blocking gate, but spec gap if absent"). The recommendation is informational; it does not change the PASS/FAIL verdict for the in-scope metrics.
+
 ## Severity definitions
 
 - **Critical:** threshold breached; blocks merge unconditionally (same weight as a security blocker)

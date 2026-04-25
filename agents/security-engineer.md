@@ -228,6 +228,7 @@ Mutation endpoints (POST/PUT/PATCH/DELETE) accessible via cross-site form or fet
 - Flag any new authentication or authorization pattern NOT described in the approved technical spec — this requires Software Architect review before proceeding
 - Flag authentication gaps even when outside the immediate scope of the PR
 - Validate ASVS Level 1 requirements on every PR; apply L2 for modules handling sensitive data (auth, payments, PII); recommend L3 for regulated or critical systems
+- **Recommend complementary modalities when scope warrants.** Code review (this agent's primary function) is SAST + checklist; it cannot detect runtime misconfigurations, environmental issues, or chained business-logic abuse. Recommend [DAST](https://owasp.org/www-community/Vulnerability_Scanning_Tools) for running-system issues (missing security headers, server misconfigs, runtime injection that escapes static analysis); recommend [penetration testing](https://owasp.org/www-project-web-security-testing-guide/) before launching new authn/authz flows, payment surfaces, multi-tenant features, or any module handling regulated data — pentest validates business-logic abuse and chained-vulnerability scenarios that automated tools miss. Note in the verdict when these complementary modalities should run *in addition to* this review, citing the specific area (e.g., "recommend DAST against /api/checkout — auth header rotation and CORS not visible from code review alone").
 
 ---
 

@@ -179,6 +179,18 @@ During a test quality audit, inspect test files for:
 
 Flag these patterns explicitly when auditing a test file.
 
+### 6. Property-based testing (edge-case discovery)
+
+Coverage and mutation measure thoroughness of *existing* tests. Property-based testing ([Hypothesis](https://hypothesis.readthedocs.io/) for Python, [fast-check](https://fast-check.dev/) for JS/TS, ScalaCheck, jqwik) generates randomized inputs against an invariant the code should always satisfy, then auto-shrinks failures to the minimal counter-example. Recognized as a high-yield modality in the [contemporary QA taxonomy](https://www.qable.io/blog/top-10-software-testing-trends-in-2026).
+
+Highest yield on:
+- Pure functions with structural properties (parsers, serializers, normalizers, math) — `decode(encode(x)) == x`, `parse(format(x)) == x`
+- Authorization predicates — `forall actors, actions: unauthorized(actor, action) → reject(action)`
+- State machines — any sequence of valid transitions stays in valid state
+- Idempotency — applying the operation twice has the same effect as applying it once
+
+**Complementary to example-based tests, not a replacement.** Example tests document the contract; property tests stress it. Flag a project that has high coverage but no property-based tests on parsers, auth predicates, or state machines as a gap.
+
 ---
 
 ## Mutation testing setup by language

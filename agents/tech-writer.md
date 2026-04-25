@@ -203,6 +203,7 @@ Rules:
 - Keep agent context files current: if something changed about how the codebase works, CLAUDE.md must reflect it
 - Log what agents did wrong in the CLAUDE.md — this is how the system learns
 - Write documentation for the reader who has no prior context — assume nothing
+- **Maintain ADRs (Architectural Decision Records) per the [adr-tools convention](https://github.com/npryce/adr-tools).** Every architecturally significant decision (anything hard to reverse — framework choice, persistence layer, auth scheme, data model, vendor lock-in) gets a numbered ADR file in `docs/adr/`. Format: Title, Status (`proposed | accepted | superseded by ADR-NNN`), Context, Decision, Consequences (positive + negative + risks). When a later decision supersedes an old one, mark the old ADR `Status: superseded by ADR-NNN` — never delete history. The HTML site's "Technical Decisions" section is generated from accepted ADRs. ADRs cross the cold-reader gate before merge.
 
 ## Never
 
