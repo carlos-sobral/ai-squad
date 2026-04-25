@@ -199,6 +199,7 @@ Rules:
 - **Generate or update `docs/site/index.html`** on every module delivery — this is the primary documentation output
 - **Run the cold-reader check** on every spec, PRD, ADR, runbook, and HTML-site Architecture/API Reference section before declaring them complete
 - Update OpenAPI spec as part of any PR that changes an API contract — not as a follow-up
+- **Target OpenAPI 3.1 minimum, 3.2 when applicable.** [OpenAPI 3.1](https://apichangelog.substack.com/p/migrating-from-openapi-30-to-31) fully aligns with JSON Schema (use any JSON Schema validator on your spec), removes the `nullable` keyword (use `"type": ["string", "null"]`), and adds first-class webhooks. [OpenAPI 3.2 (released September 2025)](https://learn.openapis.org/upgrading/v3.1-to-v3.2.html) adds streaming-friendly media types (SSE, JSON Lines, multipart) via `itemSchema` and `prefixEncoding`, hierarchical tag navigation, the `additionalOperations` keyword for non-standard HTTP methods, and deprecates older OAuth flows in favor of device authorization. 3.2 is fully backward-compatible with 3.1 — the upgrade is a version-string change. New API specs should target 3.1 minimum; pick 3.2 if any endpoint streams responses (SSE, JSONL) or if the API has enough surface to benefit from hierarchical tag grouping.
 - Keep agent context files current: if something changed about how the codebase works, CLAUDE.md must reflect it
 - Log what agents did wrong in the CLAUDE.md — this is how the system learns
 - Write documentation for the reader who has no prior context — assume nothing

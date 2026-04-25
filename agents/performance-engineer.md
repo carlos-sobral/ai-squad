@@ -22,8 +22,9 @@ Before starting, confirm you have:
 ## What you measure
 
 ### Frontend
-- **Lighthouse scores:** Performance, Accessibility, Best Practices, SEO — check against project thresholds
-- **Core Web Vitals:** LCP (Largest Contentful Paint), FID/INP (Interaction to Next Paint), CLS (Cumulative Layout Shift)
+- **Lighthouse scores:** Performance, Accessibility, Best Practices, SEO — check against project thresholds. Note: Lighthouse 12 weights TBT at 30% and CLS at 25% — Total Blocking Time and Largest Contentful Paint together account for almost half of the Performance score, so regressions in those metrics drag the headline number fastest. TTI is no longer included in the score calculation. Source: [Lighthouse performance scoring](https://developer.chrome.com/docs/lighthouse/performance/performance-scoring).
+- **Core Web Vitals (evaluated at p75 of real visitor data):** LCP (Largest Contentful Paint, "good" ≤ 2.5s), INP (Interaction to Next Paint, "good" ≤ 200ms — replaced FID on 12 March 2024 and is the most-failed CWV in 2026 per [web.dev/articles/vitals](https://web.dev/articles/vitals)), CLS (Cumulative Layout Shift, "good" ≤ 0.1). Project thresholds in CLAUDE.md still take precedence — these are the framework-level "good" cutoffs.
+- **Total Blocking Time (TBT):** Lighthouse-measured proxy for INP in lab conditions. Track separately because it's the single largest contributor to the Lighthouse Performance score.
 - **Bundle size:** initial JS bundle (gzipped), per-route code split chunks
 
 ### Backend

@@ -87,6 +87,25 @@ Use this as the baseline. Adapt proportions to the project's context — but alw
 
 **Principle:** push every test as far down the pyramid as possible without losing confidence. If an E2E fails and no unit test catches the same defect, add the unit test — don't expand E2E.
 
+### Alternative model: Testing Trophy (frontend-heavy systems)
+
+For frontend-heavy applications where correctness depends on rendered-DOM behavior, [Kent C. Dodds' Testing Trophy](https://kentcdodds.com/blog/the-testing-trophy-and-testing-classifications) is a defensible alternative to the pyramid. Layers: **static analysis** (TypeScript, ESLint) → **unit** (small) → **integration (the largest layer)** → **E2E** (small). The Trophy emphasizes integration tests as the highest-ROI layer for UI code because component-and-DOM behavior is where most defects actually live.
+
+Adopt the Trophy when:
+- the app's correctness is dominated by rendered-DOM behavior
+- modern integration tooling (Testing Library, Vitest, Playwright Component Tests) keeps integration tests in single-digit-second range
+- pure-render unit tests on UI components produce false confidence (snapshot churn, no real assertions)
+
+Stay on the Pyramid for:
+- backend services with rich domain logic — isolated unit tests on business rules still win
+- libraries / infrastructure code with low UI surface
+
+### Contract testing for multi-service systems
+
+For systems with two or more services that communicate over an API, **add contract testing as a layer between integration and E2E**. Tools: Pact, Spring Cloud Contract, schemathesis. Contract tests verify that providers and consumers agree on API shape (status codes, payload structure) without spinning up the full stack on each PR. A contract failure caught at the producer's CI is incomparably cheaper than an E2E failure caught after the breaking deploy.
+
+Recommended placement in the gate: contract verification runs on every producer PR; consumer-driven contract tests run as a non-blocking signal that the consumer's mocks still match the producer's reality.
+
 ---
 
 ## Test quality metrics
