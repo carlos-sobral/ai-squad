@@ -44,9 +44,9 @@ AR_SINCE_AUDIT=$([ -n "$LAST_AUDIT" ] && find ~/.claude/logs/auto-research -name
 ```
 
 **`agents-improvement-audit` triggers when ANY of:**
-- `AR_SINCE_AUDIT >= 10` — enough new auto-research data accumulated
-- `AUDIT_DAYS >= 14` (and `AR_RUNS >= 5`) — calendar drift on a non-empty system
-- `LAST_AUDIT` is empty AND `AR_RUNS >= 5` — never run before, enough data exists
+- `AR_SINCE_AUDIT >= 15` — enough new auto-research data accumulated
+- `AUDIT_DAYS >= 21` (and `AR_RUNS >= 7`) — calendar drift on a non-empty system
+- `LAST_AUDIT` is empty AND `AR_RUNS >= 7` — never run before, enough data exists
 
 **`sdlc-practices-evolve` triggers when ANY of:**
 - `EVOLVE_DAYS >= 30` — calendar drift on practice coverage
