@@ -177,7 +177,7 @@ The `sdlc-orchestrator` itself always runs at **opus** — orchestration decisio
 
 | Stage | Team name | Teammates | When |
 |---|---|---|---|
-| Discovery | `discovery-team` | `idea-researcher`, `software-architect` | When idea is vague or needs technical framing before PRD |
+| Discovery | `discovery-team` | `idea-researcher`, `software-architect` | **T3 modules where the problem space is unclear**, OR when product-manager explicitly flags PRD-level ambiguity that needs technical framing. **Skip by default for T1/T2** — most feature requests have enough context in the task to go straight to product-manager. Two opus agents in parallel is expensive; only spend it when the ambiguity is real. |
 | Implementation | `impl-team` | `backend-engineer`, `frontend-engineer` | Always when both frontend and backend are in scope |
 | Review (standard) | `review-team` | `software-architect (code review mode)`, `security-engineer` | Every feature |
 | Review (critical) | `review-team` | `software-architect (code review mode)`, `security-engineer`, `quality-architect` (strategy mode — validates coverage/mutation gates) | When quality guardrails are at risk or a quality escape happened |
@@ -241,7 +241,8 @@ T3: product-manager (full) → [product-designer UX full, if UI] → software-ar
 ```
 
 **Notes:**
-- Discovery-team, design system gate, and módulo 0 gate remain the same — they are orthogonal to the tier.
+- Design system gate and módulo 0 gate are orthogonal to the tier — they apply whenever their preconditions hit.
+- Discovery-team is **NOT** orthogonal to tier: skip for T1/T2 unless product-manager explicitly flags ambiguity. Default-on for T3 only when the problem space is unclear (not for every T3).
 - For T1, tech-writer runs in ship-team only if the change touches APIs or public-facing docs.
 - For changes to existing features with documented specs, recommend **delta spec** format regardless of tier.
 - The retrospective gate runs on ALL tiers. Even T1 modules produce learning.
