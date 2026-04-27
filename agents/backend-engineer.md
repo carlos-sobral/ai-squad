@@ -171,6 +171,8 @@ Patterns that caused production blockers across multiple projects. Each is a har
 - **Every registered metric must have at least one emit callsite.** Cross-check each metric variable name against grep — zero `Inc()` / `Observe()` / `Set()` callsites means the metric is dead and the dashboard backed by it will be permanently blank.
 - **When a shared type's signature changes (function arity, struct field, metric label set), grep every callsite before marking the fix done.** Runtime-only assertions — Prometheus `WithLabelValues`, reflective dispatchers, dynamic struct tags — will not surface arity mismatches at compile time; they panic in production.
 - **When the spec enumerates an integration test list, the implementation is not complete until each test has been written and runs against a real test harness.** A unit-test-only delivery against a spec that explicitly lists integration tests is a partial delivery, even if every unit test passes.
+- **Run the exact command CI will run before declaring done — never settle for a faster subset.** A `typecheck` script can be a partial wrapper (e.g., `tsc --noEmit` on a config with `"files": []` + project references is a vacuous pass; `mypy` with default ignores can skip whole packages). The build command (`pnpm build`, `tsc -b`, `cargo build`, `mvn package`, `go build ./...`) is what fails in CI and production. If the typecheck script accepts what the build rejects, that divergence is a configuration bug — escalate to the cloud-architect rather than working around it locally. A task that "passes typecheck" but breaks on `build` is not done.
+- **Each exported constant has one canonical module — every call site must import from it.** When the same identifier is exported (or re-exported) from multiple modules, or when the IDE auto-completes the import to a non-canonical path, the symbol may resolve under typecheck but break under the bundler/linker (resolution rules differ). Before commit, grep the project for the identifier and confirm a single origin and consistent imports across all call sites.
 
 ### Wall-clock caps inside loops
 
@@ -180,6 +182,38 @@ Patterns that caused production blockers across multiple projects. Each is a har
 
 - **When a new code path emits a header that already exists in another path, preserve the existing semantics or rename the header.** Silent overloading of a header consumed by dashboards or SDKs is a contract break — clients reading the header cannot tell which semantics they received. Either keep the original meaning or emit a new distinct header for the new path.
 - **Default numeric config values must match the spec exactly.** When a spec section defines a default threshold, TTL, or limit as a concrete number, that exact number must appear in code with a direct reference. When the implementation deviates, write an ADR before shipping — don't silently use a different default.
+
+### Database mutations with foreign keys
+
+- **In mass DELETEs spanning tables linked by foreign keys, validate the order before commit: child tables (those holding FK columns) before parent tables (those referenced).** An out-of-order delete may pass silently when FK enforcement is off and fail catastrophically when it is later enabled — e.g., during migration to a stricter dialect, in tests that turn FKs on, or when a future configuration change activates them. Wrap the deletes in a single transaction so that a violation reverts the whole operation rather than leaving orphan rows.
+- **In SQLite specifically, force `PRAGMA foreign_keys = ON` at the start of any FK-sensitive transaction.** SQLite's foreign_keys pragma is per-connection and OFF by default. Without forcing it on, ordering bugs go undetected in production while breaking tests that turn FKs on (or vice versa) — both forms of mismatch produce silent corruption.
+
+### Scheduled / time-triggered features
+
+- **Reload state from the source of truth before each scheduled call — never use a snapshot from boot.** Any feature that fires by temporal trigger (cron, idle timeout, scheduled task, queue consumer, retry) runs minutes-to-hours after construction. State captured at boot is stale by then. `await repo.get()` (or equivalent) at the top of the trigger handler, not in the constructor — the cost of a fresh read is trivial compared to the cost of acting on stale state. A proactive that LLM-generates with `agentSelf=null` because boot ran before identity was set produces output that contradicts the spec; a summary that uses an outdated `personality_notes` overwrites refinements made earlier in the same session.
+- **The "trigger handler is the right read site" rule applies even when the trigger fires soon after boot.** The first execution may not benefit (state is fresh anyway), but every subsequent execution does — and the rule's value is precisely that it is invariant, so the agent never has to decide "is this snapshot stale yet?" at trigger time.
+
+### Multi-site changes — grep before declaring done
+
+When a change requires updating the **same value or pattern across multiple files** (a default config value, a domain constant, a magic string that appears in N call sites), before marking the task complete:
+
+1. `grep -rn "OLD_VALUE\|OLD_PATTERN" .` across the entire project — including migration SQL, comments, JSON defaults, schema files, env templates, fixtures
+2. Confirm ALL sites were updated, not just the majority
+3. If a site is intentionally NOT updated (legacy preservation, helper-only, separate concern), comment **explicitly** explaining why
+
+Failure mode: agent updates 5/7 sites believing the work is done, leaves silent debt that surfaces in a fresh install or migration. The fix is mechanical, but the discipline is the rule: **grep is part of DoD for multi-site changes.**
+
+### Cleanup scoped to a runtime context — enumerate ALL files
+
+When a cleanup task is described as "everything in context X" (Web Worker context, frontend bundle, CLI namespace, the same architectural layer), enumerate the files in that context **before starting** — don't trust the FR title to cover all files automatically.
+
+Failure mode: a "worker logger guard" task touches `worker.ts` but misses `migrate.ts` (imported by the worker entrypoint and runs in the same thread) — the missed file ships to production with the old pattern.
+
+Recipe:
+1. Identify the runtime context (e.g., "everything that runs on the Web Worker thread")
+2. List the files: imports of the entrypoint + transitive deps that run in the same runtime
+3. Apply the change to all of them
+4. Document any intentional exclusion inline
 
 ---
 

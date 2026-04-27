@@ -494,6 +494,16 @@ Before marking a technical spec as ready to delegate, every API endpoint must sa
 - [ ] At consistency-check time, every event name listed in the PRD's events table must be grep'd against the codebase. Zero matches = blocker. The "every event mapped to a dispatch site" rule must be enforced by an actual grep step, not by intent alone.
 - [ ] ADR filenames referenced in the tech spec must be created as actual files in docs/adr/ before the spec is marked complete — a spec that references ADR-012 without creating the file creates a false sense of documentation completeness.
 
+### Spec completeness checklist — additions (from Avatar Sprint 1 blockers)
+
+- [ ] Every event declared in the implementation-layer event registry (e.g., a typed `AppEvents` map for an event bus, an enum of internal telemetry events, a job/queue type union) must point to a dispatch site in the spec — file/component or "TBD in implementation" explicitly marked. The existing rule about PRD product events covers analytics; this rule extends to **internal** event-bus / job-queue / lifecycle events. Without it, an event that exists in the schema but never fires becomes indistinguishable from a missing feature, and downstream consumers (loggers, dashboards, replay tools) silently observe empty streams.
+- [ ] When the tech-spec references an external visual contract document (`docs/design-system.md`, brand guide, design tokens repo), the §Stack table must list every library that the visual contract fixes — icon set, animation library, charting library, font loader. A library declared by the design-system but absent from §Stack causes a "is this a new dependency or not?" ambiguity at implementation time, with no clear authority to resolve it. The cosmetic divergence becomes silent debt.
+
+### Spec completeness checklist — additions (from Avatar Sprint 2.0 blockers)
+
+- [ ] Type unions (TypeScript `type X = 'a' | 'b' | 'c'`, enum-like objects, discriminated unions) must list **only values that are renderable in at least one UI surface or callable through at least one public API**. Helper-only / internal-only values (an LLM model used only for background summaries; an event id used only by an internal debug tool) belong in a **separate type**, not in the public/config union. Including a non-rendererable value in a public union creates state that is "representable but unreachable" — the type accepts it, the UI never produces it, but a config-loaded record can carry it and break invariants downstream.
+- [ ] When a tech-spec lists items from a previous sprint's retro under "cleanup", it must enumerate **all files in the same runtime context** that the cleanup affects, not rely on a verbal description. If the retro item said "log guard in the worker", the spec must list each file that runs on the Web Worker thread (`worker.ts`, `migrate.ts`, transitive deps) — not assume "the worker" is self-explanatory. Otherwise one file silently keeps the old pattern and ships.
+
 ---
 
 ## Auto-Research Scope

@@ -69,6 +69,15 @@ The design system (`docs/design-system.md`) owns the visual direction and the an
 
 If the UX spec or design system doesn't cover a visual choice, stop and flag it — do not fall back to the AI-default pattern.
 
+## Production runtime concerns
+
+- **Every `console.*` call (or `logger.X()` call that wraps `console`) in code that ships to production must respect the bundler's environment flag.** Logs ship to end-users' DevTools and may expose internal state, API responses, secrets in error objects, or noisy debug traces. Wrap or guard:
+  - Vite: `if (import.meta.env.DEV) { console.X(...) }` — `import.meta.env.PROD` for the inverse case
+  - Next.js / generic Node: `if (process.env.NODE_ENV !== 'production') { console.X(...) }`
+  - Webpack / Rollup with DefinePlugin: same `process.env.NODE_ENV` check, dead-code-eliminated at build time
+- **Real error logs (`catch` blocks at runtime) should not go to `console.error` in production.** Send them to telemetry (event bus → DB, Sentry, structured logger) so they are searchable and bounded; `console.error` in prod is unindexable noise that disappears the moment the user closes the tab.
+- **A logger module that already implements environment-aware silencing is the right pattern — use it.** Don't sprinkle raw `console.*` calls in feature code "temporarily"; they survive longer than intended and ship to prod uninstrumented.
+
 ## Output format
 
 Provide: component code + tests + notes on any design decisions made and flags raised.

@@ -141,6 +141,22 @@ Choose, document, and wire up the stacks that will observe the application in pr
 - Synthetic observability tooling (Lighthouse CI + load test runner) must be configured before the first `ship-team` runs — without it, the performance gate will block unconditionally
 - Production observability stacks must be chosen and wired before the first production deploy — without them, the post-deploy health check in the orchestrator's DoD cannot run
 
+### Validate every CI script does what it claims (mandatory)
+
+For each script in `package.json` / `Makefile` / `pyproject.toml` / equivalent that CI will execute (`typecheck`, `lint`, `test`, `build`, `format:check`), prove that the script actually exercises the codebase before declaring Módulo 0 done:
+
+1. After scaffold, introduce a deliberate breakage in a representative file (a type assertion that should fail, a lint rule violation, a failing assertion).
+2. Run each script. Confirm the script fails on the file you just broke. If a script passes despite the breakage, the script is misconfigured — fix it before continuing.
+3. Revert the breakage.
+4. If a script is intentionally a fast subset of the canonical command (e.g., `typecheck` skips slower checks that `build` runs in full), document the divergence in an ADR or in the project's `CLAUDE.md ## Tooling` block. Implementing engineers must know which command is authoritative for "ready to ship".
+
+**Common failure mode (avoidable):** in TypeScript projects with `tsc -b` project references, a `"typecheck": "tsc --noEmit"` script run against the **root** `tsconfig.json` with `"files": []` checks zero files and exits 0. Months of latent type errors accumulate before the first `tsc -b` (build) catches them. Correct recipes for projects with project references:
+
+- `"typecheck": "tsc -b --noEmit"` — build mode with noEmit, checks all referenced sub-projects
+- or explicit per-project: `"typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json"`
+
+The same class of pitfall exists for Python (`mypy` with default ignores skipping packages), Go (`go vet` not running across all build tags), and Rust (`cargo check` vs `cargo build` divergence under `[features]`). Validate by deliberate breakage, not by reading the script.
+
 ---
 
 ## Inventory mode — brownfield onboarding
