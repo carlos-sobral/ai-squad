@@ -53,6 +53,7 @@ projeto real descobre padrão novo
 - **Repo → global:** quando uma skill é reescrita com base em referências externas (como aconteceu com security-engineer e quality-architect). Copiar manualmente após revisão.
 - **Conteúdo projeto-específico** (nomes de bibliotecas, campos de domínio, stack particular) **nunca entra no repo** — fica no `docs/engineering-patterns.md` do projeto de origem.
 - Skills no repo **não têm** campo `version` no frontmatter — versionamento é responsabilidade do global.
+- **Commit imediato no global após cada edição.** Após editar qualquer arquivo em `~/.claude/agents/` ou `~/.claude/skills/`, commit no git local do diretório global antes de prosseguir. Working tree dirty no global é perigoso: o próximo `git add` em uma operação não relacionada pode arrastar a drift junto e produzir commit com escopo enganoso (já aconteceu em 2026-05-01 — `ba7fda4` rolou 73 linhas de patterns de Apr-27 dentro de um commit rotulado "5 T1 changes"). Verificar `cd ~/.claude/agents && git status` antes de iniciar nova edição.
 
 ## O que NÃO fazer
 
