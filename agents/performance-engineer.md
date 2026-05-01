@@ -137,7 +137,7 @@ When in audit mode, after running performance benchmarks, collect engineering me
 
 1. Read `engineering_metrics.provider` from the project's `CLAUDE.md ## Tooling` block. Never hardcode the provider — always look it up.
 2. Dispatch by provider:
-   - **`ai-squad-local`** — run `bash {config.script}` (typical: `scripts/metrics/collect.sh`). Then read the file at `{config.output}` (typical: `docs/metrics/latest.md`).
+   - **`ai-squad-local`** — run `bash {config.script}` (typical: `scripts/metrics/collect.sh`). Then read the file at `{config.output}` (typical: `docs/metrics/latest.md`). The script also writes `docs/metrics/latest.html` (self-contained) which the `tech-writer` agent pulls into the docs site's "Engineering Quality" section — surface this in the audit output so the writer refreshes the site.
    - **`devlake` / `linearb` / `sleuth`** — call `{config.cli}` or `{config.api_url}` per the provider's contract documented in `CLAUDE.md`. If the contract is undefined for that provider, log a warning ("provider X declared but contract missing — skipping engineering metrics") and continue without failing the audit.
    - **`none`** — skip metric collection and note in the report that engineering metrics are disabled for this project.
 3. Compare against previous snapshots in `docs/metrics/history/` if any exist. Flag deltas considered significant:

@@ -138,6 +138,12 @@ The site must always include these sections (add more as the project grows):
 6. **Module Roadmap** — Visual roadmap of all modules with status badges (done, in-progress, planned)
 7. **Technical Decisions** — Summary table of key architectural decisions with one-line rationale
 8. **Competitive Landscape** — If competitive analysis exists, include a summary comparison table and key differentiators
+9. **Engineering Quality** — honest mirror of the squad's process maturity and delivery health. Skip only when neither input artifact exists (first module not yet shipped). Otherwise this section must surface:
+   - **Maturity assessment** — render the table from `docs/maturity-assessment.md`: 5 dimensions × current level × evidence cited × next-level criteria. Include "Brownfield baseline" callout if applicable, and the "Histórico de transições" as a short timeline.
+   - **Latest metrics snapshot** — embed `docs/metrics/latest.html` via `<iframe src="../metrics/latest.html" loading="lazy" style="width:100%;height:600px;border:1px solid #e5e5e5;border-radius:8px;"></iframe>` so the metric cards render inline without duplicating the rendering logic. If iframe is undesirable for the project, re-render the same metrics as styled cards using the same visual design as the rest of the site.
+   - **Snapshot freshness** — show the timestamp from `latest.md` frontmatter and a link to `docs/metrics/history/` for trend.
+   - **Raw links** — link back to `docs/maturity-assessment.md` and `docs/metrics/latest.md` so engineers can read the evidence in markdown form.
+   These artifacts are produced by the `performance-engineer` audit mode (running ai-squad's `scripts/metrics/collect.sh`) and the orchestrator's retrospective gate. Hiding them in `docs/metrics/` while the user-facing site looks polished is documentation theater — the site must reflect both wins and gaps.
 
 ### Content rules
 
@@ -197,6 +203,7 @@ Rules:
 ## Always
 
 - **Generate or update `docs/site/index.html`** on every module delivery — this is the primary documentation output
+- **Refresh the Engineering Quality section** whenever `docs/metrics/latest.html` or `docs/maturity-assessment.md` change — these are produced by `performance-engineer` audit mode and the retrospective gate respectively. Stale quality data on the site is worse than no data, because it implies the squad is monitoring when it isn't.
 - **Run the cold-reader check** on every spec, PRD, ADR, runbook, and HTML-site Architecture/API Reference section before declaring them complete
 - Update OpenAPI spec as part of any PR that changes an API contract — not as a follow-up
 - **Target OpenAPI 3.1 minimum, 3.2 when applicable.** [OpenAPI 3.1](https://apichangelog.substack.com/p/migrating-from-openapi-30-to-31) fully aligns with JSON Schema (use any JSON Schema validator on your spec), removes the `nullable` keyword (use `"type": ["string", "null"]`), and adds first-class webhooks. [OpenAPI 3.2 (released September 2025)](https://learn.openapis.org/upgrading/v3.1-to-v3.2.html) adds streaming-friendly media types (SSE, JSON Lines, multipart) via `itemSchema` and `prefixEncoding`, hierarchical tag navigation, the `additionalOperations` keyword for non-standard HTTP methods, and deprecates older OAuth flows in favor of device authorization. 3.2 is fully backward-compatible with 3.1 — the upgrade is a version-string change. New API specs should target 3.1 minimum; pick 3.2 if any endpoint streams responses (SSE, JSONL) or if the API has enough surface to benefit from hierarchical tag grouping.
