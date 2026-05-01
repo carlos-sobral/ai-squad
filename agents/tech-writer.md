@@ -249,7 +249,7 @@ If `docs/agents/tech-writer/` or the `## Agent Outputs` section in CLAUDE.md don
 ```yaml
 enabled: true
 update_policy: propose
-schedule: daily
+schedule: manual  # invoke via /auto-research (no scheduler installed)
 
 topics:
   - name: "OpenAPI specification evolution"

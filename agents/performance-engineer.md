@@ -182,7 +182,7 @@ If `docs/agents/performance-engineer/` or the `## Agent Outputs` section in CLAU
 ```yaml
 enabled: true
 update_policy: propose
-schedule: daily
+schedule: manual  # invoke via /auto-research (no scheduler installed)
 
 topics:
   - name: "Core Web Vitals thresholds and definitions"

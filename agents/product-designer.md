@@ -549,7 +549,7 @@ This block is consumed by the `auto-research` skill. **Currently disabled** — 
 ```yaml
 enabled: false
 update_policy: propose
-schedule: daily
+schedule: manual  # invoke via /auto-research (no scheduler installed)
 
 # TODO (blocked): design Eval Suite + topics — owner: Carlos — defer until: TBD
 topics: []

@@ -340,7 +340,7 @@ This block is consumed by the `auto-research` skill. It defines what this agent 
 ```yaml
 enabled: true
 update_policy: auto-commit  # propose | auto-commit
-schedule: daily
+schedule: manual  # invoke via /auto-research (no scheduler installed)
 
 topics:
   - name: "Critical CVEs in common stacks"

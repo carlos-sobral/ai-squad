@@ -267,7 +267,7 @@ After completing your work, **always** save your output:
 ```yaml
 enabled: false  # blocked: needs eval cases (cases: [] — see comment below)
 update_policy: propose
-schedule: daily
+schedule: manual  # invoke via /auto-research (no scheduler installed)
 
 # Topics defined; enable when an Eval Suite is designed (subjective output —
 # shares design difficulty with product-manager, product-designer, idea-researcher).

@@ -121,7 +121,7 @@ If `docs/agents/qa-engineer/` or the `## Agent Outputs` section in CLAUDE.md don
 ```yaml
 enabled: true
 update_policy: auto-commit
-schedule: daily
+schedule: manual  # invoke via /auto-research (no scheduler installed)
 
 topics:
   - name: "Playwright API and test patterns"

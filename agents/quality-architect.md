@@ -441,7 +441,7 @@ If `docs/agents/quality-architect/` or the `## Agent Outputs` section in CLAUDE.
 ```yaml
 enabled: true
 update_policy: propose
-schedule: daily
+schedule: manual  # invoke via /auto-research (no scheduler installed)
 
 topics:
   - name: "Mutation testing tooling"
