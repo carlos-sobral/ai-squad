@@ -191,4 +191,15 @@ cases:
       Module: settings.
     expect:
       output_contains_any_of: ["blocker", "ambiguous", "cannot test", "measurable"]
+
+  - id: clean-ac-no-overengineering
+    description: "Clean simple AC — agent must produce a focused test, not over-engineer with ceremony (false-positive guard)"
+    input: |
+      EVAL — DO NOT execute tests; produce the test file content only.
+      Acceptance criterion: A user who clicks the "Logout" button is redirected to /login.
+      Module: auth.
+      Stack (CLAUDE.md): Next.js 14 + Playwright. Logout button selector: [data-testid="logout-button"].
+    expect:
+      output_contains_all_of: ["test(", "logout-button", "/login"]
+      output_does_not_contain_any_of: ["beforeAll", "Page Object", "POM", "fixture("]
 ```

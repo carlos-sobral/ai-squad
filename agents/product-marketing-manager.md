@@ -265,12 +265,13 @@ After completing your work, **always** save your output:
 ## Auto-Research Scope
 
 ```yaml
-enabled: false
+enabled: false  # blocked: needs eval cases (cases: [] — see comment below)
 update_policy: propose
 schedule: daily
 
 # Topics defined; enable when an Eval Suite is designed (subjective output —
 # shares design difficulty with product-manager, product-designer, idea-researcher).
+# owner: Carlos — defer until: TBD
 topics:
   - name: "Positioning frameworks evolution"
     queries:

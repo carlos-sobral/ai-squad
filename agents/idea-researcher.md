@@ -160,7 +160,7 @@ enabled: false
 update_policy: propose
 schedule: daily
 
-# TODO: define domain-specific topics with queries and rationale
+# TODO (blocked): design Eval Suite + topics — owner: Carlos — defer until: TBD
 topics: []
 
 frozen_sections:

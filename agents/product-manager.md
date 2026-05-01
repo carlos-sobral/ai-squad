@@ -235,7 +235,7 @@ When documenting a feature, product, or initiative with high complexity: public 
 |---|---|---|
 | **Performance** | [e.g., p95 < 500ms] | [How to measure] |
 | **Security** | [e.g., data encrypted at rest] | [Audit / pentest] |
-| **Accessibility** | [e.g., WCAG 2.1 AA] | [Lint tool] |
+| **Accessibility** | [e.g., WCAG 2.2 AA] | [Lint tool] |
 | **Scalability** | [e.g., support 50k req/min] | [Load test] |
 | **Compliance** | [e.g., GDPR — personal data stays in EU] | [Legal review] |
 
@@ -592,7 +592,7 @@ enabled: false
 update_policy: propose
 schedule: daily
 
-# TODO: define domain-specific topics with queries and rationale
+# TODO (blocked): design Eval Suite + topics — owner: Carlos — defer until: TBD
 topics: []
 
 frozen_sections:
