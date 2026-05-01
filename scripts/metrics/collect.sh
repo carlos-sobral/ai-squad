@@ -206,8 +206,15 @@ compute_cfr() {
     printf 'N/A (no commits in window)'
     return
   fi
+  # Match conventional-commit prefixes that signal a failure to fix:
+  #   revert / hotfix / fix — with or without scope (parens) and with or without
+  #   breaking-change bang (!). Examples matched:
+  #     revert: …          revert!: …          revert(scope): …
+  #     hotfix: …          hotfix(scope): …
+  #     fix: …             fix!: …             fix(scope): …    fix(scope)!: …
+  # NOT matched (intentional): feat:, chore:, docs:, refactor:, test:, etc.
   failures="$(git log --since="$SINCE_GIT" --pretty=format:%s 2>/dev/null \
-    | grep -E "^(revert|hotfix|fix!):" | wc -l | tr -d ' ')"
+    | grep -E "^(revert|hotfix|fix)(\([^)]+\))?!?:" | wc -l | tr -d ' ')"
   if [ "$total" -eq 0 ]; then
     printf 'N/A'
   else
