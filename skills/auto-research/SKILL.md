@@ -1,6 +1,6 @@
 ---
 name: auto-research
-description: "Runs the daily self-improvement loop for an ai-squad agent. Reads the agent's Auto-Research Scope, fetches the latest authoritative sources for each topic, proposes edits to non-frozen sections, validates the change against the agent's Eval Suite, and either commits the improvement or reverts. Inspired by Karpathy's autoresearch pattern: editable asset (the agent prompt) + scalar metric (eval pass rate) + time-boxed cycle (one daily run per agent). Use when the user types /auto-research, when a scheduler triggers it, or when the user asks to refresh an agent's knowledge."
+description: "Runs the self-improvement loop for an ai-squad agent (manual invocation — no scheduler is installed). Reads the agent's Auto-Research Scope, fetches the latest authoritative sources for each topic, proposes edits to non-frozen sections, validates the change against the agent's Eval Suite, and either commits the improvement or reverts. Inspired by Karpathy's autoresearch pattern: editable asset (the agent prompt) + scalar metric (eval pass rate) + time-boxed cycle (one run per agent). Use when the user types /auto-research or asks to refresh an agent's knowledge."
 ---
 
 You are running the **auto-research loop** for one agent in the ai-squad system. Your job is to refresh that agent's knowledge from authoritative public sources, validate the change against its Eval Suite, and either commit the improvement or revert.
@@ -29,8 +29,9 @@ Before starting, verify all of the following. Stop and report if any fail:
 1. The file `~/.claude/agents/{agent_name}.md` exists
 2. The file contains a `## Auto-Research Scope` section with a YAML block where `enabled: true`
 3. The file contains an `## Eval Suite` section with at least one case
-4. `git` is available and the directory is clean enough to commit safely (no unrelated staged changes; if there are, ask before proceeding)
-5. The user is not in the middle of another task that would conflict with the eval invocations
+4. **If `update_policy: auto-commit`, the Eval Suite must contain at least 3 cases.** Auto-commit with fewer cases lacks the statistical margin to detect regressions — abort and require either lowering the policy to `propose` or adding cases first.
+5. `git` is available and the directory is clean enough to commit safely (no unrelated staged changes; if there are, ask before proceeding)
+6. The user is not in the middle of another task that would conflict with the eval invocations
 
 ---
 
@@ -41,8 +42,23 @@ Execute these steps in order. Each step has a clear stopping condition.
 ### Step 1 — Parse the agent's contract
 
 Read `~/.claude/agents/{agent_name}.md` and extract:
-- The full YAML block under `## Auto-Research Scope` (topics, frozen_sections, editable_sections, constraints, update_policy)
+- The full YAML block under `## Auto-Research Scope` (topics, frozen_sections, editable_sections, constraints, update_policy, optional `signal_sources`)
 - The full YAML block under `## Eval Suite` (cases, pass_threshold, judge)
+
+The optional `signal_sources` block declares which real-world signal sources Step 3a should mine. Example:
+
+```yaml
+signal_sources:
+  - team_events           # .claude/team-events/**/events.jsonl
+  - agent_evolution       # docs/agent-evolution/*.md filtered by agent
+  - consistency_reports   # docs/agents/software-architect/*consistency*.md
+  - metrics_history       # docs/metrics/history/*.md
+  - git_failures          # revert/hotfix/fix commits in window
+  # Optional per-agent project paths:
+  # escaped_bugs_dir: docs/incidents
+```
+
+If `signal_sources` is absent, Step 3a is a no-op and the agent only learns from external sources.
 
 Stop if either block is malformed. Do not attempt to fix YAML errors — report them and exit.
 
@@ -64,7 +80,33 @@ Compute `baseline_score = passed_cases / total_cases`.
 
 If `baseline_score < pass_threshold`, **stop**. The agent is already failing its own eval, which means either the eval is broken or the prompt is broken — neither is something this skill should silently paper over. Log the failure and exit.
 
-### Step 3 — Research each topic
+### Step 3 — Gather signals (real-world + external)
+
+Two input streams feed this step. Run both, aggregate findings into a single list, then move to Step 4. External authoritative sources teach the agent about *what is changing in its domain at large*; real-world signals teach it about *what is going wrong (or working) in this specific project's actual use*. The first prevents staleness; the second prevents abstract drift.
+
+#### Step 3a — Real-world signals from the project
+
+If the agent's `Auto-Research Scope > signal_sources` block declares any of the sources below, gather signals from each. Skip any source not declared (or missing). This step is optional — agents without a `signal_sources` block skip it entirely and proceed to Step 3b.
+
+**Available signal sources:**
+
+| Source key | What you read | What you extract |
+|---|---|---|
+| `team_events` | `.claude/team-events/**/events.jsonl` from teams completed since the last auto-research run for this agent | recurring `blocked` events whose payload mentions topics in this agent's scope; `finding` events at severity `blocker`/`critical` |
+| `agent_evolution` | `docs/agent-evolution/*.md` whose `agent:` frontmatter matches the agent under research | the "Rationale" section of each diff — these describe *why* a real blocker happened, the strongest possible signal for what the agent should learn |
+| `consistency_reports` | `docs/agents/software-architect/*consistency*.md` since last run | (c) and (d) classified deviations — they point to spec→code gaps the agent could prevent |
+| `metrics_history` | `docs/metrics/history/*.md` last 3 snapshots | metrics regressing in this agent's lane (e.g., rising rework rate for an implementation agent; rising CFR for a review agent) |
+| `git_failures` | `git log --since="{since-last-run}" --pretty=format:%s` filtered by `^(revert|hotfix|fix)(\([^)]+\))?!?:` | commit subjects that mention topics in this agent's scope (e.g., for `security-engineer`, "fix(auth): ..." or "revert(jwt): ...") |
+| `escaped_bugs` | `docs/incidents/*.md` or equivalent (path declared per project) | post-mortems whose root cause lands in this agent's domain |
+
+**Extraction rules:**
+1. Group signals by recurrence — a single occurrence is noise; **3+ occurrences of the same pattern across the window** is a finding worth proposing.
+2. Each finding must cite at least one concrete file:line or commit SHA from the project (the project itself is the source — no external citation needed for these).
+3. Real-world findings get priority over external findings when they overlap — concrete evidence beats abstract literature.
+
+If a project does not yet have any of these data sources populated, this step is a no-op — the agent learns purely from external sources until usage history accumulates.
+
+#### Step 3b — External authoritative sources
 
 For each topic in `Auto-Research Scope > topics`:
 

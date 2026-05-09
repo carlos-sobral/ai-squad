@@ -163,6 +163,41 @@ Whenever two or more agents can run in parallel, **always** use the TeamCreate +
 
 Always pass `model` explicitly on every Agent call — never rely on the default.
 
+### Persistent event log per team
+
+Every parallel team writes to a shared, append-only event log so the orchestrator (and any human inspecting later) can reconstruct what each teammate did, when, and where it handed off. This is the harness-agnostic equivalent of the "shared filesystem + persistent event tracking" pattern used by industrial multi-agent systems — independent of any specific harness or vendor; it's just a JSONL file.
+
+**Path:** `.claude/team-events/{team_name}/events.jsonl` (relative to the project root). Create on `TeamCreate`, never delete — appended across the team's lifetime.
+
+**Event shape (one JSON object per line):**
+
+```json
+{"ts":"2026-05-09T14:32:00Z","team":"review-team","agent":"security-engineer","event":"started","payload":{"scope":"PR #482"}}
+{"ts":"2026-05-09T14:41:12Z","team":"review-team","agent":"security-engineer","event":"finding","payload":{"severity":"warning","summary":"hardcoded jwt secret in tests/fixtures/auth.ts:14"}}
+{"ts":"2026-05-09T14:55:00Z","team":"review-team","agent":"security-engineer","event":"completed","payload":{"verdict":"approved-with-conditions","blockers":0,"warnings":2}}
+```
+
+**Required event types per teammate:**
+- `started` — at the top of the agent's work; payload includes scope/task summary
+- `completed` — at the end; payload includes verdict + counts (blockers/warnings/findings)
+
+**Recommended event types (write when applicable):**
+- `blocked` — when waiting on input from another teammate or the Tech Lead; payload names the blocker
+- `handoff` — when artifact is passed to another teammate; payload names recipient and artifact path
+- `finding` — for review/qa agents emitting individual findings; payload includes severity + summary
+
+**Write protocol:**
+- Each teammate appends with `>>` (open-append-close per line — no long-held file handles)
+- Use UTC ISO8601 timestamps with `Z` suffix
+- Payload is freeform but schema-stable per `event` type within a project
+
+**Read protocol:**
+- Orchestrator reads the file via `tail` or `cat` to inspect progress without disturbing teammates
+- After `TeamDelete`, the file persists as an audit artifact — do NOT remove
+- Old logs (>90 days) may be archived but not deleted; they feed `auto-research` usage signals (see auto-research's "Real-world signals" input source)
+
+**Why this matters:** tmux split panes give the human visibility while teammates run; the event log gives the *next* orchestrator session (after compaction or resume) the same visibility, and gives `auto-research` real-world data to learn from rather than only synthetic eval cases.
+
 ### Model routing
 
 | Tier | Model | Agents |
@@ -187,6 +222,23 @@ The `sdlc-orchestrator` itself always runs at **opus** — orchestration decisio
 | Ship (first delivery) | `ship-team` | `qa-engineer`, `tech-writer`, `performance-engineer` | First time a module ships — performance-engineer runs gate mode |
 
 For single-agent stages (`software-architect` in spec review / refactor mode, `product-manager`), use a regular foreground Agent call — no team needed. Note: `software-architect` in **code review mode** runs as part of the review-team alongside `security-engineer`.
+
+### Review depth by Risk Surface
+
+The `software-architect` tech spec declares a **Risk Surface Declaration** (see software-architect agent definition, Mode 1 Core outputs). Read it before picking the review-team variant. Risk surfaces *bump* depth above the tier-default:
+
+| Declared surface | Minimum review variant | Notes |
+|---|---|---|
+| `auth`, `permissions`, `secrets / credentials` | **critical** (adds quality-architect) | Permission/auth gaps escape easily and rebuild trust slowly |
+| `payments` | **full** (adds quality-architect + cloud-architect) | Money paths get all eyes |
+| `PII / personal data` | **critical** (adds quality-architect) | Coverage and mutation gates matter for data-handling code |
+| `production-data migration` | **full** | Migrations are one-shot — review must include infra |
+| `public API contract`, `external integration` | **critical** | Contract-breaking changes blast radius outward |
+| `infrastructure / IaC` | **infra** (adds cloud-architect) | Already covered by existing infra-review trigger |
+| `LLM / agent / RAG` | standard + `security-engineer` in `llm-review` mode | Already covered by existing LLM-review automatic trigger |
+| `none — internal change only` | tier-default applies | No bump |
+
+When multiple surfaces are declared, the highest-depth variant wins (e.g., `auth` + `payments` → full). Surface this to the Tech Lead in one line: *"Spec declares `payments` + `PII` — running review-team in full variant."* The Tech Lead can override.
 
 **LLM review mode (automatic trigger):** if the diff touches LLM/agent/RAG code, recommend that `security-engineer` runs in `llm-review` mode in addition to the standard review. Detection signals:
 - Imports of `anthropic`, `openai`, `@anthropic-ai/*`, `@openai/*`, `langchain`, `llama_index`/`llamaindex`, `instructor`, `ollama`
@@ -335,6 +387,7 @@ Use these consistently across all stages:
 - **Keep agent definitions universal.** When proposing additions to agent definitions, strip all project-specific context (library names, field names, config values). The principle goes in the agent definition; the instantiation goes in `docs/engineering-patterns.md`.
 - Carimbe timestamps de gate em `docs/metrics/timeline.log` (silent instrumentation).
 - No fim do retrospective gate, atualize `docs/maturity-assessment.md` se o projeto declara `engineering_metrics.provider` no `## Tooling`.
+- **Survive auto-compaction.** Long orchestration sessions hit the harness's auto-compaction threshold and lose the most recent stage state — what gate is open, which teammates are mid-flight, which retrospective items remain unclassified. To prevent this, the orchestrator persists a compact `state.md` file at `.claude/orchestrator-state/{module-slug}.md` after every stage transition (one-line entries: `[ts] entered <gate>`, `[ts] exited <gate> verdict=<x>`). On session resume after compaction, **read that file before resuming** — it tells you exactly where the flow left off. If the harness supports a PreCompact hook, configure it to refresh the state file before compaction proceeds; if not, write the state synchronously on every transition. The mechanism is portable — it's just a markdown file. The hook is a Claude-Code-specific optimization, not a requirement.
 
 ## Never
 

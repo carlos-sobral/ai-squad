@@ -198,6 +198,97 @@ else:
 '
 }
 
+# ---------- metric: review rework rate ----------
+# Across recently merged PRs, the % of commits pushed AFTER the first
+# approving review. High value = post-approval churn, suggesting reviews
+# don't catch enough or specs are unclear at review time. Lower is better.
+compute_review_rework() {
+  if ! require_cmd gh; then
+    log_warn "gh CLI not available — skipping review rework"
+    printf 'N/A'
+    return
+  fi
+  if ! require_cmd python3; then
+    log_warn "python3 not available — skipping review rework"
+    printf 'N/A'
+    return
+  fi
+  local pr_nums
+  pr_nums="$(gh pr list --state=merged --limit 20 --json number --jq '.[].number' 2>/dev/null)" || {
+    printf 'N/A (gh pr list failed)'
+    return
+  }
+  if [ -z "$pr_nums" ]; then
+    printf 'N/A (no merged PRs)'
+    return
+  fi
+
+  local total_commits=0 rework_commits=0
+  while IFS= read -r n; do
+    [ -z "$n" ] && continue
+    local data
+    data="$(gh pr view "$n" --json reviews,commits 2>/dev/null)" || continue
+    local stats t p
+    stats="$(printf '%s' "$data" | python3 -c '
+import json, sys
+from datetime import datetime
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    print("0 0"); sys.exit()
+reviews = d.get("reviews", []) or []
+commits = d.get("commits", []) or []
+approvals = [r.get("submittedAt") for r in reviews if r.get("state") == "APPROVED" and r.get("submittedAt")]
+total = len(commits)
+if not approvals or not commits:
+    print(f"{total} 0"); sys.exit()
+fa = datetime.fromisoformat(min(approvals).replace("Z","+00:00"))
+post = 0
+for c in commits:
+    cd = c.get("committedDate") or c.get("authoredDate")
+    if not cd:
+        continue
+    try:
+        ct = datetime.fromisoformat(cd.replace("Z","+00:00"))
+        if ct > fa:
+            post += 1
+    except Exception:
+        pass
+print(f"{total} {post}")
+' 2>/dev/null)" || continue
+    t="$(printf '%s' "$stats" | awk '{print $1}')"
+    p="$(printf '%s' "$stats" | awk '{print $2}')"
+    total_commits=$((total_commits + ${t:-0}))
+    rework_commits=$((rework_commits + ${p:-0}))
+  done <<< "$pr_nums"
+
+  if [ "$total_commits" -eq 0 ]; then
+    printf 'N/A'
+  else
+    awk -v r="$rework_commits" -v t="$total_commits" \
+      'BEGIN { printf "%.1f%% (%d/%d post-approval commits)", (r/t)*100, r, t }'
+  fi
+}
+
+# ---------- metric: defect escape rate ----------
+# Of all fix-class commits, what fraction were urgent hotfixes? Hotfixes are
+# defects that slipped past review/qa and needed immediate attention — a
+# higher-confidence signal of escaped defects than ordinary `fix:` commits.
+# Lower is better.
+compute_escape_rate() {
+  local total_fixes hotfixes
+  total_fixes="$(git log --since="$SINCE_GIT" --pretty=format:%s 2>/dev/null \
+    | grep -E "^(hotfix|fix)(\([^)]+\))?!?:" | wc -l | tr -d ' ')"
+  hotfixes="$(git log --since="$SINCE_GIT" --pretty=format:%s 2>/dev/null \
+    | grep -E "^hotfix(\([^)]+\))?!?:" | wc -l | tr -d ' ')"
+  if [ "$total_fixes" -eq 0 ]; then
+    printf 'N/A (no fix-class commits in window)'
+  else
+    awk -v h="$hotfixes" -v t="$total_fixes" \
+      'BEGIN { printf "%.1f%% (%d hotfix / %d fix-class)", (h/t)*100, h, t }'
+  fi
+}
+
 # ---------- metric: change failure rate ----------
 compute_cfr() {
   local total failures
@@ -396,6 +487,8 @@ LEAD_TIME="$(compute_lead_time || echo 'N/A|N/A')"
 LT_P50="${LEAD_TIME%|*}"
 LT_P95="${LEAD_TIME#*|}"
 CFR="$(compute_cfr || echo 'N/A')"
+ESCAPE_RATE="$(compute_escape_rate || echo 'N/A')"
+REVIEW_REWORK="$(compute_review_rework || echo 'N/A')"
 REWORK="$(compute_rework || echo 'N/A')"
 SPEC_FID="$(compute_spec_fidelity || echo 'N/A')"
 CYCLE="$(compute_cycle_time || echo 'N/A')"
@@ -423,6 +516,7 @@ write_report() {
     echo "| Lead Time for Change — p50 | ${LT_P50} |"
     echo "| Lead Time for Change — p95 | ${LT_P95} |"
     echo "| Change Failure Rate | ${CFR} |"
+    echo "| Defect Escape Rate (hotfix / fix-class) | ${ESCAPE_RATE} |"
     echo
     echo "## Family B — Process health"
     echo
@@ -432,6 +526,7 @@ write_report() {
     echo
     echo "| Metric | Value |"
     echo "|---|---|"
+    echo "| Review Rework Rate (post-approval commits) | ${REVIEW_REWORK} |"
     echo "| Spec-Fidelity Rate | ${SPEC_FID} |"
     echo "| Stage Cycle Time | ${CYCLE} |"
     echo
@@ -591,7 +686,7 @@ render_html() {
   parse_previous_snapshot
 
   # Pre-compute badges
-  local lt_p50_badge lt_p95_badge cfr_badge
+  local lt_p50_badge lt_p95_badge cfr_badge escape_badge review_rework_badge
   # Lead time thresholds: p50 green<=24h(1d), yellow<=72h(3d); p95 green<=72h(3d), yellow<=120h(5d)
   lt_p50_badge="$(html_badge "$LT_P50" "Lead Time p50" 24 72 lower_better)"
   lt_p95_badge="$(html_badge "$LT_P95" "Lead Time p95" 72 120 lower_better)"
@@ -599,6 +694,10 @@ render_html() {
   local cfr_num
   cfr_num="$(printf '%s' "$CFR" | sed 's/[^0-9.]//g' | head -c 10)"
   cfr_badge="$(html_badge "$CFR" "Change Failure Rate" 10 15 lower_better)"
+  # Escape rate thresholds: green<=10%, yellow<=20%
+  escape_badge="$(html_badge "$ESCAPE_RATE" "Defect Escape Rate" 10 20 lower_better)"
+  # Review rework thresholds: green<=15%, yellow<=30%
+  review_rework_badge="$(html_badge "$REVIEW_REWORK" "Review Rework Rate" 15 30 lower_better)"
 
   # Spec fidelity badge (higher_better: green>=85, yellow>=70)
   local specfid_badge
@@ -778,6 +877,7 @@ render_html() {
     <tr class="metric-row"><td class="metric-label">Lead Time for Change — p50</td><td class="metric-value">${lt_p50_badge}</td></tr>
     <tr class="metric-row"><td class="metric-label">Lead Time for Change — p95</td><td class="metric-value">${lt_p95_badge}</td></tr>
     <tr class="metric-row"><td class="metric-label">Change Failure Rate</td><td class="metric-value">${cfr_badge}</td></tr>
+    <tr class="metric-row"><td class="metric-label">Defect Escape Rate <span style="color:#6c757d;font-size:0.8em;">(hotfix / fix-class)</span></td><td class="metric-value">${escape_badge}</td></tr>
   </table>
 </div>
 
@@ -788,6 +888,7 @@ render_html() {
     ${rework_html}
   </div>
   <table>
+    <tr class="metric-row"><td class="metric-label">Review Rework Rate <span style="color:#6c757d;font-size:0.8em;">(post-approval commits)</span></td><td class="metric-value">${review_rework_badge}</td></tr>
     <tr class="metric-row"><td class="metric-label">Spec-Fidelity Rate</td><td class="metric-value">${specfid_badge}</td></tr>
     <tr class="metric-row"><td class="metric-label">Stage Cycle Time</td><td class="metric-value"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.85em;font-weight:600;background:#e9ecef;color:#495057;">${CYCLE}</span></td></tr>
   </table>

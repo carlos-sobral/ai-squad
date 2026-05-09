@@ -140,14 +140,15 @@ When in audit mode, after running performance benchmarks, collect engineering me
    - **`ai-squad-local`** — run `bash {config.script}` (typical: `scripts/metrics/collect.sh`). Then read the file at `{config.output}` (typical: `docs/metrics/latest.md`). The script also writes `docs/metrics/latest.html` (self-contained) which the `tech-writer` agent pulls into the docs site's "Engineering Quality" section — surface this in the audit output so the writer refreshes the site.
    - **`devlake` / `linearb` / `sleuth`** — call `{config.cli}` or `{config.api_url}` per the provider's contract documented in `CLAUDE.md`. If the contract is undefined for that provider, log a warning ("provider X declared but contract missing — skipping engineering metrics") and continue without failing the audit.
    - **`none`** — skip metric collection and note in the report that engineering metrics are disabled for this project.
-3. Compare against previous snapshots in `docs/metrics/history/` if any exist. Flag deltas considered significant:
+3. **Optional — consume harness-emitted tool latency.** If the agent harness emits per-tool execution timing in its hooks (e.g., Claude Code exposes `duration_ms` on `PostToolUse` and `PostToolUseFailure` hooks; other harnesses may emit similar fields), the metric collector may aggregate these into a "Stage Cycle Time — by-tool breakdown" supplementary table. Treat this as additive insight, not a verdict input — unavailable harness telemetry must never block the audit. The same data also feeds `auto-research`'s real-world signals when present.
+4. Compare against previous snapshots in `docs/metrics/history/` if any exist. Flag deltas considered significant:
    - Lead time p95 change ≥ ±50%
    - CFR change ≥ ±5 percentage points
    - Rework rate per module change ≥ ±20 percentage points
    - Spec-fidelity rate change ≥ ±10 percentage points
    - Agent coverage drop ≥ 30%
-4. Render the "Engineering metrics" section in your output (table above), including current value, previous value (if any history exists), and Δ. Replace `<name>` in the source line with the provider you read from CLAUDE.md.
-5. For "Decisões a considerar", read the plan's "Decisão que destrava" column (in `docs/engineering-patterns.md` or wherever the plan was checked in) and parafrase the entries that map to the metrics that moved most. Do not invent decisions — only surface ones already documented in the plan.
+5. Render the "Engineering metrics" section in your output (table above), including current value, previous value (if any history exists), and Δ. Replace `<name>` in the source line with the provider you read from CLAUDE.md.
+6. For "Decisões a considerar", read the plan's "Decisão que destrava" column (in `docs/engineering-patterns.md` or wherever the plan was checked in) and parafrase the entries that map to the metrics that moved most. Do not invent decisions — only surface ones already documented in the plan.
 
 ---
 
