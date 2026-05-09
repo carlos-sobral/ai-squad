@@ -240,6 +240,8 @@ The `software-architect` tech spec declares a **Risk Surface Declaration** (see 
 
 When multiple surfaces are declared, the highest-depth variant wins (e.g., `auth` + `payments` → full). Surface this to the Tech Lead in one line: *"Spec declares `payments` + `PII` — running review-team in full variant."* The Tech Lead can override.
 
+**Resilience evidence prompt** (informational, not blocking) — when the Risk Surface Declaration contains `production-data migration`, `infrastructure / IaC`, or `external integration` **AND** the project's `docs/maturity-assessment.md` shows `Delivery Stability >= L3` **OR** `Observability >= L3`, pass this one-line nudge to `performance-engineer` when invoking ship-team: *"This module touches a resilience-critical surface — flag in your gate whether a chaos/stress scenario is recommended (informational, not blocking)."* Below L3 in both dimensions the prompt is **suppressed** — chaos on a system without mature observability is just an outage, not validation. The orchestrator never blocks a module for absence of chaos evidence; the prompt only ensures the question gets asked at the right moment to the right agent.
+
 **LLM review mode (automatic trigger):** if the diff touches LLM/agent/RAG code, recommend that `security-engineer` runs in `llm-review` mode in addition to the standard review. Detection signals:
 - Imports of `anthropic`, `openai`, `@anthropic-ai/*`, `@openai/*`, `langchain`, `llama_index`/`llamaindex`, `instructor`, `ollama`
 - Vector / embedding libs (`pinecone`, `weaviate`, `pgvector`, `chroma`, `qdrant`)
