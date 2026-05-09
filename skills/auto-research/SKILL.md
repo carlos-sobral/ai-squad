@@ -29,9 +29,11 @@ Before starting, verify all of the following. Stop and report if any fail:
 1. The file `~/.claude/agents/{agent_name}.md` exists
 2. The file contains a `## Auto-Research Scope` section with a YAML block where `enabled: true`
 3. The file contains an `## Eval Suite` section with at least one case
-4. **If `update_policy: auto-commit`, the Eval Suite must contain at least 3 cases.** Auto-commit with fewer cases lacks the statistical margin to detect regressions — abort and require either lowering the policy to `propose` or adding cases first.
-5. `git` is available and the directory is clean enough to commit safely (no unrelated staged changes; if there are, ask before proceeding)
-6. The user is not in the middle of another task that would conflict with the eval invocations
+4. **Each case has either `expect` or `rubric`, never both.** If a case has both, abort — the schemas are exclusive and mixing them is undefined.
+5. **If any case uses `rubric`, the `Eval Suite > judge` field must be set** (e.g., `judge: claude-opus-4-7`). Rubric grading without a declared judge is undefined; abort.
+6. **If `update_policy: auto-commit`, the Eval Suite must contain at least 3 cases.** Auto-commit with fewer cases lacks the statistical margin to detect regressions — abort and require either lowering the policy to `propose` or adding cases first.
+7. `git` is available and the directory is clean enough to commit safely (no unrelated staged changes; if there are, ask before proceeding)
+8. The user is not in the middle of another task that would conflict with the eval invocations
 
 ---
 
@@ -67,14 +69,25 @@ Stop if either block is malformed. Do not attempt to fix YAML errors — report 
 Before any edit, run the Eval Suite on the **current** prompt to establish a baseline:
 
 For each case in `Eval Suite > cases`:
-1. Spawn the target agent as a subagent (`Agent` tool with `subagent_type: {agent_name}`) and pass the case's `input` as the only diff/code to review. Frame the prompt so the agent treats it as a normal review request.
+1. Spawn the **agent under test** as a subagent (`Agent` tool with `subagent_type: {agent_name}`) and pass the case's `input` as the only diff/code to review. Frame the prompt so the agent treats it as a normal review request. This is the **doer**.
 2. Capture the agent's output (the findings it produced).
-3. Apply the case's `expect` rules to determine pass/fail:
+3. **Grade the output.** A case has either `expect` (rule-based grading) or `rubric` (LLM-as-judge grading) — never both. Apply whichever is present:
+
+   **Rule-based grading (`expect` block — default for binary, structured outputs):**
    - If `expect.severity` is set: the output must contain a finding at that severity level **and** the finding must cite at least one category from `expect.categories_any_of` (case-insensitive substring match).
    - If `expect.severity_max` is set: the output must contain **no** finding above that severity (used for clean-code false-positive cases).
    - If `expect.verdict` is set: the agent's verdict line must match (`approved`, `approved-with-conditions`, or `blocked`).
+   - If `expect.verdict_contains` is set: the verdict line must contain that substring (case-sensitive).
+   - If `expect.output_contains_any_of` is set: the output must contain at least one of the listed substrings (case-insensitive).
    - All applicable rules must hold for the case to pass.
-4. Record `case_id → pass | fail` and the reasoning.
+
+   **LLM-as-judge grading (`rubric` block — for subjective outputs where rules don't fit):**
+   - Spawn a **fresh subagent** as the **grader** (`Agent` tool with `subagent_type: general-purpose` or whatever the `Eval Suite > judge` field declares). The grader is a different invocation with **no access to the doer's thread or reasoning** — it sees only the doer's final output. This isolation is the entire point: the doer can't argue with its own grader.
+   - The grader's prompt has exactly three parts: (a) the case input the doer was given, (b) the doer's output verbatim, (c) the case's `rubric.criteria` list. No other context.
+   - Each criterion is phrased as a **specific, falsifiable question** (e.g., "Does the output identify the SQL injection on line 14?") — not a subjective question (avoid "is the response good?"). The grader returns one YES/NO per criterion plus a one-sentence reason.
+   - The case passes if `count(YES) >= rubric.threshold` (default: all criteria must hold; explicit threshold optional).
+   - The grader's full output (criterion-by-criterion verdicts + reasons) is appended to the run log so a human can audit any failed case.
+4. Record `case_id → pass | fail`, the grading method used (`expect` or `rubric`), and the reasoning.
 
 Compute `baseline_score = passed_cases / total_cases`.
 
@@ -203,8 +216,11 @@ When invoked with `all`:
 - **Never** invent findings. If web search returns nothing of value, the run produces no edits — that is fine.
 - **Never** make destructive git operations beyond `git checkout -- {single file}` for revert. No reset, no force, no branch operations.
 - **Never** commit unrelated changes. If the working tree is dirty before the run, ask before proceeding.
+- **Never** let the doer and the grader share context. When a case uses `rubric`, the grader must be a fresh subagent invocation seeded only with: the case input, the doer's output, and the rubric criteria. The grader does not see the doer's reasoning, the auto-research log, or the agent prompt. Sharing context defeats the entire purpose — the doer would effectively be grading itself.
+- **Never** phrase a rubric criterion as a subjective question ("is this good?", "is the response high-quality?"). Every criterion must be a falsifiable yes/no question pointing at a specific, observable property of the output.
 - **Always** include source URLs in the diff itself, not just the log.
 - **Always** report regressions explicitly so the human can investigate why the new content degraded performance.
+- **Always** log the grader's per-criterion verdicts when `rubric` was used, so a human can audit any failed case without re-running the eval.
 
 ---
 
@@ -215,3 +231,54 @@ When invoked with `all`:
 - **Web search returns the same content every day:** topic queries may be too narrow; surface as a hint to broaden them.
 - **Constraint cap (500 lines) hit:** likely over-eager edits; reject and log so a human can review what was attempted.
 - **Net no-op runs:** several days in a row with "no edits proposed" is healthy if the domain is stable, but if it persists for weeks, the topic queries may need refresh.
+- **Rubric grader always says YES on every criterion:** likely the criteria are too easy or too vague — surface as T3 escalation candidate for the audit skill. A grader that never finds a problem is not validating anything.
+- **Rubric grader produces wildly inconsistent verdicts on identical inputs across runs:** suggests the criteria are too subjective. Tighten the phrasing or move the case to `expect`-based grading.
+
+---
+
+## Eval Suite schema reference
+
+A case uses **either** `expect` (rule-based) **or** `rubric` (LLM-as-judge) — never both. Choose based on the agent's output shape:
+
+- **`expect`** — for agents whose output has structured, machine-checkable properties (severity levels, verdicts, named categories, presence of specific strings). Examples: `security-engineer` (finds-vuln-X-at-severity-Y), `performance-engineer` (verdict PASS/FAIL).
+- **`rubric`** — for agents whose output is subjective enough that no rule can capture quality. Examples: `product-manager` (PRD completeness), `product-designer` (UX flow soundness), `software-architect` (tech-spec design quality).
+
+```yaml
+## Eval Suite
+
+pass_threshold: 0.7
+judge: claude-opus-4-7   # required when ANY case uses `rubric`
+
+cases:
+  # Rule-based grading (expect) — preferred when output has structure
+  - id: sql-injection-detected
+    description: "Agent must flag SQLi at high severity in injection-vulnerable code"
+    input: |
+      Review this Express handler:
+      app.get('/users', (req, res) => {
+        db.query(`SELECT * FROM users WHERE name = '${req.query.name}'`);
+      });
+    expect:
+      severity: high
+      categories_any_of: [injection, sqli, sql injection]
+
+  # Rubric grading — for subjective outputs
+  - id: prd-covers-edge-cases
+    description: "PRD for refund flow must address the documented edge cases"
+    input: |
+      Write a PRD for a feature that lets users request a refund within 30 days
+      of purchase, with manual review for refunds over $500.
+    rubric:
+      threshold: 3   # at least 3 of 4 criteria must hold; default = all
+      criteria:
+        - "Does the PRD enumerate at least one edge case for orders that would partially refund (e.g., used-in-part subscription, returned-after-30-days)?"
+        - "Does the PRD specify what happens when manual review takes longer than the SLA?"
+        - "Does the PRD declare which user role can initiate refunds (customer self-service vs. CS agent only)?"
+        - "Does the PRD include success metrics for refund processing time?"
+```
+
+**Rubric design rules:**
+- Phrase every criterion as a yes/no question pointing at a specific property of the output.
+- Avoid "is the X good/clear/comprehensive?" — those are subjective and the grader's verdict will drift across runs.
+- 3-6 criteria per case is the sweet spot. Fewer = the case grades too coarse. More = the grader's reliability degrades.
+- The `threshold` is optional. If absent, all criteria must hold. Set explicitly when you want the case to be tolerant of one missing criterion.
