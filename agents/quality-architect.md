@@ -466,6 +466,11 @@ topics:
       - "defect leakage measurement 2026"
     why: "Classification frameworks anchor RCA quality"
 
+signal_sources:
+  - team_events           # quality blockers + qa findings
+  - consistency_reports   # (c)/(d) deviations point directly at quality gaps
+  - agent_evolution       # past quality-classified blockers
+
 frozen_sections:
   - "Operating modes"
   - "Output format"

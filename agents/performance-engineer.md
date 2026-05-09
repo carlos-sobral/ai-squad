@@ -208,6 +208,11 @@ topics:
       - "browser performance observer API 2026"
     why: "New web APIs enable better field-data diagnosis"
 
+signal_sources:
+  - team_events           # perf findings during ship-team gates
+  - metrics_history       # rising rework / regressing perf trends point at recurring failure modes
+  - agent_evolution       # past perf-classified blockers
+
 frozen_sections:
   - "Required inputs"
   - "Severity definitions"

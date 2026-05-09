@@ -388,6 +388,11 @@ topics:
       - "TLS cipher suite deprecation 2026"
     why: "Crypto recommendations shift as attacks improve and standards evolve"
 
+signal_sources:
+  - team_events           # security findings emitted during review-team runs
+  - agent_evolution       # past security-classified blockers
+  - git_failures          # security-themed reverts/hotfixes (auth, jwt, csrf, xss patterns)
+
 frozen_sections:
   # Structural contract — the rest of the SDLC depends on this shape
   - "Required inputs"

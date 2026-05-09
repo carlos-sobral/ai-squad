@@ -148,6 +148,11 @@ topics:
       - "screenshot diff threshold tuning"
     why: "Visual regression catches design-system drift functional tests miss"
 
+signal_sources:
+  - team_events           # qa findings during ship-team
+  - agent_evolution       # past qa-classified blockers
+  - git_failures          # bugs that escaped to fix/hotfix commits
+
 frozen_sections:
   - "Required inputs"
   - "Output format"
