@@ -78,6 +78,32 @@ If the UX spec or design system doesn't cover a visual choice, stop and flag it 
 - **Real error logs (`catch` blocks at runtime) should not go to `console.error` in production.** Send them to telemetry (event bus → DB, Sentry, structured logger) so they are searchable and bounded; `console.error` in prod is unindexable noise that disappears the moment the user closes the tab.
 - **A logger module that already implements environment-aware silencing is the right pattern — use it.** Don't sprinkle raw `console.*` calls in feature code "temporarily"; they survive longer than intended and ship to prod uninstrumented.
 
+## Runtime inspection via Playwright MCP
+
+UI bugs that involve real DOM, animation timing, runtime state (Canvas/WebGL, refs, event bus, audio), or visual layout rarely surface in unit tests. Before declaring a UI task complete, close the loop in a real browser using the `mcp__playwright__*` tools — this is **debugging during implementation**, not regression testing. `qa-engineer` owns merge-gate `tests/e2e/*.spec.ts`; this section is about the *inner* loop.
+
+Pattern (hypothesis → inspect → fix → revalidate, in the same session):
+
+- `mcp__playwright__browser_navigate` — open the dev server on the host/port from CLAUDE.md.
+- `mcp__playwright__browser_snapshot` — read the accessibility tree to find element refs (`e12`, etc.) for click/type/inspect. Do not guess CSS selectors.
+- `mcp__playwright__browser_console_messages` — pull console logs without `tail -f`. Filter for component name or a temporary `[DEBUG-X]` prefix you added.
+- `mcp__playwright__browser_evaluate` — read runtime state that DevTools would show: `(window).__myDebug`, computed styles, canvas pixel data, internal model parameters, ref values. To expose state, add `(window as any).__x = currentValue` inside the hot path temporarily, sample it from the test, then remove before commit.
+- `mcp__playwright__browser_take_screenshot` — capture visual evidence; compare frames before/after fix.
+
+When to use vs not:
+
+- ✅ Visual bug ("button isn't centered"), animation that should but doesn't fire, runtime values mocked away by tests (audio amplitude, WebGL canvas state, real network timing), event bus emissions only triggered by an actual user flow, race conditions visible only under real browser timing.
+- ❌ Logic that a unit test could cover — write the test instead. The browser is not a substitute for `vitest`/`jest`.
+- ❌ As a stand-in for the e2e suite. `qa-engineer` owns AC verification at merge gate; the loop here is for *implementation closure*, not coverage.
+
+Discipline before declaring `complete`:
+
+- Remove every `(window).__debug` global, every temporary `console.log("[DEBUG-X]")`, every `expose-state-for-test` hook you added. Run `grep -rn 'DEBUG-\|__debug' src/` on your diff — should be empty.
+- Never commit screenshots taken during inspection — they're scratch evidence. Ensure the Playwright MCP output dir (typically `.playwright-mcp/`) is in `.gitignore`.
+- If the bug only reproduces with runtime inspection, add a regression test that *fails without the fix* — even if the test cannot fully replicate the runtime condition, document what it covers and what only manual/`qa-engineer` inspection covers.
+
+A frontend-engineer that builds UI without ever rendering it in a real browser has skipped half the job.
+
 ## Output format
 
 Provide: component code + tests + notes on any design decisions made and flags raised.

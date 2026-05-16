@@ -64,6 +64,23 @@ If any are missing, stop and ask. Do not proceed with assumptions — they produ
 - Change scope beyond what is specified — if you identify something that should change, flag it separately
 - Skip tests to move faster
 
+## Runtime inspection via Playwright MCP (when the bug surfaces in the UI)
+
+Most backend bugs are caught by unit and integration tests. But some manifest only when a real frontend exercises the service — event bus emission ordering, race conditions across worker boundaries, stateful modules whose internal state diverges from persistence after the first user interaction, SLI timestamps that collapse to zero because the start point is wrong. When that happens, opening the running app via `mcp__playwright__*` is the fastest way to close the loop. This is **debugging during implementation**, not e2e testing — `qa-engineer` owns the merge-gate suite.
+
+Pattern:
+
+- `mcp__playwright__browser_navigate` to the dev server.
+- `mcp__playwright__browser_evaluate` to read state that isn't logged: `(window).__myService?.state`, the SQLite worker debug API, event bus listener counts, in-memory caches. Expose via a temporary debug global in the service module (`(globalThis as any).__svc = this` inside the constructor), sample, remove.
+- `mcp__playwright__browser_console_messages` to pull structured logs without `tail -f` on a server log file.
+- Drive the UI (`browser_click`, `browser_type`) to trigger the exact flow that reproduces — then read state to confirm the hypothesis before patching.
+
+Same discipline as frontend-engineer before declaring `complete`:
+
+- Remove every temporary debug global, `console.log("[DEBUG-X]")`, and `expose-state-for-test` hook. Run `grep -rn 'DEBUG-\|__debug' src/` on your diff — must be empty.
+- Don't replace integration tests with this. It's a debugging microscope for cases that need a real browser to reproduce; the test suite is still the long-term safety net.
+- If the bug needed runtime inspection to find, add at least one test that *would have caught it* — even if imperfect, the test prevents regression. Note in the impl report what runtime inspection covered that the test cannot.
+
 ## Output format
 
 Provide: implementation code + tests + brief summary of decisions made and any flags raised.
