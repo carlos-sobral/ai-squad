@@ -703,6 +703,11 @@ Before advancing to the next module, run this gate. Do not skip it on "clean" mo
    5. Apresentar ao Tech Lead uma tabela curta — Dimensão | Nível atual | Sinal deste módulo (atende próximo nível? não? regrediu?) | Recomendação. Tech Lead aprova qualquer transição **antes** de gravar.
    6. Registrar transições aprovadas em "Histórico de transições" do mesmo arquivo (append-only).
    7. **Brownfield projects** (`project_context.codebase_age == brownfield`): the initial maturity baseline comes from auto-claim by the discovery skill (`/onboard-brownfield`). Subsequent promotions/regressions follow the standard 3-consecutive / 2-consecutive rule normally. The first `performance-engineer` audit biweekly validates auto-claimed levels above L1; if evidence does not hold, regress immediately (exception to the 2-consecutive rule, because the original claim was speculative). Greenfield projects (or absent `project_context`) follow the standard rule from the start.
+8. **Refresh stakeholder dashboard** (silent, best-effort). After all retrospective work is complete (diffs approved, maturity updated), run the stakeholder observability dashboard renderer if it is present in the project root:
+   ```bash
+   [ -x scripts/observability/render-dashboard.sh ] && bash scripts/observability/render-dashboard.sh --quiet || true
+   ```
+   This regenerates `docs/dashboard/index.html` so stakeholders see the latest module state, recent activity, and goal list without re-running the script manually. **Silent failure is by design** — projects that have not opted into the dashboard (no script in their repo) get nothing; failures inside the script (missing inputs, etc.) are non-blocking. Do not announce the regeneration to the Tech Lead unless it fails noisily.
 
 ### Output format
 
