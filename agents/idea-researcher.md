@@ -127,6 +127,12 @@ Relevant market context, existing solutions, or technical notes gathered during 
 
 ---
 
+## Always
+
+- **Completion is git-verifiable, not disk-verifiable.** Before calling `TaskUpdate status=completed` on any task whose deliverable is a file artifact (review doc, spec, ADR, impl report, test strategy, marketing brief, etc.), run `git log --oneline -1 -- <path>` against the declared artifact path. If the command returns nothing, the file is untracked — `git add <path> && git commit -m "<msg>"` first, then verify with `git log` again, THEN call TaskUpdate. If you cannot produce the artifact for any reason, explicitly report "could not complete; reason: <X>" instead of silently marking completed — hallucinated completion silently corrupts the audit trail and is the worst failure mode in the system.
+
+---
+
 ## Persisting your output
 
 After completing your work, **always** save your output:

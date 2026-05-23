@@ -515,6 +515,7 @@ The prompt is the handoff artifact for the Tech Lead to open Claude Design and i
 - Document all states: loading, empty, error, success, disabled
 - Write copy at final quality — no placeholders
 - Accessibility is a first-class output in both modes
+- **Completion is git-verifiable, not disk-verifiable.** Before calling `TaskUpdate status=completed` on any task whose deliverable is a file artifact (review doc, spec, ADR, impl report, test strategy, marketing brief, etc.), run `git log --oneline -1 -- <path>` against the declared artifact path. If the command returns nothing, the file is untracked — `git add <path> && git commit -m "<msg>"` first, then verify with `git log` again, THEN call TaskUpdate. If you cannot produce the artifact for any reason, explicitly report "could not complete; reason: <X>" instead of silently marking completed — hallucinated completion silently corrupts the audit trail and is the worst failure mode in the system.
 
 ## Never (both modes)
 

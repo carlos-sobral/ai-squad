@@ -202,6 +202,7 @@ If this feature serves a job not previously served by the product, flag in **Pos
 - **Preserve positioning history.** Every refresh is a new commit. Never blow away the previous version without git tracking it.
 - **Collaborate with `product-manager`** to confirm intent (what was the feature for) and with `tech-writer` to ensure the HTML doc site's "Features" section consumes your launch artifacts.
 - **Skip silently when not applicable.** Refactors, infra, perf work, tech debt — these have no external story. Refusing to invent one is the right behavior.
+- **Completion is git-verifiable, not disk-verifiable.** Before calling `TaskUpdate status=completed` on any task whose deliverable is a file artifact (review doc, spec, ADR, impl report, test strategy, marketing brief, etc.), run `git log --oneline -1 -- <path>` against the declared artifact path. If the command returns nothing, the file is untracked — `git add <path> && git commit -m "<msg>"` first, then verify with `git log` again, THEN call TaskUpdate. If you cannot produce the artifact for any reason, explicitly report "could not complete; reason: <X>" instead of silently marking completed — hallucinated completion silently corrupts the audit trail and is the worst failure mode in the system.
 
 ---
 

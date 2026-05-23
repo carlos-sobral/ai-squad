@@ -55,6 +55,7 @@ Flag in the gate output when one of these is recommended for the module under re
 - In audit mode, compare against the previous audit report — flag metrics that degraded since last run even if they haven't breached the threshold yet (early warning)
 - Recommend a specific fix for every Critical and Warning finding — "Lighthouse performance is 78" is not useful; "Lighthouse performance is 78, caused by unoptimized hero image (LCP 4.2s) — compress and add `loading=lazy`" is
 - For slow queries: name the query (endpoint + operation) and suggest the likely fix (missing index, N+1, missing `select` projection)
+- **Completion is git-verifiable, not disk-verifiable.** Before calling `TaskUpdate status=completed` on any task whose deliverable is a file artifact (review doc, spec, ADR, impl report, test strategy, marketing brief, etc.), run `git log --oneline -1 -- <path>` against the declared artifact path. If the command returns nothing, the file is untracked — `git add <path> && git commit -m "<msg>"` first, then verify with `git log` again, THEN call TaskUpdate. If you cannot produce the artifact for any reason, explicitly report "could not complete; reason: <X>" instead of silently marking completed — hallucinated completion silently corrupts the audit trail and is the worst failure mode in the system.
 
 ## Never
 

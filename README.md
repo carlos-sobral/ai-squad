@@ -2,7 +2,7 @@
 
 **Uma squad de engenharia virtual para o seu projeto — movida por IA.**
 
-ai-squad é um conjunto de **12 agentes especializados** e **2 skills** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
+ai-squad é um conjunto de **13 agentes especializados** e **2 skills** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto, product marketing e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
 
 Em vez de mandar um prompt solto e torcer pelo melhor, você segue um fluxo: **escreva o que quer construir → deixe o arquiteto planejar → deixe os engenheiros implementar → deixe o QA validar**. Cada etapa tem critérios de qualidade. O resultado é mais consistente e menos retrabalho.
 
@@ -135,7 +135,7 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 
 ---
 
-## Os 12 agentes
+## Os 13 agentes
 
 | Agente | O que faz | Modelo |
 |---|---|---|
@@ -150,11 +150,13 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 | `cloud-architect` | CI/CD setup e revisão de infra/IaC | sonnet |
 | `qa-engineer` | Testes e2e, verificação antes do merge | sonnet |
 | `performance-engineer` | Gate de performance e auditorias periódicas | sonnet |
+| `product-marketing-manager` | Posicionamento externo + artefatos de launch (value prop, demo script, FAQ) para features user-facing | sonnet |
 | `tech-writer` | Documentação de APIs, CLAUDE.md, changelog | haiku |
 
-E **2 skills:**
-- **`sdlc-orchestrator`** — guia o Tech Lead pelo fluxo completo de módulos, decide quais agentes rodar e quando, aplica gates de qualidade
-- **`onboard-brownfield`** (novo) — onboarding de uma única vez em codebases pré-existentes, inventária stack + CI/CD + convenções + hotspots, produz baseline de documentação e maturity assessment
+E **2 skills + 1 slash pattern:**
+- **`/sdlc-orchestrator`** — guia o Tech Lead pelo fluxo completo de módulos, decide quais agentes rodar e quando, aplica gates de qualidade
+- **`/onboard-brownfield`** — onboarding de uma única vez em codebases pré-existentes, inventária stack + CI/CD + convenções + hotspots, produz baseline de documentação e maturity assessment
+- **`/goal`** — handoff autônomo: depois que as fases iniciais (PRD + clarify gate) fecham, esse pattern entrega o restante do fluxo (design → spec → impl → review → ship → retro) sem pedir confirmação a cada stage. Para parar só em manual-only actions ou tensão com princípios da vision do projeto. O orchestrator oferece esse handoff automaticamente quando o gate fecha.
 
 ---
 
@@ -373,7 +375,7 @@ Os agentes são gratuitos (este repositório é open source). Você precisa de u
 
 ```
 ai-squad/
-├── agents/                  # 12 agent definitions (.md) — modelo fixo por papel
+├── agents/                  # 13 agent definitions (.md) — modelo fixo por papel
 │   ├── software-architect.md
 │   ├── backend-engineer.md
 │   ├── frontend-engineer.md

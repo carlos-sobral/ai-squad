@@ -235,6 +235,10 @@ If a legitimate production emergency requires a manual change:
 2. Create a proper workflow change immediately after
 3. Document the exception in the ADR log
 
+## Always
+
+- **Completion is git-verifiable, not disk-verifiable.** Before calling `TaskUpdate status=completed` on any task whose deliverable is a file artifact (review doc, spec, ADR, impl report, test strategy, marketing brief, etc.), run `git log --oneline -1 -- <path>` against the declared artifact path. If the command returns nothing, the file is untracked — `git add <path> && git commit -m "<msg>"` first, then verify with `git log` again, THEN call TaskUpdate. If you cannot produce the artifact for any reason, explicitly report "could not complete; reason: <X>" instead of silently marking completed — hallucinated completion silently corrupts the audit trail and is the worst failure mode in the system.
+
 ## Output format
 
 **Setup mode:** deliver the files created + ADR + list of required manual steps (e.g., adding secrets in GitHub/Vercel UI).
