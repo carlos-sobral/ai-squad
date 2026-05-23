@@ -1,0 +1,2718 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ai-squad — Squad de engenharia virtual movida por IA</title>
+<meta name="description" content="ai-squad é um framework spec-driven com 13 agentes especializados pra Claude Code: do PRD ao deploy, com gates de qualidade automáticos.">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --bg-card: #ffffff;
+    --bg-code: #f5f3ef;
+    --text: #1a1a1a;
+    --text-muted: #6b6b6b;
+    --text-faint: #9a9a9a;
+    --border: #e5e2dc;
+    --border-strong: #c8c4bc;
+    --accent: #2563eb;
+    --accent-dark: #1e40af;
+    --accent-soft: #dbeafe;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --purple: #7c3aed;
+    --teal: #0d9488;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono {
+    font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Nav */
+  nav.topnav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(250, 250, 247, 0.92);
+    backdrop-filter: saturate(180%) blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+  }
+  nav.topnav .wrap {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; align-items: center; gap: 24px;
+    flex-wrap: wrap;
+  }
+  nav.topnav .brand {
+    font-weight: 700; font-size: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  nav.topnav .brand .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  nav.topnav .links { display: flex; gap: 20px; font-size: 14px; }
+  nav.topnav .links a { color: var(--text-muted); }
+  nav.topnav .links a:hover { color: var(--text); text-decoration: none; }
+  nav.topnav .repo {
+    margin-left: auto; font-size: 13px;
+    padding: 6px 12px; border: 1px solid var(--border-strong);
+    border-radius: 6px; color: var(--text);
+  }
+  nav.topnav .repo:hover { background: var(--bg-card); text-decoration: none; }
+
+  /* Hero */
+  .hero {
+    max-width: 1100px; margin: 0 auto;
+    padding: 80px 24px 60px;
+  }
+  .hero h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.1; font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+  .hero h1 .accent { color: var(--accent); }
+  .hero .lead {
+    font-size: 19px; color: var(--text-muted);
+    max-width: 680px; margin-bottom: 32px;
+  }
+  .hero .lead strong { color: var(--text); font-weight: 600; }
+  .hero-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px; max-width: 720px;
+  }
+  .stat {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px;
+  }
+  .stat .n {
+    font-size: 28px; font-weight: 700; color: var(--text);
+    line-height: 1; margin-bottom: 6px;
+  }
+  .stat .l { font-size: 13px; color: var(--text-muted); }
+
+  /* Section */
+  section.block {
+    max-width: 1100px; margin: 0 auto;
+    padding: 56px 24px;
+    border-top: 1px solid var(--border);
+  }
+  section.block h2 {
+    font-size: 28px; font-weight: 700; letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  section.block .subtitle {
+    color: var(--text-muted); margin-bottom: 32px;
+    max-width: 720px;
+  }
+
+  /* Flow diagram */
+  .flow {
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .flow-stage {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 22px;
+    position: relative;
+  }
+  .flow-stage .stage-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 12px;
+  }
+  .flow-stage .stage-tag {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px;
+    background: var(--accent-soft); color: var(--accent-dark);
+  }
+  .flow-stage .stage-tag.optional {
+    background: #f5f3ef; color: var(--text-muted);
+  }
+  .flow-stage h3 {
+    font-size: 17px; font-weight: 600;
+  }
+  .flow-stage .stage-desc {
+    color: var(--text-muted); font-size: 14px; margin-bottom: 12px;
+  }
+  .flow-stage .stage-agents {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .agent-chip {
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px; padding: 4px 10px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+  }
+  .agent-chip.parallel {
+    border-color: var(--purple);
+    background: #f5f0ff;
+    color: var(--purple);
+  }
+  .flow-arrow {
+    text-align: center; color: var(--text-faint);
+    font-size: 18px; line-height: 1;
+  }
+
+  /* Agents grid */
+  .agents-filter {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+  }
+  .filter-btn {
+    background: var(--bg-card); border: 1px solid var(--border-strong);
+    border-radius: 20px; padding: 6px 14px; font-size: 13px;
+    color: var(--text-muted); cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .filter-btn:hover { color: var(--text); border-color: var(--text-muted); }
+  .filter-btn.active {
+    background: var(--text); color: var(--bg);
+    border-color: var(--text);
+  }
+  .agents-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .agent-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .agent-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  }
+  .agent-card .head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 8px; gap: 8px;
+  }
+  .agent-card .name {
+    font-family: "JetBrains Mono", monospace; font-size: 14px;
+    font-weight: 600; color: var(--text);
+  }
+  .agent-card .model {
+    font-size: 10px; padding: 2px 6px; border-radius: 4px;
+    font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .agent-card .model.opus { background: #f3e8ff; color: #6b21a8; }
+  .agent-card .model.sonnet { background: #dbeafe; color: #1e40af; }
+  .agent-card .model.haiku { background: #dcfce7; color: #166534; }
+  .agent-card .one-liner {
+    font-size: 13px; color: var(--text-muted);
+    line-height: 1.5; margin-bottom: 10px;
+  }
+  .agent-card .stages {
+    display: flex; gap: 4px; flex-wrap: wrap;
+  }
+  .agent-card .stage-pill {
+    font-size: 10px; padding: 2px 7px; border-radius: 10px;
+    background: var(--bg-code); color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .agent-modal {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .agent-modal-content {
+    background: var(--bg); border-radius: 14px;
+    max-width: 640px; width: 100%; max-height: 85vh;
+    overflow-y: auto;
+    padding: 28px 32px;
+    border: 1px solid var(--border);
+  }
+  .agent-modal h3 {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 20px; margin-bottom: 4px;
+  }
+  .agent-modal .desc {
+    font-size: 14px; color: var(--text-muted); margin-bottom: 20px;
+  }
+  .agent-modal h4 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-faint); margin: 16px 0 8px;
+  }
+  .agent-modal ul { padding-left: 20px; font-size: 14px; }
+  .agent-modal ul li { margin-bottom: 4px; }
+  .agent-modal .close {
+    position: absolute; top: 14px; right: 18px;
+    background: none; border: none; font-size: 22px;
+    color: var(--text-muted); cursor: pointer;
+  }
+
+  /* Disciplines */
+  .disciplines-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .discipline {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px;
+  }
+  .discipline .icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 12px;
+  }
+  .discipline h3 {
+    font-size: 17px; font-weight: 600; margin-bottom: 6px;
+  }
+  .discipline p {
+    font-size: 14px; color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .discipline .who {
+    font-size: 12px; font-family: monospace;
+    color: var(--text-faint);
+    padding-top: 10px; border-top: 1px dashed var(--border);
+  }
+
+  /* Example walkthrough */
+  .example-intro {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px 24px;
+    margin-bottom: 24px;
+  }
+  .example-intro h3 {
+    font-size: 18px; margin-bottom: 8px;
+  }
+  .example-intro p {
+    color: var(--text-muted); font-size: 14px;
+  }
+  .example-intro .meta {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px dashed var(--border);
+    font-size: 13px;
+  }
+  .example-intro .meta span { color: var(--text-muted); }
+  .example-intro .meta strong { color: var(--text); }
+
+  .walkthrough { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: grid; grid-template-columns: 80px 1fr;
+    gap: 0;
+    position: relative;
+  }
+  .step .gutter {
+    position: relative;
+    padding-top: 24px;
+  }
+  .step .gutter .num {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg-card); border: 2px solid var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: var(--text-muted);
+    position: relative; z-index: 2;
+  }
+  .step .gutter .line {
+    position: absolute;
+    left: 17px; top: 60px; bottom: -8px;
+    width: 2px; background: var(--border);
+    z-index: 1;
+  }
+  .step:last-child .gutter .line { display: none; }
+  .step .body {
+    padding: 16px 0 32px 16px;
+  }
+  .step .body .agent-line {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 6px; flex-wrap: wrap;
+  }
+  .step .body .agent-line .agent-name {
+    font-family: "JetBrains Mono", monospace; font-size: 14px;
+    font-weight: 600;
+  }
+  .step .body .agent-line .arrow { color: var(--text-faint); }
+  .step .body .step-title {
+    font-size: 17px; font-weight: 600; margin-bottom: 6px;
+  }
+  .step .body .step-context {
+    font-size: 14px; color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+  .artifact {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .artifact-head {
+    background: rgba(0,0,0,0.03);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    font-size: 12px; font-family: monospace;
+    color: var(--text-muted);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .artifact-head .tag {
+    font-size: 10px; padding: 2px 7px; border-radius: 3px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.06em; font-weight: 600;
+  }
+  .artifact pre {
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .artifact pre .com { color: #6b6b6b; font-style: italic; }
+  .artifact pre .key { color: #7c3aed; font-weight: 600; }
+  .artifact pre .ok { color: var(--success); }
+  .artifact pre .bad { color: var(--danger); }
+  .artifact pre .warn { color: var(--warning); }
+  .artifact pre .accent { color: var(--accent); }
+
+  .step .gate {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 10px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .step .gate .gate-icon { font-size: 16px; }
+  .step .gate strong { color: #92400e; }
+
+  /* Setup */
+  .setup-steps {
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  .setup-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+  }
+  .setup-card .n {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--text); color: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; margin-bottom: 10px;
+  }
+  .setup-card h3 { font-size: 16px; margin-bottom: 8px; }
+  .setup-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+  .setup-card pre {
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 10px;
+    font-size: 12px; overflow-x: auto;
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--text-muted); font-size: 13px;
+  }
+  footer a { color: var(--text-muted); }
+
+  /* Utility */
+  .pill {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 4px; font-size: 11px;
+    background: var(--accent-soft); color: var(--accent-dark);
+    font-weight: 600;
+  }
+
+  /* Approach section */
+  .approach-block { margin-bottom: 48px; }
+  .approach-block:last-child { margin-bottom: 0; }
+  .approach-block h3 {
+    font-size: 20px; font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .approach-block > p {
+    color: var(--text-muted); font-size: 15px;
+    margin-bottom: 20px; max-width: 760px;
+  }
+  .approach-block > p strong { color: var(--text); font-weight: 600; }
+
+  /* Loop diagram */
+  .loop-diagram {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 28px 18px;
+    display: flex; align-items: flex-start; justify-content: center;
+    gap: 4px; overflow-x: auto;
+  }
+  .loop-step {
+    text-align: center; flex-shrink: 0;
+    width: 130px;
+  }
+  .loop-step .ls-icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 8px; font-size: 18px;
+  }
+  .loop-step .ls-label {
+    font-size: 13px; font-weight: 700;
+    color: var(--text); margin-bottom: 6px;
+  }
+  .loop-step .ls-desc {
+    font-size: 11.5px; color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .loop-arrow {
+    color: var(--text-faint); font-size: 18px;
+    flex-shrink: 0; padding: 22px 4px 0;
+  }
+  .loop-arrow.loopback {
+    color: var(--accent); font-weight: 700;
+  }
+
+  /* Versus */
+  .versus {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  .versus-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px 24px;
+    display: flex; flex-direction: column;
+  }
+  .versus-card.spec-driven {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, #eff6ff 0%, var(--bg-card) 60%);
+  }
+  .versus-card .v-head {
+    margin-bottom: 14px;
+  }
+  .versus-card h4 {
+    font-size: 17px; font-weight: 700;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .versus-card.spec-driven h4 { color: var(--accent-dark); }
+  .versus-card .v-tagline {
+    font-size: 13px; color: var(--text-muted);
+    font-family: "JetBrains Mono", monospace;
+  }
+  .versus-card .v-list {
+    list-style: none; padding: 0; margin: 0 0 14px;
+    flex-grow: 1;
+  }
+  .versus-card .v-list li {
+    font-size: 13.5px; padding: 4px 0;
+    display: flex; gap: 8px; align-items: flex-start;
+    line-height: 1.5;
+  }
+  .versus-card .v-list li::before {
+    flex-shrink: 0; font-weight: 700; font-size: 14px;
+    line-height: 1.5;
+  }
+  .versus-card .v-list li.pro::before { content: "+"; color: var(--success); }
+  .versus-card .v-list li.con::before { content: "−"; color: var(--danger); }
+  .versus-card .v-ideal {
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+    font-size: 13px;
+  }
+  .versus-card .v-ideal strong { color: var(--text); }
+
+  /* Maturity */
+  .maturity-levels {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  }
+  .maturity-level {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 16px;
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .maturity-level.current {
+    border-color: var(--accent); border-width: 2px;
+    background: linear-gradient(180deg, #eff6ff 0%, var(--bg-card) 70%);
+  }
+  .maturity-level .level-tag {
+    font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; font-weight: 700;
+    color: var(--text-faint); margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .maturity-level.current .level-tag { color: var(--accent-dark); }
+  .maturity-level .level-tag .here {
+    background: var(--accent); color: white;
+    padding: 2px 7px; border-radius: 10px;
+    font-size: 9px;
+  }
+  .maturity-level h4 {
+    font-size: 15px; font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .maturity-level .level-tagline {
+    font-size: 11.5px; color: var(--text-muted);
+    font-family: "JetBrains Mono", monospace;
+    margin-bottom: 10px; line-height: 1.4;
+  }
+  .maturity-level .level-desc {
+    font-size: 13px; color: var(--text);
+    margin-bottom: 12px; line-height: 1.5;
+    flex-grow: 1;
+  }
+  .maturity-level .level-stat {
+    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 1px dashed var(--border);
+    font-size: 12px;
+  }
+  .maturity-level .level-stat:first-of-type {
+    margin-top: 0;
+  }
+  .maturity-level .level-stat .lbl {
+    color: var(--text-faint);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    font-weight: 600; font-size: 10px;
+    margin-bottom: 3px;
+  }
+  .maturity-level .level-stat.change .lbl { color: var(--accent); }
+  .maturity-level .level-stat.benefit .lbl { color: var(--success); }
+  .maturity-level .level-stat .val {
+    color: var(--text); line-height: 1.5;
+  }
+  .maturity-level .level-stat .val strong {
+    color: var(--text); font-weight: 700;
+  }
+
+  /* Persona line (in agent modal) */
+  .agent-modal .persona-line {
+    font-size: 13.5px;
+    color: var(--accent-dark);
+    font-style: italic;
+    padding: 10px 14px;
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  /* Specs grid */
+  .specs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  .spec-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px;
+  }
+  .spec-card .sc-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .spec-card .sc-icon {
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+  .spec-card h4 {
+    font-size: 14px; font-weight: 700;
+    color: var(--text);
+  }
+  .spec-card .sc-purpose {
+    font-size: 13px; color: var(--text-muted);
+    margin-bottom: 10px; line-height: 1.5;
+  }
+  .spec-card .sc-meta {
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+    font-size: 11.5px;
+    font-family: "JetBrains Mono", monospace;
+    color: var(--text-faint);
+    line-height: 1.6;
+  }
+  .spec-card .sc-meta .sc-key {
+    color: var(--text-muted); font-weight: 600;
+  }
+  .spec-card .sc-meta code {
+    color: var(--text); background: var(--bg-code);
+    padding: 1px 4px; border-radius: 3px;
+  }
+
+  /* Human checkpoints */
+  .checkpoints {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 8px 0;
+  }
+  .checkpoint {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 14px;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .checkpoint:last-child { border-bottom: none; }
+  .checkpoint .cp-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #fef3c7;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+  }
+  .checkpoint.gate .cp-icon { background: #fde68a; }
+  .checkpoint.start .cp-icon { background: var(--accent-soft); }
+  .checkpoint .cp-body h4 {
+    font-size: 14px; font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .checkpoint .cp-body p {
+    font-size: 13px; color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .checkpoint .cp-tag {
+    font-size: 10px; padding: 3px 8px; border-radius: 4px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .checkpoint.gate .cp-tag { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  .checkpoint.start .cp-tag { background: var(--accent-soft); color: var(--accent-dark); border-color: var(--accent); }
+
+  /* TL;DR no hero */
+  .tldr {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 28px;
+    max-width: 760px;
+  }
+  .tldr-row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 14px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+    align-items: baseline;
+  }
+  .tldr-row:last-child { border-bottom: none; }
+  .tldr-row .tldr-key {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--accent-dark);
+  }
+  .tldr-row .tldr-val {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* Limitações */
+  .limits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .limit-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--warning);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .limit-card .l-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: #fef3c7; color: #92400e;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; margin-bottom: 10px;
+  }
+  .limit-card h3 {
+    font-size: 15px; font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .limit-card p {
+    font-size: 13.5px; color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .limit-card p strong { color: var(--text); }
+
+  /* FAQ */
+  .faq { display: flex; flex-direction: column; gap: 8px; }
+  .faq-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .faq-item.open { border-color: var(--border-strong); }
+  .faq-q {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 16px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: inherit;
+  }
+  .faq-q:hover { background: var(--bg-code); }
+  .faq-chev {
+    color: var(--text-faint); font-size: 20px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .faq-chev.rot { transform: rotate(90deg); color: var(--accent); }
+  .faq-a {
+    padding: 0 20px 18px;
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .faq-a p { margin-bottom: 8px; }
+  .faq-a p:last-child { margin-bottom: 0; }
+  .faq-a code {
+    background: var(--bg-code); padding: 1px 5px;
+    border-radius: 3px; color: var(--text);
+    font-size: 12.5px;
+  }
+
+  /* Backlog */
+  .backlog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+  }
+  .backlog-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--purple);
+    border-radius: 10px;
+    padding: 22px 24px;
+  }
+  .backlog-card .bc-icon {
+    width: 38px; height: 38px; border-radius: 8px;
+    background: #f5f0ff; color: var(--purple);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 12px;
+  }
+  .backlog-card h3 {
+    font-size: 17px; font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .backlog-card > p {
+    font-size: 14px; color: var(--text-muted);
+    line-height: 1.5; margin-bottom: 14px;
+  }
+  .backlog-card .bc-meta {
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+    font-size: 12.5px; color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .backlog-card .bc-meta .bc-key {
+    color: var(--text); font-weight: 600;
+  }
+  .backlog-pointer {
+    font-size: 13px; color: var(--text-muted);
+    margin-top: 18px; padding: 14px 18px;
+    background: var(--bg-card); border: 1px dashed var(--border-strong);
+    border-radius: 8px;
+    max-width: none;
+  }
+  .backlog-pointer code {
+    color: var(--text); background: var(--bg-code);
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  /* Human marker in walkthrough steps */
+  .human-touch {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .human-touch .ht-icon { font-size: 13px; }
+
+  @media (max-width: 900px) {
+    .versus { grid-template-columns: 1fr; }
+    .maturity-levels { grid-template-columns: repeat(2, 1fr); }
+    .loop-diagram { padding: 20px 12px; }
+    .loop-step { width: 110px; }
+    .loop-step .ls-icon { width: 38px; height: 38px; font-size: 16px; }
+    .loop-step .ls-label { font-size: 12px; }
+    .loop-step .ls-desc { font-size: 10.5px; }
+    .loop-arrow { padding-top: 19px; }
+    .checkpoint { grid-template-columns: 44px 1fr; padding: 12px 16px; }
+    .checkpoint .cp-tag { grid-column: 2; justify-self: start; margin-top: 4px; }
+  }
+  @media (max-width: 500px) {
+    .maturity-levels { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px) {
+    .hero { padding: 48px 20px 40px; }
+    section.block { padding: 40px 20px; }
+    .step { grid-template-columns: 56px 1fr; }
+    .step .gutter .num { width: 30px; height: 30px; font-size: 13px; }
+    .step .gutter .line { left: 14px; }
+  }
+</style>
+</head>
+<body x-data="aiSquadDocs()" x-cloak>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="#top" class="brand"><span class="dot"></span>ai-squad</a>
+    <div class="links">
+      <a href="#approach">Abordagem</a>
+      <a href="#flow">Fluxo</a>
+      <a href="#agents">Agentes</a>
+      <a href="#example">Exemplo</a>
+      <a href="#backlog">Backlog</a>
+      <a href="#faq">FAQ</a>
+      <a href="#start">Começar</a>
+    </div>
+    <a href="https://github.com/carlos-sobral/ai-squad" class="repo" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</nav>
+
+<header id="top" class="hero">
+  <h1>Uma <span class="accent">squad de engenharia virtual</span> pro seu projeto.</h1>
+  <p class="lead">
+    ai-squad é um framework <strong>spec-driven</strong> pra Claude Code: 13 agentes especializados — arquiteto, PM, designer, backend, frontend, QA, security, tech writer — orquestrados por uma skill que conduz o fluxo do <em>"tenho uma ideia"</em> até o merge na main, com gates de qualidade aplicados nos pontos certos.
+  </p>
+
+  <div class="tldr">
+    <div class="tldr-row">
+      <span class="tldr-key">O que muda</span>
+      <span class="tldr-val">Agentes especializados por papel + gates automáticos (security, perf, QA, docs) + spec antes do código + processo se auto-melhora a cada módulo via retrospective.</span>
+    </div>
+    <div class="tldr-row">
+      <span class="tldr-key">Pra quem</span>
+      <span class="tldr-val">Time produzindo código long-lived em produção — com requisitos de segurança, perf, multi-pessoa e manutenção previsível.</span>
+    </div>
+    <div class="tldr-row">
+      <span class="tldr-key">Quando NÃO usar</span>
+      <span class="tldr-val">Weekend hack, script que vai rodar uma vez, exploração solo de ideia — vibecoding resolve mais rápido nesses casos.</span>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat"><div class="n">13</div><div class="l">agentes especializados</div></div>
+    <div class="stat"><div class="n">1</div><div class="l">orquestrador (skill)</div></div>
+    <div class="stat"><div class="n">6</div><div class="l">estágios do fluxo SDLC</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">gates de qualidade automáticos</div></div>
+  </div>
+</header>
+
+<!-- ========================= A ABORDAGEM ========================= -->
+<section class="block" id="approach">
+  <h2>A abordagem</h2>
+  <p class="subtitle">
+    ai-squad é uma <em>escolha de processo</em>, não só uma coleção de prompts melhores. Vale entender o porquê antes do como — e onde isso se encaixa no espectro de jeitos de codar com IA hoje.
+  </p>
+
+  <!-- Block 1: Spec-driven explained -->
+  <div class="approach-block">
+    <h3>Spec-driven com agentes especializados</h3>
+    <p>
+      <strong>Spec-driven</strong> significa que o artefato primário é a <em>especificação</em>, não o código. PRD captura o problema e os critérios de aceite. Tech spec captura a solução técnica e os contratos. O código vem depois, como execução da spec — e pode ser regerado se a spec mudar.
+    </p>
+    <p>
+      <strong>Agentes especializados</strong> significa que cada papel é um agente diferente, com seu próprio prompt, modelo (Opus pra raciocínio, Sonnet pra execução, Haiku pra docs) e gatilho. Ninguém é generalista. Quem orquestra é uma skill (<code>/sdlc-orchestrator</code>) que conhece o fluxo, decide quem entra quando, e aplica os gates de qualidade.
+    </p>
+    <p>
+      O loop fica assim:
+    </p>
+    <div class="loop-diagram">
+      <div class="loop-step">
+        <div class="ls-icon">🎯</div>
+        <div class="ls-label">Intenção</div>
+        <div class="ls-desc">Você descreve o problema em linguagem natural ao orchestrator</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step">
+        <div class="ls-icon">📋</div>
+        <div class="ls-label">Specs</div>
+        <div class="ls-desc">PRD + UX spec + tech spec escritas e aprovadas antes de qualquer código</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step">
+        <div class="ls-icon">🤖</div>
+        <div class="ls-label">Agentes</div>
+        <div class="ls-desc">Engineers especialistas implementam — em paralelo quando dá (tmux teammates)</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step">
+        <div class="ls-icon">🚦</div>
+        <div class="ls-label">Gates</div>
+        <div class="ls-desc">Security, perf, consistency e QA bloqueiam ou liberam o merge</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step">
+        <div class="ls-icon">🚀</div>
+        <div class="ls-label">Ship</div>
+        <div class="ls-desc">Merge na main com docs, CHANGELOG e OpenAPI atualizados no mesmo PR</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step">
+        <div class="ls-icon">🔄</div>
+        <div class="ls-label">Retrô</div>
+        <div class="ls-desc">Blockers do módulo viram diffs nos agentes ou no CLAUDE.md</div>
+      </div>
+      <div class="loop-arrow loopback">↺</div>
+    </div>
+    <p style="font-size: 13px; color: var(--text-faint); margin-top: 10px; max-width: 760px;">
+      A retrospective fecha o loop: os blockers de cada módulo viram diffs nos agentes ou no <code>CLAUDE.md</code>. A squad fica mais rápida módulo a módulo — não fica parada.
+    </p>
+  </div>
+
+  <!-- Block: Onde o humano entra -->
+  <div class="approach-block">
+    <h3>Onde o humano entra</h3>
+    <p>
+      Autonomia agentic não significa "humano fora do loop". O Tech Lead (você) é <strong>o approver em pontos específicos</strong> — não micro-gerencia, mas decide nos checkpoints onde julgamento humano importa. Tudo o que não está marcado aqui, os agentes resolvem entre si.
+    </p>
+    <div class="checkpoints">
+
+      <div class="checkpoint start">
+        <div class="cp-icon">🎯</div>
+        <div class="cp-body">
+          <h4>Start — dispara o orquestrador</h4>
+          <p>Você descreve a intenção em linguagem natural ("preciso de X porque Y"). Orchestrator classifica o tier (T1/T2/T3) e propõe o fluxo.</p>
+        </div>
+        <div class="cp-tag">obrigatório</div>
+      </div>
+
+      <div class="checkpoint">
+        <div class="cp-icon">👤</div>
+        <div class="cp-body">
+          <h4>Aprova o PRD</h4>
+          <p>PM entrega o PRD. Você lê, ajusta non-goals se quiser, valida que os critérios de aceite são os certos. Sem aprovação, não vira tech spec.</p>
+        </div>
+        <div class="cp-tag">decisão</div>
+      </div>
+
+      <div class="checkpoint gate">
+        <div class="cp-icon">⚑</div>
+        <div class="cp-body">
+          <h4>Clarify gate — responde top-5 ambiguidades</h4>
+          <p>Pós-PRD, orchestrator levanta as 5 maiores ambiguidades antes da tech spec. Você responde uma vez; o arquiteto não precisa adivinhar depois.</p>
+        </div>
+        <div class="cp-tag">gate</div>
+      </div>
+
+      <div class="checkpoint">
+        <div class="cp-icon">👤</div>
+        <div class="cp-body">
+          <h4>Aprova UX spec + tech spec</h4>
+          <p>Designer e arquiteto entregam suas specs. Você revisa, sugere ajustes ou aprova. ADRs com trade-offs materiais ficam em destaque pra sua atenção.</p>
+        </div>
+        <div class="cp-tag">decisão</div>
+      </div>
+
+      <div class="checkpoint">
+        <div class="cp-icon">👁️</div>
+        <div class="cp-body">
+          <h4>Acompanha implementação</h4>
+          <p>Engineers rodam em painéis tmux paralelos. Você vê o progresso em tempo real mas <em>não interrompe</em> a menos que algo dê errado. Eles param e perguntam se a spec tem buraco.</p>
+        </div>
+        <div class="cp-tag">opcional</div>
+      </div>
+
+      <div class="checkpoint gate">
+        <div class="cp-icon">🔒</div>
+        <div class="cp-body">
+          <h4>Decide sobre security findings</h4>
+          <p>Security-engineer reporta findings classificados (HIGH/MED/LOW). HIGH bloqueia merge automaticamente. MED você decide: corrige agora ou abre issue pra próximo sprint.</p>
+        </div>
+        <div class="cp-tag">gate</div>
+      </div>
+
+      <div class="checkpoint gate">
+        <div class="cp-icon">📐</div>
+        <div class="cp-body">
+          <h4>Aceita consistency-check classification</h4>
+          <p>Arquiteto compara PRD ↔ spec ↔ diff e classifica deltas (aligned / minor drift / divergent / undefined). Você decide o que aceitar e o que voltar pro engineer.</p>
+        </div>
+        <div class="cp-tag">gate</div>
+      </div>
+
+      <div class="checkpoint">
+        <div class="cp-icon">✓</div>
+        <div class="cp-body">
+          <h4>Aprova merge final</h4>
+          <p>QA verdes, security limpa, docs em dia, consistency aceita. Orchestrator pede o merge. Você confirma — é o último checkpoint antes do código entrar na main.</p>
+        </div>
+        <div class="cp-tag">decisão</div>
+      </div>
+
+      <div class="checkpoint">
+        <div class="cp-icon">🔄</div>
+        <div class="cp-body">
+          <h4>Retrospective — aprova diffs pros agentes</h4>
+          <p>Pós-merge, orchestrator classifica blockers do módulo e propõe diffs (em agentes, CLAUDE.md, ADRs). Você aprova um a um. <strong>Sem isto, a squad não fica mais rápida.</strong></p>
+        </div>
+        <div class="cp-tag">decisão</div>
+      </div>
+
+    </div>
+    <p style="font-size: 13px; color: var(--text-faint); margin-top: 14px; max-width: 760px;">
+      <strong>Resumo:</strong> 5 decisões (start + PRD + specs + merge + retro) + 3 gates (clarify + security + consistency) + acompanhamento opcional da impl. Em T1 hotfix, vários checkpoints viram silenciosos — o orchestrator avisa quais.
+    </p>
+  </div>
+
+  <!-- Block 3: Maturity model -->
+  <div class="approach-block">
+    <h3>Modelo de maturidade — onde isso se encaixa</h3>
+    <p>
+      Pensando em IA aplicada a desenvolvimento de software como uma escala de maturidade (inspirado em CMMI, mas adaptado pra o contexto agentic), dá pra ver 4 níveis. A progressão não é "L1 ruim, L4 bom" — é <strong>"qual nível serve qual caso"</strong>. ai-squad é o ferramental pra operar no L4 quando o problema pede.
+    </p>
+    <div class="maturity-levels">
+
+      <div class="maturity-level">
+        <div class="level-tag">Nível 1</div>
+        <h4>Vibecoding</h4>
+        <div class="level-tagline">prompt-and-pray</div>
+
+        <div class="level-stat">
+          <div class="lbl">O que é</div>
+          <div class="val">IA gera código por intuição a partir de prompt solto. Sem spec, sem revisão sistemática, sem testes. Você aceita o que vier.</div>
+        </div>
+
+        <div class="level-stat benefit">
+          <div class="lbl">Benefícios colhidos</div>
+          <div class="val">Velocidade máxima em exploração. Zero fricção de processo. Ideal pra protótipo descartável, script solo, weekend hack.</div>
+        </div>
+      </div>
+
+      <div class="maturity-level">
+        <div class="level-tag">Nível 2</div>
+        <h4>AI-assisted dev</h4>
+        <div class="level-tagline">copilot + chat</div>
+
+        <div class="level-stat">
+          <div class="lbl">O que é</div>
+          <div class="val">IDE com tab completions (Copilot, Cursor) e chat lateral pra snippets. Humano segue como driver principal; IA assiste localmente.</div>
+        </div>
+
+        <div class="level-stat change">
+          <div class="lbl">O que muda do N1</div>
+          <div class="val">IA deixa de ser autora solo. Vira <strong>assistente local</strong> sob revisão humana. Cada sugestão passa pelo seu olho antes de virar código.</div>
+        </div>
+
+        <div class="level-stat benefit">
+          <div class="lbl">Benefícios colhidos</div>
+          <div class="val">Velocidade individual sem perder controle arquitetural. Code review continua sendo humano. Funciona em qualquer codebase sem setup.</div>
+        </div>
+      </div>
+
+      <div class="maturity-level">
+        <div class="level-tag">Nível 3</div>
+        <h4>Single-agent execution</h4>
+        <div class="level-tagline">um agente, um prompt</div>
+
+        <div class="level-stat">
+          <div class="lbl">O que é</div>
+          <div class="val">Um agente generalista (Claude Code, Cursor agent mode) implementa feature inteira a partir de prompt detalhado. Humano revisa o diff final.</div>
+        </div>
+
+        <div class="level-stat change">
+          <div class="lbl">O que muda do N2</div>
+          <div class="val">IA volta a ser autora — mas agora com <strong>contexto multi-arquivo</strong> e iteração agentic (roda tools, lê código, testa). Você descreve a feature, ela vai e faz.</div>
+        </div>
+
+        <div class="level-stat benefit">
+          <div class="lbl">Benefícios colhidos</div>
+          <div class="val">Features inteiras entregues por prompt. Tech Lead deixa de escrever código repetitivo — vira revisor. Salto grande de velocidade em features de complexidade média.</div>
+        </div>
+      </div>
+
+      <div class="maturity-level current">
+        <div class="level-tag">
+          Nível 4
+          <span class="here">você está aqui</span>
+        </div>
+        <h4>Multi-agent SDD</h4>
+        <div class="level-tagline">spec-driven orchestrated</div>
+
+        <div class="level-stat">
+          <div class="lbl">O que é</div>
+          <div class="val">Agentes especializados por papel (PM, designer, arquiteto, eng, QA, security, docs). Orquestrador aplica gates. Retrospective evolui o próprio processo.</div>
+        </div>
+
+        <div class="level-stat change">
+          <div class="lbl">O que muda do N3</div>
+          <div class="val"><strong>Especialização</strong> em vez de generalista. <strong>Gates automáticos</strong> (security, perf, QA, docs) embutidos no fluxo. <strong>Spec como artefato primário</strong> antes de código. <strong>Aprendizado entre módulos</strong> via retrospective.</div>
+        </div>
+
+        <div class="level-stat benefit">
+          <div class="lbl">Benefícios colhidos</div>
+          <div class="val">Código long-lived produzível por agentes sem virar dívida. Disciplinas garantidas (não opcionais). Sistema fica mais rápido módulo a módulo. Multi-pessoa consegue colaborar sobre o mesmo código.</div>
+        </div>
+      </div>
+
+    </div>
+    <p style="font-size: 13px; color: var(--text-faint); margin-top: 16px; max-width: 760px;">
+      Detalhe importante: você não <em>precisa</em> escolher um nível e ficar nele. Time/projeto maduros usam L4 pro código de produção e L1 pra hackar um script de migração que vai rodar uma vez. A maturidade é em <strong>saber quando usar qual</strong>.
+    </p>
+  </div>
+
+</section>
+
+<!-- ========================= O FLUXO ========================= -->
+<section class="block" id="flow">
+  <h2>O fluxo, de ponta a ponta</h2>
+  <p class="subtitle">
+    Você não chama agente por agente. Roda <code>/sdlc-orchestrator</code> e ele guia: triagem do tier (T1 hotfix / T2 feature / T3 módulo), decide quais agentes entram, paraleliza onde dá, aplica os gates. Estágios em <span class="pill">opcional</span> entram só quando o módulo exige.
+  </p>
+
+  <div class="flow">
+
+    <div class="flow-stage">
+      <div class="stage-head">
+        <span class="stage-tag optional">setup — 1x por projeto</span>
+        <h3>Fundação</h3>
+      </div>
+      <div class="stage-desc">CI/CD, design system e contexto de codebase. Roda só uma vez na vida do projeto (ou na chegada de um codebase brownfield).</div>
+      <div class="stage-agents">
+        <span class="agent-chip">cloud-architect</span>
+        <span class="agent-chip">product-designer</span>
+        <span class="agent-chip">onboard-brownfield</span>
+      </div>
+    </div>
+
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-stage">
+      <div class="stage-head">
+        <span class="stage-tag optional">opcional</span>
+        <h3>Discovery</h3>
+      </div>
+      <div class="stage-desc">Quando a ideia ainda está vaga. Vira pergunta estruturada, depois PRD com critérios de aceite testáveis.</div>
+      <div class="stage-agents">
+        <span class="agent-chip">idea-researcher</span>
+        <span class="agent-chip">product-manager</span>
+      </div>
+    </div>
+
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-stage">
+      <div class="stage-head">
+        <span class="stage-tag">design</span>
+        <h3>UX + Tech Spec</h3>
+      </div>
+      <div class="stage-desc">Telas, fluxos e copy (se tem UI). Tech spec com contratos de API, schema, ADRs, contrato de observabilidade. <strong>Clarify gate</strong> levanta top-5 ambiguidades antes de escrever spec.</div>
+      <div class="stage-agents">
+        <span class="agent-chip">product-designer</span>
+        <span class="agent-chip">software-architect</span>
+      </div>
+    </div>
+
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-stage">
+      <div class="stage-head">
+        <span class="stage-tag">implementação</span>
+        <h3>Backend + Frontend em paralelo</h3>
+      </div>
+      <div class="stage-desc">Engenheiros implementam contra a spec aprovada. Quando ambos rodam, viram <strong>teammates</strong> com painéis tmux separados — você acompanha em tempo real.</div>
+      <div class="stage-agents">
+        <span class="agent-chip parallel">backend-engineer ⇆</span>
+        <span class="agent-chip parallel">⇆ frontend-engineer</span>
+      </div>
+    </div>
+
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-stage">
+      <div class="stage-head">
+        <span class="stage-tag">revisão</span>
+        <h3>Gates antes do merge</h3>
+      </div>
+      <div class="stage-desc">Code review contra spec, security review (OWASP/CWE/ASVS), perf gate na primeira entrega. <strong>Consistency-check gate</strong> classifica deltas em 5 classes: aligned / minor drift / divergent / undefined / legacy preservation.</div>
+      <div class="stage-agents">
+        <span class="agent-chip">software-architect</span>
+        <span class="agent-chip">security-engineer</span>
+        <span class="agent-chip">performance-engineer</span>
+        <span class="agent-chip">quality-architect</span>
+      </div>
+    </div>
+
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-stage">
+      <div class="stage-head">
+        <span class="stage-tag">entrega</span>
+        <h3>QA, docs, merge</h3>
+      </div>
+      <div class="stage-desc">QA roda happy path + edge cases via Playwright. Tech-writer atualiza docs e CHANGELOG (documentação é gate, não afterthought). PMM gera posicionamento se for feature user-facing.</div>
+      <div class="stage-agents">
+        <span class="agent-chip">qa-engineer</span>
+        <span class="agent-chip">tech-writer</span>
+        <span class="agent-chip">product-marketing-manager</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========================= AGENTES ========================= -->
+<section class="block" id="agents">
+  <h2>Os 13 agentes</h2>
+  <p class="subtitle">
+    Cada agente é um <em>especialista</em> com modelo fixo (Opus pra raciocínio profundo, Sonnet pra execução, Haiku pra docs) e gatilho claro. Clica num card pra ver o que ele produz, quando entra e com quem se conecta.
+  </p>
+
+  <div class="agents-filter">
+    <button class="filter-btn" :class="{ active: stageFilter === 'all' }" @click="stageFilter = 'all'">Todos</button>
+    <button class="filter-btn" :class="{ active: stageFilter === 'discovery' }" @click="stageFilter = 'discovery'">Discovery</button>
+    <button class="filter-btn" :class="{ active: stageFilter === 'design' }" @click="stageFilter = 'design'">Design</button>
+    <button class="filter-btn" :class="{ active: stageFilter === 'impl' }" @click="stageFilter = 'impl'">Implementação</button>
+    <button class="filter-btn" :class="{ active: stageFilter === 'review' }" @click="stageFilter = 'review'">Revisão</button>
+    <button class="filter-btn" :class="{ active: stageFilter === 'delivery' }" @click="stageFilter = 'delivery'">Entrega</button>
+  </div>
+
+  <div class="agents-grid">
+    <template x-for="agent in filteredAgents()" :key="agent.name">
+      <div class="agent-card" @click="openAgent = agent">
+        <div class="head">
+          <div class="name" x-text="agent.name"></div>
+          <div class="model" :class="agent.model" x-text="agent.model"></div>
+        </div>
+        <div class="one-liner" x-text="agent.oneLiner"></div>
+        <div class="stages">
+          <template x-for="s in agent.stages">
+            <span class="stage-pill" x-text="stageLabel(s)"></span>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Agent modal -->
+  <div class="agent-modal" x-show="openAgent" @click.self="openAgent = null" x-cloak>
+    <div class="agent-modal-content" x-show="openAgent" style="position: relative;">
+      <button class="close" @click="openAgent = null">×</button>
+      <template x-if="openAgent">
+        <div>
+          <h3 x-text="openAgent.name"></h3>
+          <div class="persona-line" x-text="openAgent.persona"></div>
+          <div class="desc" x-text="openAgent.fullDesc"></div>
+
+          <h4>Quando rodar</h4>
+          <ul>
+            <template x-for="t in openAgent.triggers"><li x-text="t"></li></template>
+          </ul>
+
+          <h4>O que produz</h4>
+          <ul>
+            <template x-for="o in openAgent.outputs"><li x-text="o"></li></template>
+          </ul>
+
+          <template x-if="openAgent.modes">
+            <div>
+              <h4>Modos</h4>
+              <ul>
+                <template x-for="m in openAgent.modes"><li x-text="m"></li></template>
+              </ul>
+            </div>
+          </template>
+
+          <h4>Conecta com</h4>
+          <ul>
+            <template x-for="c in openAgent.connects"><li x-text="c"></li></template>
+          </ul>
+        </div>
+      </template>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= DISCIPLINAS ========================= -->
+<section class="block" id="disciplines">
+  <h2>Disciplinas distintivas</h2>
+  <p class="subtitle">
+    Práticas que não aparecem como capability individual de agente no grid acima — são <em>cross-cutting</em>, aplicadas automaticamente em pontos específicos do fluxo. Gates clássicos (security, perf, QA, consistency-check) você já viu em ação no exemplo.
+  </p>
+
+  <div class="disciplines-grid">
+
+    <div class="discipline">
+      <div class="icon" style="background: #dbeafe;">🎚️</div>
+      <h3>Tier triage (T1/T2/T3)</h3>
+      <p>Profundidade calibrada ao escopo: T1 hotfix pula etapas, T2 feature tem fluxo padrão, T3 módulo deep. Orchestrator triages na entrada — você não decide manualmente quanto processo aplicar a cada caso.</p>
+      <div class="who">sdlc-orchestrator</div>
+    </div>
+
+    <div class="discipline">
+      <div class="icon" style="background: #fee2e2;">🔒</div>
+      <h3>Security review com modo LLM</h3>
+      <p>OWASP Top 10:2021, API Top 10:2023, CWE Top 25:2024, ASVS 4.0, NIST SSDF. Quando o diff toca código de LLM/agent/RAG, modo extra contra OWASP LLM Top 10:2025 — prompt injection, training data poisoning, model DoS.</p>
+      <div class="who">security-engineer</div>
+    </div>
+
+    <div class="discipline">
+      <div class="icon" style="background: #e0e7ff;">🔭</div>
+      <h3>Observabilidade contratada</h3>
+      <p>Tech spec T2+ exige SLI/SLO + event schema + 2 alertas (1 SLO burn + 1 symptom). Pós-deploy +15min, validação automática de saúde: query analytics + alertas + SLO ok. Observabilidade não é "depois" — é parte da spec.</p>
+      <div class="who">software-architect • cloud-architect</div>
+    </div>
+
+    <div class="discipline">
+      <div class="icon" style="background: #fed7aa;">📚</div>
+      <h3>Docs como gate (cold-reader)</h3>
+      <p>OpenAPI, runbooks, CLAUDE.md, CHANGELOG, site de docs. Não opcional — bloqueia merge. Sub-agente "cold reader" lê os docs sem contexto prévio pra validar que faz sentido pra alguém de fora.</p>
+      <div class="who">tech-writer</div>
+    </div>
+
+    <div class="discipline">
+      <div class="icon" style="background: #fce7f3;">🔄</div>
+      <h3>Self-evolution</h3>
+      <p>Retrospective gate ao fim de cada módulo: blockers viram diffs nos próprios agentes ou no CLAUDE.md. Auto-research loop investiga padrões que escapam. <strong>A squad fica mais rápida a cada módulo</strong> — não fica parada.</p>
+      <div class="who">sdlc-orchestrator</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========================= EXEMPLO ========================= -->
+<section class="block" id="example">
+  <h2>Exemplo end-to-end</h2>
+  <p class="subtitle">
+    Pra deixar concreto: uma feature pequena, com UI e backend, do "tenho uma ideia" até o merge. Cada passo mostra qual agente roda, em qual contexto, e o <em>shape</em> real do artefato que sai.
+  </p>
+
+  <div class="example-intro">
+    <h3>Feature: comentários em tasks</h3>
+    <p>Usuários do produto querem registrar discussão estruturada sobre uma task — hoje conversam por Slack/email e o contexto se perde. Decisão: adicionar thread de comentários inline em cada task.</p>
+    <div class="meta">
+      <span>Tier: <strong>T2 (feature)</strong></span>
+      <span>Estimativa: <strong>1 sprint</strong></span>
+      <span>Touch: <strong>backend + frontend + DB</strong></span>
+      <span>Tipo: <strong>greenfield em codebase existente</strong></span>
+    </div>
+  </div>
+
+  <div class="walkthrough">
+
+    <!-- Step 0 -->
+    <div class="step">
+      <div class="gutter">
+        <div class="num">0</div>
+        <div class="line"></div>
+      </div>
+      <div class="body">
+        <div class="agent-line">
+          <span class="mono">Tech Lead</span>
+          <span class="arrow">→</span>
+          <span class="mono agent-name">/sdlc-orchestrator</span>
+        </div>
+        <div class="step-title">Triagem inicial</div>
+        <div class="step-context">O orchestrator confere pré-requisitos (CLAUDE.md existe? spec rascunhada? critérios de aceite testáveis?), classifica o tier, e propõe o fluxo.</div>
+        <div class="human-touch"><span class="ht-icon">👤</span> Tech Lead confirma o tier e o fluxo proposto</div>
+        <div class="artifact">
+          <div class="artifact-head">
+            <span>orchestrator output</span>
+            <span class="tag">triage</span>
+          </div>
+<pre><span class="key">Tier proposto:</span> T2 (feature, escopo ≤ 1 sprint, touch full-stack)
+
+<span class="key">Pré-requisitos:</span>
+<span class="ok">✓</span> CLAUDE.md presente em ./CLAUDE.md
+<span class="ok">✓</span> Stack identificado: Node/Fastify + React/Vite + Postgres
+<span class="warn">⚠</span> PRD ainda não escrito — vou chamar product-manager
+<span class="warn">⚠</span> Spec não escrita — vou chamar software-architect após PRD
+
+<span class="key">Fluxo proposto:</span>
+  1. product-manager → PRD com critérios de aceite testáveis
+  2. clarify gate → top-5 ambiguidades
+  3. product-designer → UX spec (módulo tem UI)
+  4. software-architect → tech spec T2 + ADR
+  5. backend-engineer ⇆ frontend-engineer (paralelo, teammates)
+  6. security-engineer + software-architect (review)
+  7. qa-engineer → e2e Playwright
+  8. tech-writer → docs + CHANGELOG
+
+<span class="accent">Confirma pra começar? (s/n)</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="step">
+      <div class="gutter">
+        <div class="num">1</div>
+        <div class="line"></div>
+      </div>
+      <div class="body">
+        <div class="agent-line">
+          <span class="mono agent-name">product-manager</span>
+          <span class="arrow">→</span>
+          <span class="mono">PRD + user stories</span>
+        </div>
+        <div class="step-title">Escreve o PRD</div>
+        <div class="step-context">Problem-before-solution. Non-goals explícitos. Acceptance criteria em formato Gherkin, testável por humano e agente.</div>
+        <div class="human-touch"><span class="ht-icon">👤</span> Tech Lead aprova o PRD (ou volta com ajustes)</div>
+        <div class="artifact">
+          <div class="artifact-head">
+            <span>docs/specs/comments/PRD.md</span>
+            <span class="tag">prd</span>
+          </div>
+<pre><span class="key"># PRD: Comentários em tasks</span>
+
+<span class="key">## Problema</span>
+Discussão sobre tasks acontece fora do produto (Slack, email) e o
+contexto se perde quando alguém entra na task semanas depois.
+
+<span class="key">## Solução (alto nível)</span>
+Thread de comentários inline em cada task, visível pra todos que
+têm acesso à task.
+
+<span class="key">## Non-goals (v1)</span>
+- Notificações (push/email) — fora do escopo
+- Menções @user — fora do escopo
+- Anexos — fora do escopo
+- Reactions/emoji — fora do escopo
+
+<span class="key">## Critérios de aceite</span>
+<span class="ok">✓</span> Usuário autenticado pode postar comentário (1–2000 chars)
+<span class="ok">✓</span> Comentário aparece imediatamente na thread (otimista)
+<span class="ok">✓</span> Apenas o autor pode editar/deletar seu próprio comentário
+<span class="ok">✓</span> Comentários ordenados cronologicamente (mais antigo primeiro)
+<span class="ok">✓</span> Markdown básico suportado: bold, italic, links
+<span class="ok">✓</span> Comentário deletado mostra "comentário removido pelo autor"
+   (mantém o slot, não some)
+
+<span class="key">## Métrica de sucesso</span>
+30% das tasks ativas têm ≥ 1 comentário em 30 dias.</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gate: Clarify -->
+    <div class="step">
+      <div class="gutter">
+        <div class="num">⚑</div>
+        <div class="line"></div>
+      </div>
+      <div class="body">
+        <div class="agent-line">
+          <span class="mono agent-name">sdlc-orchestrator</span>
+          <span class="arrow">→</span>
+          <span class="mono">clarify gate</span>
+        </div>
+        <div class="step-title">Gate de clareza</div>
+        <div class="step-context">Antes da tech spec, levantar as 5 maiores ambiguidades do PRD. O Tech Lead responde uma vez; depois o arquiteto não precisa adivinhar.</div>
+        <div class="human-touch"><span class="ht-icon">👤</span> Tech Lead responde top-5 perguntas</div>
+        <div class="gate">
+          <span class="gate-icon">⚑</span>
+          <div>
+            <strong>Clarify gate (T2)</strong> — top-5 perguntas:<br>
+            1. Comentário deletado: mantém data e autor visíveis? <em>(decisão: sim)</em><br>
+            2. Edição mostra "(editado)" ao lado? <em>(decisão: sim)</em><br>
+            3. Markdown render server-side ou client-side? <em>(decisão: client, com sanitização server)</em><br>
+            4. Tamanho mínimo do body? <em>(decisão: 1 char depois de trim)</em><br>
+            5. Soft-delete ou hard-delete no DB? <em>(decisão: soft, pra manter histórico)</em>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: UX -->
+    <div class="step">
+      <div class="gutter">
+        <div class="num">2</div>
+        <div class="line"></div>
+      </div>
+      <div class="body">
+        <div class="agent-line">
+          <span class="mono agent-name">product-designer</span>
+          <span class="arrow">→</span>
+          <span class="mono">UX spec</span>
+        </div>
+        <div class="step-title">Especifica as telas</div>
+        <div class="step-context">Layout, estados (vazio / loading / erro / sucesso), copy, comportamento, acessibilidade. Reusa tokens do design system existente.</div>
+        <div class="human-touch"><span class="ht-icon">👤</span> Tech Lead aprova UX spec</div>
+        <div class="artifact">
+          <div class="artifact-head">
+            <span>docs/specs/comments/ux-spec.md</span>
+            <span class="tag">ux</span>
+          </div>
+<pre><span class="key"># UX Spec: Comments thread</span>
+
+<span class="key">## Onde mora</span>
+Aba "Discussão" na página de task, à direita do form principal.
+Em viewport &lt; 768px: vira accordion abaixo do form.
+
+<span class="key">## Estados</span>
+- <span class="accent">Empty:</span> "Nenhum comentário ainda. Seja o primeiro."
+- <span class="accent">Loading:</span> 3 skeletons (avatar + 2 linhas)
+- <span class="accent">Error:</span> banner vermelho "Não consegui carregar.
+                                  Tentar de novo →"
+- <span class="accent">Posted:</span> aparece otimista; se falha, undo banner
+
+<span class="key">## Componentes (reusa do DS)</span>
+- &lt;Avatar size="sm"&gt; — autor
+- &lt;Card&gt; — container do comentário
+- &lt;Textarea&gt; — campo de input (auto-grow, max-h 200px)
+- &lt;Button variant="primary" size="sm"&gt; — "Comentar"
+- &lt;DropdownMenu&gt; — ações (editar, deletar) só pro autor
+
+<span class="key">## Copy</span>
+- Placeholder: "Escreva um comentário…"
+- Botão primário: "Comentar"
+- Tooltip editar: "Editar comentário"
+- Confirmação delete: "Apagar este comentário? Não dá pra desfazer."
+
+<span class="key">## Acessibilidade</span>
+- Thread: &lt;section aria-label="Comentários"&gt;
+- Cada comentário: &lt;article&gt;
+- Edição: focus management volta pro textarea após salvar
+- Markdown render: alt em links, no autoplay em mídia
+- Contrast: AA mínimo (testar "(editado)" tag)</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Tech spec -->
+    <div class="step">
+      <div class="gutter">
+        <div class="num">3</div>
+        <div class="line"></div>
+      </div>
+      <div class="body">
+        <div class="agent-line">
+          <span class="mono agent-name">software-architect</span>
+          <span class="arrow">→</span>
+          <span class="mono">tech spec T2</span>
+        </div>
+        <div class="step-title">Define a solução técnica</div>
+        <div class="step-context">API contracts, DB schema, segurança, observabilidade, mapa de delegação (o que cada engineer faz). Contém ADR quando há trade-off material.</div>
+        <div class="human-touch"><span class="ht-icon">👤</span> Tech Lead aprova tech spec + ADRs</div>
+        <div class="artifact">
+          <div class="artifact-head">
+            <span>docs/specs/comments/tech-spec.md</span>
+            <span class="tag">spec</span>
+          </div>
+<pre><span class="key"># Tech Spec: Comments — T2</span>
+
+<span class="key">## API contracts</span>
+POST   /api/tasks/:taskId/comments   { body: string }      → 201 { id, ... }
+GET    /api/tasks/:taskId/comments                          → 200 [ ... ]
+PATCH  /api/comments/:id              { body: string }      → 200 { id, ... }
+DELETE /api/comments/:id                                    → 204
+
+Auth: Bearer token (existing middleware). Owner-check no PATCH/DELETE.
+
+<span class="key">## DB schema (migration)</span>
+CREATE TABLE comments (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id     UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  author_id   UUID NOT NULL REFERENCES users(id),
+  body        TEXT NOT NULL CHECK (char_length(body) BETWEEN 1 AND 2000),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  edited_at   TIMESTAMPTZ,
+  deleted_at  TIMESTAMPTZ  <span class="com">-- soft-delete</span>
+);
+CREATE INDEX idx_comments_task_id ON comments(task_id, created_at);
+
+<span class="key">## Validation &amp; security</span>
+- Body sanitization: server <span class="accent">DOMPurify</span> antes de salvar
+- Markdown render: client (<span class="accent">marked</span>) c/ allowlist tight
+- Rate limit: 30 comentários/min/user (existing middleware)
+- XSS: body sempre em &lt;p&gt; com escape default no React
+
+<span class="key">## Observabilidade</span>
+SLI:    P95 POST latency &lt; 200ms
+SLO:    99.5% requests &lt; 500ms (rolling 7d)
+Alert1: burn — SLO burn rate &gt; 14.4 (1h window)
+Alert2: symptom — error rate &gt; 1% (5min window)
+Events: comment.posted, comment.edited, comment.deleted
+
+<span class="key">## Mapa de delegação</span>
+backend-engineer:
+  - migration + repo + 4 endpoints + tests (Jest)
+frontend-engineer:
+  - hook useComments + 4 componentes (Thread, Item, Form, Empty)
+  - integração c/ existing TaskPage</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: parallel impl -->
+    <div class="step">
+      <div class="gutter">
+        <div class="num">4</div>
+        <div class="line"></div>
+      </div>
+      <div class="body">
+        <div class="agent-line">
+          <span class="mono agent-name">backend-engineer</span>
+          <span style="color: var(--purple); font-weight: 600;">⇆</span>
+          <span class="mono agent-name">frontend-engineer</span>
+          <span class="arrow">→</span>
+          <span>teammates em tmux</span>
+        </div>
+        <div class="step-title">Implementação em paralelo</div>
+        <div class="step-context">Quando dois agentes rodam ao mesmo tempo, viram <strong>teammates</strong>: cada um num painel tmux separado, comunicam por mensagens internas, contam progresso ao orchestrator. Você vê tudo em tempo real.</div>
+        <div class="human-touch"><span class="ht-icon">👁️</span> Tech Lead acompanha (não interrompe — agentes param e perguntam se a spec tem buraco)</div>
+        <div class="artifact">
+          <div class="artifact-head">
+            <span>terminal — painéis paralelos</span>
+            <span class="tag">tmux</span>
+          </div>
+<pre>┌──────────────── backend-engineer ────────────────┐ ┌──────────────── frontend-engineer ───────────────┐
+│ <span class="ok">✓</span> Read tech-spec.md                         │ │ <span class="ok">✓</span> Read tech-spec.md + ux-spec.md           │
+│ <span class="ok">✓</span> Created migration 20260522_comments.sql  │ │ <span class="ok">✓</span> Created hooks/useComments.ts            │
+│ <span class="ok">✓</span> Implemented CommentsRepo (Postgres)      │ │ <span class="ok">✓</span> Created components/Comments/Thread.tsx  │
+│ <span class="ok">✓</span> Wired routes/comments.ts (4 endpoints)   │ │ <span class="ok">✓</span> Created components/Comments/Item.tsx    │
+│ <span class="ok">✓</span> Owner-check middleware                   │ │ <span class="ok">✓</span> Created components/Comments/Form.tsx    │
+│ <span class="ok">✓</span> 18 tests passing (Jest)                  │ │ <span class="ok">✓</span> Wired into pages/TaskPage.tsx          │
+│ <span class="accent">→</span> Posting to teammate: API ready.           │ │ <span class="accent">→</span> Got: API ready. Switching to live calls.  │
+│   GET /api/tasks/:id/comments verified.       │ │ <span class="ok">✓</span> 12 component tests passing (Vitest)    │
+│ <span class="ok">✓</span> Reporting to orchestrator: <span class="accent">done</span>          │ │ <span class="ok">✓</span> Reporting to orchestrator: <span class="accent">done</span>          │
+└──────────────────────────────────────────────────┘ └──────────────────────────────────────────────────┘</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5: security -->
+    <div class="step">
+      <div class="gutter">
+        <div class="num">5</div>
+        <div class="line"></div>
+      </div>
+      <div class="body">
+        <div class="agent-line">
+          <span class="mono agent-name">security-engineer</span>
+          <span class="arrow">→</span>
+          <span>OWASP scan</span>
+        </div>
+        <div class="step-title">Security review</div>
+        <div class="step-context">Roda contra OWASP Top 10, CWE Top 25, ASVS 4.0. Diff toca input de usuário + markdown render — área quente. Output classifica findings por severidade.</div>
+        <div class="human-touch"><span class="ht-icon">👤</span> Tech Lead decide: HIGH bloqueia merge automático; MED você escolhe (fix agora ou issue pra depois)</div>
+        <div class="artifact">
+          <div class="artifact-head">
+            <span>security review</span>
+            <span class="tag">owasp</span>
+          </div>
+<pre><span class="key">Scope:</span> 14 arquivos modificados, 1 migration nova
+<span class="key">Frameworks aplicados:</span> OWASP Top 10:2021, CWE Top 25:2024, ASVS 4.0
+
+<span class="key">Findings:</span>
+
+<span class="bad">[HIGH]</span> A03:Injection — XSS via markdown links
+  File: components/Comments/Item.tsx:34
+  Issue: marked() roda sem allowlist de schemes. <span class="bad">javascript:</span> URL
+         em link passa direto.
+  Fix:   passar opts { sanitize: true } OU usar DOMPurify pós-render
+         no client (já tá no server, falta no client).
+
+<span class="warn">[MED]</span>  A04:Insecure Design — owner-check tardio
+  File: routes/comments.ts:67
+  Issue: PATCH lê body do request antes de verificar ownership.
+         Atacante com token válido pode tentar 100 PATCHes/seg em IDs
+         alheios — falham, mas geram I/O.
+  Fix:   middleware authorizeOwner ANTES do body parse.
+
+<span class="ok">[INFO]</span> Rate limit OK (30/min/user).
+<span class="ok">[INFO]</span> SQL prepared statements OK (via repo layer).
+<span class="ok">[INFO]</span> Auth middleware aplicado em todas as 4 rotas.
+
+<span class="key">Veredicto:</span> <span class="bad">BLOCKED</span> — 1 HIGH + 1 MED. Endereçar e re-submit.</pre>
+        </div>
+        <div class="gate">
+          <span class="gate-icon">🛑</span>
+          <div><strong>Gate bloqueou.</strong> backend-engineer abre fix, security re-escaneia. <em>(2 iterações até passar — comum em features com user input)</em></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 6: consistency check -->
+    <div class="step">
+      <div class="gutter">
+        <div class="num">6</div>
+        <div class="line"></div>
+      </div>
+      <div class="body">
+        <div class="agent-line">
+          <span class="mono agent-name">software-architect</span>
+          <span class="arrow">→</span>
+          <span>code review + consistency check</span>
+        </div>
+        <div class="step-title">Code review contra a spec</div>
+        <div class="step-context">Não é "code review genérico". É a comparação PRD ↔ tech spec ↔ diff. Cada delta vira uma das 5 classes: aligned / minor drift / divergent / undefined / legacy preservation.</div>
+        <div class="human-touch"><span class="ht-icon">👤</span> Tech Lead aceita ou rejeita os deltas classificados</div>
+        <div class="artifact">
+          <div class="artifact-head">
+            <span>consistency-check gate</span>
+            <span class="tag">review</span>
+          </div>
+<pre><span class="key">Comparando:</span> PRD ↔ tech-spec.md ↔ diff (PR #142)
+
+<span class="ok">[ALIGNED]</span>     14 itens — schema, endpoints, owner-check, soft-delete,
+              copy, estados, critérios #1–6 todos batem com a spec.
+
+<span class="warn">[MINOR DRIFT]</span> 2 itens
+  - frontend usa <span class="accent">useSWR</span> em vez de <span class="accent">react-query</span> mencionado
+    na spec. Ambos válidos no projeto. <span class="ok">Aceito.</span> Vou anotar em
+    CLAUDE.md que useSWR é o default agora.
+  - backend coloca CommentsRepo em <span class="accent">repos/</span> em vez de
+    <span class="accent">db/repositories/</span> da spec. Padrão pré-existente
+    do projeto. <span class="ok">Aceito.</span>
+
+<span class="warn">[UNDEFINED]</span> 1 item
+  - frontend-engineer adicionou indicator "digitando…" (presence)
+    NÃO mencionado no PRD nem na UX spec. Pode ser desejável
+    mas é feature nova.
+    <span class="bad">Ação:</span> remover deste PR. Se quiser, abre PRD curto pra v1.1.
+
+<span class="key">Veredicto:</span> <span class="warn">APROVADO COM RESSALVA</span> — remover indicator de typing.</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 7: QA -->
+    <div class="step">
+      <div class="gutter">
+        <div class="num">7</div>
+        <div class="line"></div>
+      </div>
+      <div class="body">
+        <div class="agent-line">
+          <span class="mono agent-name">qa-engineer</span>
+          <span class="arrow">→</span>
+          <span>Playwright e2e</span>
+        </div>
+        <div class="step-title">Verificação end-to-end</div>
+        <div class="step-context">Reconhecimento (acessa a UI, mapeia o que existe), depois action (executa cada critério de aceite como user). Golden path + edge cases. É o último filtro antes do merge.</div>
+        <div class="human-touch"><span class="ht-icon">👤</span> Tech Lead aprova merge final</div>
+        <div class="artifact">
+          <div class="artifact-head">
+            <span>qa run report</span>
+            <span class="tag">e2e</span>
+          </div>
+<pre><span class="key">Setup:</span> dev server up, db seeded com 2 users + 1 task
+
+<span class="key">Golden path:</span>
+<span class="ok">✓</span> User A loga, abre task, vê "Nenhum comentário ainda."
+<span class="ok">✓</span> User A posta "Primeiro comentário com **bold**" — render OK
+<span class="ok">✓</span> User B (em outra session) refresh, vê comentário de A
+<span class="ok">✓</span> User B posta resposta — ordem cronológica preservada
+<span class="ok">✓</span> User A edita seu comentário — tag "(editado)" aparece
+<span class="ok">✓</span> User A deleta seu comentário — "comentário removido pelo autor"
+
+<span class="key">Edge cases:</span>
+<span class="ok">✓</span> Body vazio: botão "Comentar" disabled
+<span class="ok">✓</span> Body 2001 chars: validação dispara, erro inline
+<span class="ok">✓</span> User B tenta editar comentário do A: dropdown não aparece
+<span class="ok">✓</span> User B tenta DELETE /api/comments/[id-do-A] via curl: 403
+<span class="ok">✓</span> Link com javascript: no markdown: render como texto puro
+<span class="ok">✓</span> Server offline + post: undo banner aparece, otimista revertida
+<span class="ok">✓</span> Markdown XSS payload &lt;img src=x onerror=alert(1)&gt;: escapado
+
+<span class="key">Acessibilidade:</span>
+<span class="ok">✓</span> Tab navigation: thread → textarea → button → ações
+<span class="ok">✓</span> Screen reader: aria-label="Comentários" anunciado
+<span class="ok">✓</span> Contrast: AA passa em todos os tokens usados
+
+<span class="key">Veredicto:</span> <span class="ok">APROVADO PRO MERGE</span> — 19/19 testes verdes.</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 8: docs -->
+    <div class="step">
+      <div class="gutter">
+        <div class="num">8</div>
+        <div class="line"></div>
+      </div>
+      <div class="body">
+        <div class="agent-line">
+          <span class="mono agent-name">tech-writer</span>
+          <span class="arrow">→</span>
+          <span>OpenAPI + CHANGELOG + CLAUDE.md</span>
+        </div>
+        <div class="step-title">Documentação como gate final</div>
+        <div class="step-context">OpenAPI atualizado, CHANGELOG escrito, CLAUDE.md ganha menção do módulo novo. Sub-agente "cold reader" lê os docs sem contexto prévio pra validar que faz sentido.</div>
+        <div class="artifact">
+          <div class="artifact-head">
+            <span>diff de docs</span>
+            <span class="tag">docs</span>
+          </div>
+<pre><span class="key">CHANGELOG.md</span>
+  + ## [Unreleased]
+  + ### Added
+  + - Comments on tasks — usuários podem postar, editar e
+  +   deletar comentários inline em tasks. Markdown básico
+  +   (bold/italic/links) suportado. (#142)
+
+<span class="key">openapi.yaml</span>
+  + paths:
+  +   /api/tasks/{taskId}/comments:
+  +     post: { ... }
+  +     get:  { ... }
+  +   /api/comments/{id}:
+  +     patch:  { ... }
+  +     delete: { ... }
+  + components:
+  +   schemas:
+  +     Comment: { ... }
+
+<span class="key">CLAUDE.md</span>
+  + ## Comments module
+  + Located in src/comments. Soft-delete by default
+  + (deleted_at column). Owner-check is enforced at
+  + middleware level (authorizeOwner) — never at route body.
+
+<span class="key">docs/site/index.html</span>
+  + entrada "Comments" no menu de features
+
+<span class="key">Cold-reader check:</span> <span class="ok">PASSOU</span>
+  Sub-agente sem contexto leu CHANGELOG + OpenAPI e
+  conseguiu descrever a feature corretamente.
+
+<span class="key">Veredicto:</span> <span class="ok">MERGE LIBERADO</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 9: retrospective -->
+    <div class="step">
+      <div class="gutter">
+        <div class="num">9</div>
+        <div class="line"></div>
+      </div>
+      <div class="body">
+        <div class="agent-line">
+          <span class="mono agent-name">sdlc-orchestrator</span>
+          <span class="arrow">→</span>
+          <span>retrospective gate</span>
+        </div>
+        <div class="step-title">Aprendizado coletivo</div>
+        <div class="step-context">Pós-merge, o orchestrator classifica os blockers do módulo. Cada um vira diff em algum lugar: agente, CLAUDE.md, ADR ou docs do projeto. <strong>Sem isto, a squad não fica mais rápida.</strong></div>
+        <div class="human-touch"><span class="ht-icon">👤</span> Tech Lead aprova cada diff proposto (agente, CLAUDE.md, ADR)</div>
+        <div class="artifact">
+          <div class="artifact-head">
+            <span>retro classification</span>
+            <span class="tag">learning</span>
+          </div>
+<pre><span class="key">Blockers do módulo:</span>
+
+1. <span class="bad">Security HIGH</span> em marked() sem sanitize no client
+   <span class="key">Classificação:</span> universal engineering principle
+   <span class="key">Ação:</span> diff em <span class="accent">agents/frontend-engineer.md</span> — adicionar
+            regra "sempre sanitizar markdown render no client,
+            mesmo quando há sanitize server-side"
+   <span class="key">Aprovação:</span> Tech Lead aceita o diff
+
+2. <span class="warn">Owner-check tardio</span> em PATCH
+   <span class="key">Classificação:</span> project-specific pattern
+   <span class="key">Ação:</span> diff em <span class="accent">CLAUDE.md</span> — documentar convenção
+            "authorize-then-parse-body" no projeto
+   <span class="key">Aprovação:</span> Tech Lead aceita
+
+3. <span class="warn">Drift useSWR vs react-query</span>
+   <span class="key">Classificação:</span> project-specific convention
+   <span class="key">Ação:</span> diff em <span class="accent">CLAUDE.md</span> — declarar useSWR como
+            padrão pra data fetching no frontend
+   <span class="key">Aprovação:</span> Tech Lead aceita
+
+<span class="key">Resultado:</span> 3 diffs commitados, próximos módulos não
+caem nos mesmos blockers. Maturity assessment subiu de
+"Defined" pra "Managed" na dimensão de Quality.</pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========================= ARTEFATOS ========================= -->
+<section class="block" id="artifacts">
+  <h2>Artefatos do fluxo — referência</h2>
+  <p class="subtitle">
+    Você viu vários deles no exemplo acima (PRD, UX spec, tech spec, ADR). Esta é a lista completa do que circula em cada estágio: propósito, quem escreve, formato e onde mora no projeto.
+  </p>
+
+  <div class="specs-grid">
+
+    <div class="spec-card">
+      <div class="sc-head">
+        <div class="sc-icon" style="background: #dbeafe;">📄</div>
+        <h4>PRD</h4>
+      </div>
+      <div class="sc-purpose">
+        O contrato do produto. Problema, solução high-level, critérios de aceite testáveis, non-goals, métricas de sucesso.
+      </div>
+      <div class="sc-meta">
+        <span class="sc-key">Quem escreve:</span> product-manager<br>
+        <span class="sc-key">Formato:</span> Markdown estruturado (problema → solução → AC → métricas)<br>
+        <span class="sc-key">Localização:</span> <code>docs/specs/&lt;módulo&gt;/PRD.md</code>
+      </div>
+    </div>
+
+    <div class="spec-card">
+      <div class="sc-head">
+        <div class="sc-icon" style="background: #f3e8ff;">🎨</div>
+        <h4>UX Spec</h4>
+      </div>
+      <div class="sc-purpose">
+        Como a feature aparece pro usuário. Layout, estados (vazio/loading/erro/sucesso), copy, acessibilidade, inventário de componentes do DS reusados vs novos.
+      </div>
+      <div class="sc-meta">
+        <span class="sc-key">Quem escreve:</span> product-designer<br>
+        <span class="sc-key">Formato:</span> Markdown + referências ao design system<br>
+        <span class="sc-key">Localização:</span> <code>docs/specs/&lt;módulo&gt;/ux-spec.md</code>
+      </div>
+    </div>
+
+    <div class="spec-card">
+      <div class="sc-head">
+        <div class="sc-icon" style="background: #fef3c7;">🏗️</div>
+        <h4>Tech Spec</h4>
+      </div>
+      <div class="sc-purpose">
+        A solução técnica. API contracts, schema DB, validação, segurança, observabilidade (SLI/SLO + alertas), mapa de delegação. Profundidade calibrada ao tier (T1 delta / T2 padrão / T3 deep).
+      </div>
+      <div class="sc-meta">
+        <span class="sc-key">Quem escreve:</span> software-architect<br>
+        <span class="sc-key">Formato:</span> Markdown estruturado + diagramas Mermaid<br>
+        <span class="sc-key">Localização:</span> <code>docs/specs/&lt;módulo&gt;/tech-spec.md</code>
+      </div>
+    </div>
+
+    <div class="spec-card">
+      <div class="sc-head">
+        <div class="sc-icon" style="background: #dcfce7;">⚖️</div>
+        <h4>ADR</h4>
+      </div>
+      <div class="sc-purpose">
+        Architecture Decision Record. Captura trade-offs materiais: contexto, decisão, alternativas consideradas, consequências. Imutável depois de aceito (decisão nova vira ADR novo).
+      </div>
+      <div class="sc-meta">
+        <span class="sc-key">Quem escreve:</span> software-architect<br>
+        <span class="sc-key">Formato:</span> Markdown (template MADR — contexto/decisão/consequências)<br>
+        <span class="sc-key">Localização:</span> <code>docs/adr/&lt;NNNN&gt;-&lt;slug&gt;.md</code>
+      </div>
+    </div>
+
+    <div class="spec-card">
+      <div class="sc-head">
+        <div class="sc-icon" style="background: #fce7f3;">🎨</div>
+        <h4>Design System</h4>
+      </div>
+      <div class="sc-purpose">
+        A fundação visual. Cores, tipografia, espaçamentos, componentes base — fonte da verdade pra todas as telas. Escrito 1x por projeto (Design System Mode) ou extraído (Documentation Mode em brownfield).
+      </div>
+      <div class="sc-meta">
+        <span class="sc-key">Quem escreve:</span> product-designer<br>
+        <span class="sc-key">Formato:</span> Markdown + tokens estruturados (cor/space/type)<br>
+        <span class="sc-key">Localização:</span> <code>docs/design-system.md</code>
+      </div>
+    </div>
+
+    <div class="spec-card">
+      <div class="sc-head">
+        <div class="sc-icon" style="background: #e0e7ff;">📘</div>
+        <h4>CLAUDE.md</h4>
+      </div>
+      <div class="sc-purpose">
+        O contexto perene do projeto. Stack, convenções, restrições, bloco <code>## Tooling</code> com integrações externas. Todo agente lê antes de qualquer ação — sem ele, alucinam convenção.
+      </div>
+      <div class="sc-meta">
+        <span class="sc-key">Quem escreve:</span> humano (greenfield) ou software-architect (brownfield discovery)<br>
+        <span class="sc-key">Formato:</span> Markdown — seções fixas (Stack, Convenções, Tooling, NÃO fazer)<br>
+        <span class="sc-key">Localização:</span> <code>./CLAUDE.md</code> (raiz)
+      </div>
+    </div>
+
+    <div class="spec-card">
+      <div class="sc-head">
+        <div class="sc-icon" style="background: #ccfbf1;">📊</div>
+        <h4>OpenAPI</h4>
+      </div>
+      <div class="sc-purpose">
+        O contrato de API formalizado. Atualizado pelo tech-writer após implementação. Permite contract-testing, geração de SDK, e mocks pra frontend antes do backend pronto.
+      </div>
+      <div class="sc-meta">
+        <span class="sc-key">Quem escreve:</span> tech-writer<br>
+        <span class="sc-key">Formato:</span> YAML/JSON (OpenAPI 3.x)<br>
+        <span class="sc-key">Localização:</span> <code>docs/openapi.yaml</code>
+      </div>
+    </div>
+
+    <div class="spec-card">
+      <div class="sc-head">
+        <div class="sc-icon" style="background: #fed7aa;">📈</div>
+        <h4>Maturity Assessment</h4>
+      </div>
+      <div class="sc-purpose">
+        Onde a squad está hoje. Rubrica 5×4 (5 dimensões × 4 níveis: Ad-hoc → Otimizando). Baseline auto-reivindicado no onboarding; revisado nas retrospectives.
+      </div>
+      <div class="sc-meta">
+        <span class="sc-key">Quem escreve:</span> sdlc-orchestrator (template) + humano (claim)<br>
+        <span class="sc-key">Formato:</span> Markdown — matriz de rubrica<br>
+        <span class="sc-key">Localização:</span> <code>docs/maturity-assessment.md</code>
+      </div>
+    </div>
+
+  </div>
+  <p style="font-size: 13px; color: var(--text-faint); margin-top: 14px; max-width: 760px;">
+    <strong>Princípio:</strong> spec é contrato vivo. Quando a implementação revela que a spec estava errada, atualiza a spec primeiro, depois o código — nunca o contrário. Drift entre spec e código é dívida que aparece no consistency-check gate.
+  </p>
+</section>
+
+<!-- ========================= LIMITAÇÕES ========================= -->
+<section class="block" id="limits">
+  <h2>Onde isto não brilha</h2>
+  <p class="subtitle">
+    ai-squad é uma escolha de processo — tem trade-offs reais. Saber quando <em>não</em> usar é parte da maturidade. Honest list do que ainda dói ou exige cuidado:
+  </p>
+
+  <div class="limits-grid">
+
+    <div class="limit-card">
+      <div class="l-icon">⚖️</div>
+      <h3>Overhead em tarefas triviais</h3>
+      <p>
+        Pra hotfix de 1 linha ou script que vai rodar uma vez, o overhead engole o ganho. <strong>T1 mitiga</strong> pulando etapas, mas mesmo T1 é mais processo que vibecoding cru. Pra exploração rápida ou prototipagem solo, vibecoding ainda é o tool certo.
+      </p>
+    </div>
+
+    <div class="limit-card">
+      <div class="l-icon">📘</div>
+      <h3>Depende de CLAUDE.md decente</h3>
+      <p>
+        Sem o arquivo de contexto bem preenchido, agentes alucinam convenção. Greenfield exige curadoria manual; brownfield exige rodar <code>/onboard-brownfield</code> primeiro. Atalho aqui = retrabalho depois.
+      </p>
+    </div>
+
+    <div class="limit-card">
+      <div class="l-icon">🧠</div>
+      <h3>Não substitui domínio</h3>
+      <p>
+        Regras de negócio específicas, edge cases do produto, restrições regulatórias — continuam sendo seu trabalho documentar no PRD e na tech spec. <strong>Agentes implementam, não inventam regras</strong>. Garbage in spec = garbage out code.
+      </p>
+    </div>
+
+    <div class="limit-card">
+      <div class="l-icon">🔌</div>
+      <h3>Single point of failure: Claude API</h3>
+      <p>
+        API offline = squad paralisada. Sem fallback automático pra outro modelo. Pra equipes em ambiente regulado/air-gapped, isto pode ser bloqueador.
+      </p>
+    </div>
+
+    <div class="limit-card">
+      <div class="l-icon">🌀</div>
+      <h3>Loops, divergência, alucinação</h3>
+      <p>
+        Agentes podem entrar em loop, divergir do escopo, ou inventar API que não existe. Gates automáticos pegam a maioria (security bloqueia, consistency-check pega drift, QA pega regressão). O resto depende do humano interromper — <strong>checkpoints existem por isto</strong>.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========================= BACKLOG ========================= -->
+<section class="block" id="backlog">
+  <h2>O que vem por aí</h2>
+  <p class="subtitle">
+    O processo é vivo — evolui módulo a módulo via retrospective. Algumas frentes específicas estão no radar agora pra serem incorporadas como disciplina permanente no fluxo.
+  </p>
+
+  <div class="backlog-grid">
+
+    <div class="backlog-card">
+      <div class="bc-icon">🔭</div>
+      <h3>Agente de Operação (pós-deploy)</h3>
+      <p>
+        Hoje o fluxo termina no merge — o que acontece no ambiente em produção depois disso fica fora do escopo dos agentes. Falta um agente que assume daí: <strong>monitora o ambiente, garante que os SLIs/SLOs definidos na tech spec estão sendo respeitados, dispara alerta antes de virar incidente</strong>, e fecha o ciclo do contrato de observabilidade.
+      </p>
+      <div class="bc-meta">
+        <span class="bc-key">Possível forma:</span> agent novo (<code>operations-engineer</code>) ou modo <code>operate</code> no cloud-architect<br>
+        <span class="bc-key">Conecta com:</span> observability contract da tech spec (SLI/SLO/alerts), incident-commander (futuro), retrospective gate
+      </div>
+    </div>
+
+    <div class="backlog-card">
+      <div class="bc-icon">📊</div>
+      <h3>Feature nasce com métricas de uso</h3>
+      <p>
+        Toda nova feature deveria sair do berço já instrumentada: <strong>event schema definido, active users tracking, adoption funnel, retention por feature</strong>. Hoje isso é manual, fica pra depois — e na prática raramente vem. Vira disciplina embutida no PRD (KPIs) e na tech spec (event schema).
+      </p>
+      <div class="bc-meta">
+        <span class="bc-key">Toca:</span> product-manager define KPIs no PRD, software-architect define event schema na tech spec, tech-writer documenta os eventos<br>
+        <span class="bc-key">Conecta com:</span> bloco <code>## Tooling &gt; product_analytics</code> no CLAUDE.md (PostHog/Mixpanel/Amplitude)
+      </div>
+    </div>
+
+    <div class="backlog-card">
+      <div class="bc-icon">🌪️</div>
+      <h3>Chaos engineering no fluxo</h3>
+      <p>
+        Sistemas distribuídos só são resilientes se você prova — caso contrário, "resiliência" é wishful thinking. Vira disciplina embutida em <strong>3 pontos</strong>: no <em>processo</em> (gate de chaos test antes de promover pra prod), na <em>spec</em> (cenários de falha declarados no tech spec — o que acontece se DB cair? cache morrer? upstream timeout?), e no <em>gateway</em> (fault injection controlada via Sensedia / Envoy / equivalente, com blast radius limitado).
+      </p>
+      <div class="bc-meta">
+        <span class="bc-key">Toca:</span> software-architect declara cenários de falha na tech spec, quality-architect define chaos suite, cloud-architect provisiona fault injection no gateway<br>
+        <span class="bc-key">Conecta com:</span> contrato de observabilidade (SLO burn precisa pegar a falha injetada), retrospective gate (cada incidente real vira chaos scenario na suite)
+      </div>
+    </div>
+
+  </div>
+
+  <p class="backlog-pointer">
+    <strong>Outras ideias persistidas</strong> em <code>docs/improvements.md</code> — 17 itens organizados em T1/T2/T3 cobrindo eval suites, telemetria de invocação, dry-run mode, novas disciplinas (release engineering, incident commander, FinOps), retrospective inter-módulos, onboard-greenfield. Este doc mostra só as 2 frentes que estão no radar pra ganhar status de disciplina permanente.
+  </p>
+</section>
+
+<!-- ========================= FAQ ========================= -->
+<section class="block" id="faq">
+  <h2>Perguntas frequentes</h2>
+  <p class="subtitle">
+    Coisas que aparecem na primeira conversa quando você mostra isto pra alguém.
+  </p>
+
+  <div class="faq">
+
+    <div class="faq-item" x-data="{ open: false }" :class="{ open: open }">
+      <button class="faq-q" @click="open = !open">
+        Funciona com qualquer linguagem ou framework?
+        <span class="faq-chev" :class="{ rot: open }">›</span>
+      </button>
+      <div class="faq-a" x-show="open" x-transition>
+        <p>Sim. Os agentes são instruções em linguagem natural, agnósticas de stack. O <code>CLAUDE.md</code> é onde você declara qual stack o projeto usa (linguagem, framework, banco, libs) — e todo agente lê isto antes de qualquer ação.</p>
+        <p>Quanto mais rico o <code>CLAUDE.md</code>, menos os agentes alucinam convenção. Em codebase brownfield, <code>/onboard-brownfield</code> inventaria stack automaticamente.</p>
+      </div>
+    </div>
+
+    <div class="faq-item" x-data="{ open: false }" :class="{ open: open }">
+      <button class="faq-q" @click="open = !open">
+        Quanto custa e quanto tempo demora um módulo?
+        <span class="faq-chev" :class="{ rot: open }">›</span>
+      </button>
+      <div class="faq-a" x-show="open" x-transition>
+        <p>Agentes em si são open-source (MIT). Você precisa de uma assinatura <strong>Claude Pro+</strong> pra usar o Claude Code com volume razoável.</p>
+        <p>Tempo varia por tier:</p>
+        <p>• <strong>T1 (hotfix):</strong> 15-30min wall-clock<br>
+        • <strong>T2 (feature, como o exemplo de comentários):</strong> 1-3h wall-clock<br>
+        • <strong>T3 (módulo completo):</strong> meio dia a 1 dia</p>
+        <p>Wall-clock inclui revisão humana nos checkpoints, não só tempo dos agentes rodando. Custo de tokens varia por complexidade — T2 típico fica em alguns dólares.</p>
+      </div>
+    </div>
+
+    <div class="faq-item" x-data="{ open: false }" :class="{ open: open }">
+      <button class="faq-q" @click="open = !open">
+        E quando um agente erra, alucina ou entra em loop?
+        <span class="faq-chev" :class="{ rot: open }">›</span>
+      </button>
+      <div class="faq-a" x-show="open" x-transition>
+        <p>Vários safeguards em camadas:</p>
+        <p>1. <strong>Gates automáticos pegam.</strong> Security bloqueia merge se HIGH finding. Consistency-check pega divergência da spec. QA pega regressão funcional. Cold-reader pega doc ruim.</p>
+        <p>2. <strong>Tech Lead aprova em checkpoints específicos</strong> (start, PRD, specs, security, consistency, merge, retrospective). Pode reverter ou interromper a qualquer momento — Ctrl+C funciona.</p>
+        <p>3. <strong>Retrospective gate captura erros</strong> pra virar diff nos agentes na próxima vez. Mesmo erro raramente acontece duas vezes.</p>
+        <p>Cenário pior: agente em loop. Você interrompe; orchestrator pede clarify ou reverte pro último checkpoint estável.</p>
+      </div>
+    </div>
+
+    <div class="faq-item" x-data="{ open: false }" :class="{ open: open }">
+      <button class="faq-q" @click="open = !open">
+        Funciona em codebase grande / legado?
+        <span class="faq-chev" :class="{ rot: open }">›</span>
+      </button>
+      <div class="faq-a" x-show="open" x-transition>
+        <p>Sim — desde que rode <code>/onboard-brownfield</code> uma vez antes do primeiro módulo. A skill faz discovery automático: inventaria stack, CI/CD, convenções, hotspots, e popula o <code>CLAUDE.md</code> baseline + ADRs.</p>
+        <p>Pra UI legada sem design system documentado, <code>product-designer</code> roda em Documentation Mode (extrai DS da UI existente em vez de criar do zero).</p>
+        <p>Limitação real: codebase >300k linhas com convenções muito heterogêneas exige curadoria humana extra no <code>CLAUDE.md</code> — o discovery pega o macro, mas micro-convenções de subdiretório precisam ser explicitadas.</p>
+      </div>
+    </div>
+
+    <div class="faq-item" x-data="{ open: false }" :class="{ open: open }">
+      <button class="faq-q" @click="open = !open">
+        Integra com Jira, Linear, Asana, etc?
+        <span class="faq-chev" :class="{ rot: open }">›</span>
+      </button>
+      <div class="faq-a" x-show="open" x-transition>
+        <p>Sim — via bloco <code>## Tooling</code> no <code>CLAUDE.md</code>. Slots suportados hoje:</p>
+        <p>• <strong>issue_tracker:</strong> github, jira, linear, asana<br>
+        • <strong>ci_cd:</strong> github_actions, circleci, gitlab_ci<br>
+        • <strong>observability:</strong> posthog/mixpanel/amplitude + datadog/honeycomb/grafana<br>
+        • <strong>engineering_metrics:</strong> ai-squad-local, devlake, linearb</p>
+        <p>Trocar de Jira pra Linear, ou de Slack pra Discord, é editar uma linha. Agentes leem deste bloco em vez de assumir tool específica.</p>
+      </div>
+    </div>
+
+    <div class="faq-item" x-data="{ open: false }" :class="{ open: open }">
+      <button class="faq-q" @click="open = !open">
+        Em que é diferente de Cursor agent mode, Devin, Aider?
+        <span class="faq-chev" :class="{ rot: open }">›</span>
+      </button>
+      <div class="faq-a" x-show="open" x-transition>
+        <p>Esses ferramentas sentam no <strong>Nível 3 do modelo de maturidade</strong>: um agente generalista executa feature inteira via prompt detalhado, humano revisa diff final. São excelentes pro que se propõem.</p>
+        <p>ai-squad é <strong>Nível 4</strong>: vários agentes <em>especializados</em> por papel (PM, designer, arquiteto, eng, QA, security, docs), gates automáticos embutidos, retrospective evolui o sistema, spec como artefato primário.</p>
+        <p>Trade-off honesto: ai-squad é mais lento e mais caro em features triviais. Em código long-lived multi-pessoa, o overhead paga em manutenção previsível, dívida controlada, e disciplinas garantidas.</p>
+      </div>
+    </div>
+
+    <div class="faq-item" x-data="{ open: false }" :class="{ open: open }">
+      <button class="faq-q" @click="open = !open">
+        Posso adicionar meu próprio agente customizado?
+        <span class="faq-chev" :class="{ rot: open }">›</span>
+      </button>
+      <div class="faq-a" x-show="open" x-transition>
+        <p>Sim. Agentes são arquivos <code>.md</code> em <code>~/.claude/agents/&lt;nome&gt;.md</code> com frontmatter (<code>name</code>, <code>description</code>, <code>model</code>). Veja qualquer um dos 13 como template — o formato é simples.</p>
+        <p>Pra integrar com o orchestrator (i.e., pra ele saber quando chamar seu agente), adicione referência na skill <code>sdlc-orchestrator/SKILL.md</code> indicando o gatilho e estágio.</p>
+        <p>Se o agente ficar bom em projetos reais, considere PR no repo <code>ai-squad</code> — conteúdo universal entra; conteúdo project-specific fica no <code>docs/engineering-patterns.md</code> do seu projeto.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========================= START ========================= -->
+<section class="block" id="start">
+  <h2>Começar</h2>
+  <p class="subtitle">
+    Três passos. Demora ~5 minutos. Os agentes ficam disponíveis pro Claude Code em todos os seus projetos.
+  </p>
+
+  <div class="setup-steps">
+    <div class="setup-card">
+      <div class="n">1</div>
+      <h3>Pré-requisitos</h3>
+      <p>Claude Code instalado (Pro+), <code>tmux</code> e <code>git</code>.</p>
+<pre>brew install tmux git
+# Claude Code:
+# https://claude.ai/code</pre>
+    </div>
+
+    <div class="setup-card">
+      <div class="n">2</div>
+      <h3>Clone + instala</h3>
+      <p>Instala agents em <code>~/.claude/agents/</code> e skills em <code>~/.claude/skills/</code>.</p>
+<pre>git clone https://github.com/\
+  carlos-sobral/ai-squad.git
+cd ai-squad
+bash install.sh</pre>
+    </div>
+
+    <div class="setup-card">
+      <div class="n">3</div>
+      <h3>Configura o projeto</h3>
+      <p>Copia template de contexto. Preenche stack, convenções, restrições.</p>
+<pre>cp templates/CLAUDE.md \
+   /caminho/do/projeto/CLAUDE.md
+# edita</pre>
+    </div>
+
+    <div class="setup-card">
+      <div class="n">4</div>
+      <h3>Roda</h3>
+      <p>Dentro do projeto, abre tmux + Claude Code, invoca o orchestrator.</p>
+<pre>tmux new -s projeto
+claude --dangerously-skip-permissions
+# dentro do Claude:
+/sdlc-orchestrator</pre>
+    </div>
+  </div>
+
+  <p style="margin-top: 24px; color: var(--text-muted); font-size: 14px;">
+    Em codebase brownfield, rode <code>/onboard-brownfield</code> uma vez antes do primeiro módulo — inventaria stack, convenções e hotspots automaticamente.
+  </p>
+</section>
+
+<footer>
+  <p>
+    ai-squad é open-source (MIT). Mantido por <a href="https://github.com/carlos-sobral" target="_blank" rel="noopener">@carlos-sobral</a>.<br>
+    Esta documentação é um artefato vivo — atualizada a cada release.
+  </p>
+</footer>
+
+<script>
+function aiSquadDocs() {
+  return {
+    stageFilter: 'all',
+    openAgent: null,
+
+    agents: [
+      {
+        name: 'idea-researcher',
+        model: 'opus',
+        stages: ['discovery'],
+        oneLiner: 'Transforma ideia vaga em brief estruturado, pronto pro PRD.',
+        persona: 'Pesquisador curioso e cético. Recusa pular direto pra solução — trata cada ideia como hipótese a ser interrogada antes de virar PRD.',
+        fullDesc: 'Pega "e se a gente fizesse X?" ou "tenho um problema com Y", pesquisa contexto (web + codebase), e entrega um brief: problema, hipótese, opções de solução, riscos. Roda antes do product-manager quando a ideia ainda não está madura.',
+        triggers: [
+          'Usuário descreve uma ideia vaga ou meio-formada',
+          'Pede "o que vocês acham se…" ou "como abordar X?"',
+          'Quer explorar um problem space antes de decidir solução'
+        ],
+        outputs: [
+          'Brief de ~1-2 páginas em Markdown',
+          'Problema + hipótese + 2-3 opções avaliadas',
+          'Riscos e desconhecidos explícitos',
+          'Recomendação de qual opção vale virar PRD'
+        ],
+        connects: [
+          '→ product-manager (consome o brief pra escrever PRD)'
+        ]
+      },
+      {
+        name: 'product-manager',
+        model: 'opus',
+        stages: ['discovery'],
+        oneLiner: 'Escreve PRDs e user stories com critérios de aceite testáveis.',
+        persona: 'PM disciplinado, formado em spec-driven. Obcecado por critérios binários — vai te puxar "quando X, então Y" até cada AC ficar testável por humano e agente.',
+        fullDesc: 'Spec-driven puro. Problem-before-solution. Non-goals explícitos. Acceptance criteria em formato Gherkin ou EARS, testável por humano e por agente. PRD é contrato vivo entre PM, design, engenharia e agentes — não documentação burocrática.',
+        triggers: [
+          'Nova feature, novo módulo, "vamos especificar"',
+          'Pede critérios de aceite',
+          'Após idea-researcher fechar um brief'
+        ],
+        outputs: [
+          'PRD em Markdown: problema, solução high-level, non-goals',
+          'User stories quebradas em incrementos testáveis',
+          'Critérios de aceite executáveis',
+          'Métricas de sucesso definidas'
+        ],
+        connects: [
+          '← idea-researcher (recebe brief)',
+          '→ product-designer (UX spec do PRD)',
+          '→ software-architect (tech spec do PRD)'
+        ]
+      },
+      {
+        name: 'product-designer',
+        model: 'opus',
+        stages: ['discovery', 'design'],
+        oneLiner: 'Design system (1x) + UX specs (por módulo): telas, fluxos, copy, acessibilidade.',
+        persona: 'Designer sênior dual-mode: sistêmico no design system, empático no UX. Pensa em estados (vazio, loading, erro) antes do happy path. Reusa antes de inventar componente novo.',
+        fullDesc: 'Dois modos. Design System Mode roda uma vez por projeto, define tokens, tipografia, componentes — a base visual. UX Spec Mode roda por módulo: layout, estados (vazio/loading/erro), copy, comportamento, acessibilidade. Em brownfield, Documentation Mode extrai DS da UI existente.',
+        triggers: [
+          'Projeto novo precisa de design system',
+          'Módulo com UI precisa de UX spec',
+          'Codebase brownfield com UI sem DS documentado'
+        ],
+        outputs: [
+          'docs/design-system.md (greenfield) ou DS documentado (brownfield)',
+          'UX spec por módulo: telas, fluxos, copy, a11y',
+          'Inventário de componentes reusados vs novos'
+        ],
+        modes: [
+          'Design System Mode (greenfield, 1x)',
+          'Documentation Mode (brownfield, 1x)',
+          'UX Spec Mode (por módulo)'
+        ],
+        connects: [
+          '← product-manager (consome PRD)',
+          '→ software-architect (input pra tech spec)',
+          '→ frontend-engineer (consome UX spec)'
+        ]
+      },
+      {
+        name: 'software-architect',
+        model: 'opus',
+        stages: ['design', 'review'],
+        oneLiner: 'Tech specs, ADRs, code review, refactor, discovery em brownfield.',
+        persona: 'Arquiteto sênior, ponderado. Calibra a profundidade da spec ao tier — não sobre-engenheirar T1, não subestimar T3. Documenta o porquê (ADR) em todo trade-off material. Em review, separa drift aceitável de divergência problemática.',
+        fullDesc: 'O agente mais polifacetado. Em Spec Mode, escreve tech spec calibrada ao tier (T1/T2/T3): API contracts, schema, ADRs, contrato de observabilidade. Em Code Review Mode, compara PRD ↔ spec ↔ diff e classifica deltas. Em Refactor Mode, faz cleanup sem mudar comportamento. Em Discovery Mode, inventaria brownfield.',
+        triggers: [
+          'Após PRD aprovado, antes de implementação',
+          'PR pronto pra revisão',
+          'Diff toca hotspots — refactor sugerido',
+          'Codebase pré-existente sendo onboardada'
+        ],
+        outputs: [
+          'Tech spec T1/T2/T3 (ou delta)',
+          'API contracts + diagramas Mermaid',
+          'ADRs pra trade-offs materiais',
+          'Code review com classificação de deltas (5 classes)',
+          'Refactor plan + mapa de delegação'
+        ],
+        modes: [
+          'Spec Mode (pré-implementação)',
+          'Code Review Mode (pós-implementação)',
+          'Refactor Mode (pós-implementação, opcional)',
+          'Discovery Mode (brownfield onboarding)'
+        ],
+        connects: [
+          '← product-manager (consome PRD)',
+          '← product-designer (consome UX spec)',
+          '→ backend-engineer / frontend-engineer (delega impl)',
+          '→ tech-writer (inputs pra docs)'
+        ]
+      },
+      {
+        name: 'backend-engineer',
+        model: 'sonnet',
+        stages: ['impl'],
+        oneLiner: 'Implementa backend (API, DB, jobs, services) contra tech spec aprovada.',
+        persona: 'Engenheiro pragmático. Lê tech spec + CLAUDE.md, executa. Não inventa padrão arquitetural novo no meio do código. Se a spec tem buraco, para e pergunta — não adivinha.',
+        fullDesc: 'Pega tech spec + CLAUDE.md (contexto do projeto) e implementa. Não toma decisões arquiteturais — se faltar info na spec, para e pergunta. Sempre escreve tests junto com o código. Reusa convenções do projeto, não inventa padrões novos.',
+        triggers: [
+          'Tech spec aprovada pra implementação backend',
+          'Hotfix backend (T1)',
+          'Migration nova'
+        ],
+        outputs: [
+          'Código de produção + tests (Jest/Vitest/pytest)',
+          'Migration DB com up/down',
+          'Logs estruturados + métricas conforme contrato observabilidade',
+          'Pode rodar em paralelo com frontend-engineer como teammate'
+        ],
+        connects: [
+          '← software-architect (consome tech spec)',
+          '⇆ frontend-engineer (teammate quando paralelo)',
+          '→ security-engineer (diff vai pra review)'
+        ]
+      },
+      {
+        name: 'frontend-engineer',
+        model: 'sonnet',
+        stages: ['impl'],
+        oneLiner: 'Implementa UI contra tech spec + UX spec + design system.',
+        persona: 'Engenheiro visual e funcional. Reusa o design system antes de criar componente novo. Sabe que type-check passar não significa "feature funciona" — testa em browser real antes de declarar pronto.',
+        fullDesc: 'Lê tech spec + UX spec + docs/design-system.md. Para se faltar qualquer um. Implementa componentes reusando o DS, segue o visual contract. Sempre testa em browser real antes de declarar pronto — type-check passar não é "feature funciona".',
+        triggers: [
+          'Tech spec + UX spec aprovadas pra UI',
+          'Componente novo do DS',
+          'Landing page, dashboard, formulário'
+        ],
+        outputs: [
+          'Componentes React/Vue/Svelte seguindo o DS',
+          'Tests de componente (RTL/Vitest)',
+          'Integração com API conforme contract',
+          'Validação visual em browser antes de marcar como done'
+        ],
+        connects: [
+          '← software-architect (tech spec)',
+          '← product-designer (UX spec + DS)',
+          '⇆ backend-engineer (teammate quando paralelo)',
+          '→ qa-engineer (input pra testes e2e)'
+        ]
+      },
+      {
+        name: 'security-engineer',
+        model: 'sonnet',
+        stages: ['review'],
+        oneLiner: 'Security review (OWASP, CWE, ASVS, NIST SSDF) + modo LLM/agent/RAG.',
+        persona: 'Pentester paranoico. Conhece OWASP e CWE de cor. Não aceita "parece seguro" como argumento — cita CWE específico, mostra payload, sugere fix de 1 linha. Bloqueia merge sem hesitar.',
+        fullDesc: 'Gate de segurança antes do merge. Aplica OWASP Top 10:2021, API Top 10:2023, CWE Top 25:2024, ASVS 4.0, NIST SSDF. Quando o diff toca código de LLM/agent/RAG, roda modo adicional contra OWASP LLM Top 10:2025 (prompt injection, training data poisoning, etc).',
+        triggers: [
+          'Diff toca authn/authz, secrets, input de usuário',
+          'Upload de arquivos, crypto, IaC',
+          'Dependências novas',
+          'Código de LLM/agent/RAG/prompts'
+        ],
+        outputs: [
+          'Lista classificada por severidade (HIGH/MED/LOW/INFO)',
+          'Findings com file:line + fix sugerido',
+          'Veredicto: APPROVED / APPROVED_WITH_NOTES / BLOCKED',
+          'Re-scan automático após fix'
+        ],
+        connects: [
+          '← backend-engineer / frontend-engineer (recebe diff)',
+          '→ sdlc-orchestrator (reporta veredicto)'
+        ]
+      },
+      {
+        name: 'quality-architect',
+        model: 'sonnet',
+        stages: ['review'],
+        oneLiner: 'Estratégia de testes, mutation testing, RCA de bugs em prod.',
+        persona: 'Engenheiro de qualidade sistêmico. Pirâmide de testes pesa mais que coverage absoluto. Em RCA, busca o gap no processo — não na pessoa. Acredita que mutation testing diz a verdade que coverage esconde.',
+        fullDesc: 'Dois modos. Em Strategy Mode, define quality gates e pirâmide de testes pro projeto (uma vez). Em RCA Mode, investiga bugs que escaparam pra produção — não pra apontar culpa, pra capturar o gap no processo que deixou passar.',
+        triggers: [
+          'Setup inicial de quality strategy',
+          'Bug em produção (RCA)',
+          'Test suite com coverage alto mas bugs escapando (mutation testing)'
+        ],
+        outputs: [
+          'Test strategy document (pirâmide, gates, ferramentas)',
+          'Mutation testing config (Stryker/etc)',
+          'RCA: timeline + root cause + ação no processo (não só fix)'
+        ],
+        modes: [
+          'Strategy Mode (1x por projeto)',
+          'RCA Mode (por incidente)'
+        ],
+        connects: [
+          '↔ qa-engineer (define o que QA executa)',
+          '→ sdlc-orchestrator (RCA vira diff no processo)'
+        ]
+      },
+      {
+        name: 'cloud-architect',
+        model: 'sonnet',
+        stages: ['discovery', 'review'],
+        oneLiner: 'CI/CD setup (Módulo 0) + revisão de IaC/Terraform/Kubernetes/Docker.',
+        persona: 'SRE sênior. Treme ao ver secret hardcoded. Sabe que CI lento mata adoção mais rápido que bug em prod. Prefere boring infrastructure a brilhante e frágil.',
+        fullDesc: 'Três modos. Setup Mode roda uma vez por projeto novo (Módulo 0): pipeline CI/CD, script setup local, vars de ambiente. Inventory Mode roda em brownfield: documenta infra existente. Review Mode revisa qualquer PR que toca IaC contra security baseline.',
+        triggers: [
+          'Projeto novo, primeiro deploy',
+          'Brownfield onboarding (extrai infra atual)',
+          'PR mexe em Terraform, GitHub Actions, Dockerfile, k8s'
+        ],
+        outputs: [
+          'Pipeline CI/CD funcional',
+          'README de setup local',
+          'Documentação de ## Tooling no CLAUDE.md',
+          'IaC review com findings de segurança/conformidade'
+        ],
+        modes: [
+          'Setup Mode (Módulo 0, 1x)',
+          'Inventory Mode (brownfield, 1x)',
+          'Review Mode (por PR de infra)'
+        ],
+        connects: [
+          '→ sdlc-orchestrator (declara stack disponível)',
+          '↔ security-engineer (cross-review em PRs de infra)'
+        ]
+      },
+      {
+        name: 'qa-engineer',
+        model: 'sonnet',
+        stages: ['delivery'],
+        oneLiner: 'Verificação e2e via Playwright antes do merge.',
+        persona: 'QA cético por ofício. Não confia em descrição — vai e clica. Faz reconhecimento antes da ação. Edge case é onde mora o bug; happy path é onde mora o falso conforto.',
+        fullDesc: 'Recon-then-action. Primeiro acessa a UI e mapeia o que existe (não confia na descrição da spec). Depois executa cada critério de aceite como user. Golden path + edge cases documentados. Único gate que valida que a feature funciona pelo olhar do usuário.',
+        triggers: [
+          'PR pronto pra merge',
+          'Módulo completou implementação',
+          'Validação black-box necessária'
+        ],
+        outputs: [
+          'Suite Playwright nova ou updates',
+          'Run report: golden path + edge cases + a11y',
+          'Veredicto: APPROVED / BLOCKED (com motivo)',
+          'Screenshots quando o output é visual'
+        ],
+        connects: [
+          '← frontend-engineer + backend-engineer (recebe módulo pronto)',
+          '↔ quality-architect (executa a strategy)',
+          '→ sdlc-orchestrator (reporta veredicto)'
+        ]
+      },
+      {
+        name: 'performance-engineer',
+        model: 'sonnet',
+        stages: ['review'],
+        oneLiner: 'Lighthouse + Core Web Vitals (FE) + slow queries + memory (BE).',
+        persona: 'Perf engineer com olho em P99. Sabe que otimização tem hora — gate na primeira entrega, auditoria quinzenal, não em todo PR. Lê profile antes de palpitar; "parece lento" não é diagnóstico.',
+        fullDesc: 'Dois modos. Gate Mode roda na primeira entrega de cada módulo — bloqueia merge se tiver regressão crítica. Audit Mode roda periodicamente (default: quinzenal) — relatório completo da app, identifica trends antes de virarem incidente.',
+        triggers: [
+          'Primeira entrega de módulo (gate)',
+          'Auditoria quinzenal agendada',
+          'Usuário menciona latência, slowness, bundle size'
+        ],
+        outputs: [
+          'Lighthouse report + Core Web Vitals (FE)',
+          'API response times P50/P95/P99 (BE)',
+          'Bundle size diff + análise de slow queries',
+          'Veredicto: APPROVED / NEEDS_ATTENTION / BLOCKED'
+        ],
+        modes: [
+          'Gate Mode (primeira entrega de módulo)',
+          'Audit Mode (quinzenal)'
+        ],
+        connects: [
+          '← frontend-engineer + backend-engineer (recebe módulo)',
+          '→ sdlc-orchestrator (reporta veredicto)'
+        ]
+      },
+      {
+        name: 'tech-writer',
+        model: 'haiku',
+        stages: ['delivery'],
+        oneLiner: 'OpenAPI, CLAUDE.md, runbooks, CHANGELOG, site de docs. Gate final.',
+        persona: 'Doc writer minimalista. Trata documentação como gate, não afterthought. Sub-agente cold-reader valida que doc faz sentido pra alguém sem contexto prévio — se não passa, refaz.',
+        fullDesc: 'Documentação é gate, não afterthought. Após qualquer mudança de API contract, completion de módulo, ou nova convenção, tech-writer atualiza onde fizer sentido. Sub-agente cold-reader lê os docs sem contexto prévio pra validar que faz sentido pra alguém de fora.',
+        triggers: [
+          'API contract mudou',
+          'Módulo completou',
+          'Convenção nova estabelecida',
+          'Erro de agente que deve virar regra em CLAUDE.md'
+        ],
+        outputs: [
+          'OpenAPI atualizado',
+          'CHANGELOG entry',
+          'Updates no CLAUDE.md',
+          'Runbooks pra novos endpoints',
+          'docs/site/index.html atualizado',
+          'Cold-reader check pass/fail'
+        ],
+        connects: [
+          '← todos os agentes (pega outputs e documenta)',
+          '→ sdlc-orchestrator (sinaliza se docs ok pra merge)'
+        ]
+      },
+      {
+        name: 'product-marketing-manager',
+        model: 'sonnet',
+        stages: ['delivery'],
+        oneLiner: 'Posicionamento externo: value prop, demo, talking points, FAQ por feature.',
+        persona: 'PMM Dunford-style. Distinto do PM: PM define O QUE construir, PMM posiciona POR QUE IMPORTA pro buyer/user. Sabe que feature ≠ value prop — e que um sem o outro vira release nota perdida.',
+        fullDesc: 'Distinto do product-manager. PM define O QUE construir. PMM posiciona POR QUE IMPORTA pro buyer/user. Roda quando feature user-facing termina. Também mantém posicionamento vivo da app (Dunford 5-component) periodicamente. Pula refactors, infra, tooling interno.',
+        triggers: [
+          'Módulo user-facing shippable completou',
+          'Usuário pergunta "como a gente posiciona isso?"',
+          'sdlc-orchestrator detecta trigger de refresh de posicionamento'
+        ],
+        outputs: [
+          'Value prop diff (antes vs depois)',
+          'Demo script de 2 minutos',
+          'Talking points + FAQ',
+          'JTBD servido pela feature',
+          'Update no positioning document da app'
+        ],
+        connects: [
+          '← product-manager (referência: o que foi construído)',
+          '← qa-engineer (confirma que a feature funciona antes do posicionamento sair)'
+        ]
+      }
+    ],
+
+    filteredAgents() {
+      if (this.stageFilter === 'all') return this.agents;
+      return this.agents.filter(a => a.stages.includes(this.stageFilter));
+    },
+
+    stageLabel(s) {
+      return ({
+        discovery: 'discovery',
+        design: 'design',
+        impl: 'implementação',
+        review: 'revisão',
+        delivery: 'entrega'
+      })[s] || s;
+    }
+  };
+}
+</script>
+
+</body>
+</html>
