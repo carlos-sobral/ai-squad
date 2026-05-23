@@ -2,7 +2,7 @@
 
 **Uma squad de engenharia virtual para o seu projeto — movida por IA.**
 
-ai-squad é um conjunto de **13 agentes especializados** e **2 skills** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto, product marketing e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
+ai-squad é um conjunto de **13 agentes especializados** e **4 skills** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto, product marketing e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
 
 Em vez de mandar um prompt solto e torcer pelo melhor, você segue um fluxo: **escreva o que quer construir → deixe o arquiteto planejar → deixe os engenheiros implementar → deixe o QA validar**. Cada etapa tem critérios de qualidade. O resultado é mais consistente e menos retrabalho.
 
@@ -153,9 +153,17 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 | `product-marketing-manager` | Posicionamento externo + artefatos de launch (value prop, demo script, FAQ) para features user-facing | sonnet |
 | `tech-writer` | Documentação de APIs, CLAUDE.md, changelog | haiku |
 
-E **2 skills + 1 slash pattern:**
+E **4 skills + 1 slash pattern:**
+
+*User-invocáveis (Tech Lead chama via slash):*
 - **`/sdlc-orchestrator`** — guia o Tech Lead pelo fluxo completo de módulos, decide quais agentes rodar e quando, aplica gates de qualidade
 - **`/onboard-brownfield`** — onboarding de uma única vez em codebases pré-existentes, inventária stack + CI/CD + convenções + hotspots, produz baseline de documentação e maturity assessment
+
+*Agent-invocáveis (outros agents chamam quando precisam):*
+- **`systematic-debugging`** — 4-fases de investigação de root cause (read errors, reproduce, check changes, gather boundary evidence → pattern analysis → hypothesis → fix). Invocada por qa-engineer em falhas E2E, por engineers em surpresas de runtime, ou pelo Tech Lead em produção
+- **`writing-plans`** — decompõe uma tech spec aprovada em tarefas executáveis de 2-5 min com caminhos exatos, código real e comandos verificáveis. Invocada pelo software-architect após spec aprovada, antes da delegação aos engineers
+
+*Slash pattern:*
 - **`/goal`** — handoff autônomo: depois que as fases iniciais (PRD + clarify gate) fecham, esse pattern entrega o restante do fluxo (design → spec → impl → review → ship → retro) sem pedir confirmação a cada stage. Para parar só em manual-only actions ou tensão com princípios da vision do projeto. O orchestrator oferece esse handoff automaticamente quando o gate fecha.
 
 ---
@@ -380,7 +388,7 @@ ai-squad/
 │   ├── backend-engineer.md
 │   ├── frontend-engineer.md
 │   └── ...
-├── skills/                  # 2 skills: sdlc-orchestrator + onboard-brownfield
+├── skills/                  # 4 skills: sdlc-orchestrator + onboard-brownfield + systematic-debugging + writing-plans
 │   ├── sdlc-orchestrator/
 │   └── onboard-brownfield/
 ├── scripts/

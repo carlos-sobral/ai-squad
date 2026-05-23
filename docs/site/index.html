@@ -1227,10 +1227,11 @@
         <span class="stage-tag">design</span>
         <h3>UX + Tech Spec</h3>
       </div>
-      <div class="stage-desc">Telas, fluxos e copy (se tem UI). Tech spec com contratos de API, schema, ADRs, contrato de observabilidade. <strong>Clarify gate</strong> levanta top-5 ambiguidades antes de escrever spec.</div>
+      <div class="stage-desc">Telas, fluxos e copy (se tem UI). Tech spec com contratos de API, schema, ADRs, contrato de observabilidade. <strong>Clarify gate</strong> levanta top-5 ambiguidades antes de escrever spec. Spec aprovada vira plano executável via <code>writing-plans</code> antes de delegar aos engineers.</div>
       <div class="stage-agents">
         <span class="agent-chip">product-designer</span>
         <span class="agent-chip">software-architect</span>
+        <span class="agent-chip">writing-plans</span>
       </div>
     </div>
 
@@ -1241,10 +1242,11 @@
         <span class="stage-tag">implementação</span>
         <h3>Backend + Frontend em paralelo</h3>
       </div>
-      <div class="stage-desc">Engenheiros implementam contra a spec aprovada. Quando ambos rodam, viram <strong>teammates</strong> com painéis tmux separados — você acompanha em tempo real.</div>
+      <div class="stage-desc">Engenheiros implementam contra a spec aprovada, com test-first como default em código de feature novo. Quando ambos rodam, viram <strong>teammates</strong> com painéis tmux separados — você acompanha em tempo real. Em falha inesperada ou bug, alcançam <code>systematic-debugging</code> antes de propor fix.</div>
       <div class="stage-agents">
         <span class="agent-chip parallel">backend-engineer ⇆</span>
         <span class="agent-chip parallel">⇆ frontend-engineer</span>
+        <span class="agent-chip">systematic-debugging</span>
       </div>
     </div>
 

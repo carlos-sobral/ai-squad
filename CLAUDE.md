@@ -1,6 +1,6 @@
 # ai-squad — Project Context
 
-ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. Fornece 13 agents especializados + 2 skills (sdlc-orchestrator + onboard-brownfield) + 1 slash pattern (`/goal` para handoff autônomo), um processo completo de SDLC com gates de qualidade, suporte a paralelismo via TeamMode + tmux, e onboarding automático de codebases pré-existentes.
+ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. Fornece 13 agents especializados + 4 skills (2 user-invocáveis: sdlc-orchestrator + onboard-brownfield; 2 agent-invocáveis: systematic-debugging + writing-plans) + 1 slash pattern (`/goal` para handoff autônomo), um processo completo de SDLC com gates de qualidade, suporte a paralelismo via TeamMode + tmux, e onboarding automático de codebases pré-existentes.
 
 ## Stack
 
@@ -13,7 +13,7 @@ ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. 
 
 ```
 ai-squad/
-├── skills/                  # 2 skills (sdlc-orchestrator + onboard-brownfield)
+├── skills/                  # 4 skills (sdlc-orchestrator, onboard-brownfield, systematic-debugging, writing-plans)
 │   └── {nome}/SKILL.md
 ├── agents/                  # 13 custom agents (.md) — modelo fixo por papel
 │   └── {nome}.md
