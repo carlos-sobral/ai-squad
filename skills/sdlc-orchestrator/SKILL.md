@@ -392,6 +392,7 @@ Use these consistently across all stages:
 - No fim do retrospective gate, atualize `docs/maturity-assessment.md` se o projeto declara `engineering_metrics.provider` no `## Tooling`.
 - **Survive auto-compaction.** Long orchestration sessions hit the harness's auto-compaction threshold and lose the most recent stage state — what gate is open, which teammates are mid-flight, which retrospective items remain unclassified. To prevent this, the orchestrator persists a compact `state.md` file at `.claude/orchestrator-state/{module-slug}.md` after every stage transition (one-line entries: `[ts] entered <gate>`, `[ts] exited <gate> verdict=<x>`). On session resume after compaction, **read that file before resuming** — it tells you exactly where the flow left off. If the harness supports a PreCompact hook, configure it to refresh the state file before compaction proceeds; if not, write the state synchronously on every transition. The mechanism is portable — it's just a markdown file. The hook is a Claude-Code-specific optimization, not a requirement.
 - **Task descriptions for impl agents must quote tech spec literally, not paraphrase.** When spawning a backend-engineer / frontend-engineer / cloud-architect from a tech spec, the task description sent to the agent must: (1) **Quote file paths exactly** as the tech spec writes them — do not infer/normalize/typo-fix. If the spec says `src/voice/tts-streamer.ts`, do not write `src/llm/tts-streamer.ts` thinking it's the same logical location. Agents trust task descriptions and may follow either source — divergence forces them to detect and report drift, costing a round-trip. (2) **Quote schema columns exactly** — column names, types, defaults, CHECK constraints. Do not paraphrase a 5-column schema as "8-column schema" because you remember a different design from a previous module. (3) **Quote migration paths exactly** — confirm before delegating; one project's `v1/` subfolder is another's flat `migrations/`. (4) **When uncertain**, cite the spec section reference (e.g., "per tech-spec §5.1") and let the agent read the source. Agents have tools to read; better they read than you paraphrase wrong. Cost of citing literally: 30 seconds per delegation. Cost of paraphrasing wrong: 1 round-trip of agent flagging divergence + your decision + agent re-confirmation.
+- **Review dispatches pass git SHAs, never inlined diff text.** When invoking `software-architect` Mode 2 (code review) or any reviewer subagent, the dispatch prompt MUST include `BASE_SHA`, `HEAD_SHA`, a one-paragraph description of what the PR is supposed to do, and a link to the spec/plan it implements. Reviewers read the diff from git via `git diff <BASE>..<HEAD>` — not from prompt text. This isolates the reviewer's context from any session history accumulated during implementation, and makes reviews reproducible: anyone can rerun the same SHAs and get the same shape of findings. Refuse to start a review without all four inputs; pasting the diff into the prompt defeats the isolation and bloats the reviewer's context.
 - **Every implementation PR invokes at least the default review-team variant — even when operating autonomously.** Skipping the review gate to "save a round-trip" is a false economy: Critical and High findings surface in retroactive review at 10× the original cost (the implementation has been built on top of, downstream consumers have wired against the unreviewed surface, and the fix becomes a multi-PR rebase chain instead of a one-line patch). When spawning impl agents in autonomous mode, the orchestrator schedules the review-team unconditionally — the variant (standard / critical / infra / full) is selected by Risk Surface; the variant `none` does not exist. If a Critical retroactive finding is later attributed to a skipped review, the orchestrator surfaces it in the next retrospective with explicit attribution to the skip.
 - **Agent output docs commit on the same branch as the implementation they describe.** When an impl agent (backend-engineer, frontend-engineer, cloud-architect) writes its own output report at `docs/agents/<role>/<date>-<task>.md`, that file MUST land in the same branch as the code change it describes — ideally in the same commit, or as an immediate follow-up commit on the same branch. Cross-branch doc drift (the output doc landed on a previous branch, or got committed to main directly while the code stayed on a feature branch) makes review trails unreviewable: reviewers cannot trace the rationale behind the diff because the doc is somewhere else. At spawn time, instruct every impl agent that the output doc is part of the same PR as the implementation.
 - **Set task owner before spawning a dedicated agent.** When creating a task intended for a specific agent (e.g., spawning `qa-review-m3` for "PR #11 quality review"), call `TaskUpdate { taskId, owner: "<agent-name>" }` BEFORE the `Agent` call — `owner` is a native field in TaskUpdate's schema. Otherwise, idle teammates may race-claim the task from the shared list before the dedicated agent sees it, producing duplicate work and overwritten files (observed M2/M3: task #7 auto-claimed by `qa-strategy-m3` before `qa-review-m3` could see it; both produced output, one overwrote the other locally). Order is mandatory: `TaskCreate` → returns id → `TaskUpdate { taskId, owner }` → `Agent { name: <owner>, ... }`.
@@ -553,6 +554,68 @@ Catch silent drift between what was specified (PRD + tech spec) and what was imp
 ### Relationship to retrospective gate
 
 This gate catches *what happened*. The retrospective gate classifies *why it happened* and updates the system to prevent repeat. Both are required — they are not redundant.
+
+---
+
+## Finish-branch gate — present integration options
+
+After the consistency-check gate closes with verdict PASS or PASS_WITH_WARNINGS, the implementation is mergeable. Don't silently merge — present the Tech Lead with a structured choice of how to integrate, because the right path depends on context (solo merge vs PR review vs keeping a long-lived feature branch).
+
+### Steps
+
+1. **Verify tests** — run the project's test command and confirm 0 failures. If anything fails, surface it and stop — do not present integration options on a red baseline.
+
+2. **Detect environment** — capture branch + worktree state:
+   ```bash
+   GIT_DIR=$(cd "$(git rev-parse --git-dir)" 2>/dev/null && pwd -P)
+   GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
+   BRANCH=$(git branch --show-current)
+   ```
+   The state shapes the menu (normal repo vs worktree vs detached HEAD). When `GIT_DIR != GIT_COMMON`, also run the submodule guard from `TEAMMODE.md` ("Worktree safety") before treating the directory as a worktree.
+
+3. **Determine base branch** — usually `main` or `master`. Confirm with `git merge-base HEAD main 2>/dev/null` or ask the Tech Lead if ambiguous.
+
+4. **Present options** — present exactly the 4 (or 3) options as a numbered list, no padding:
+
+   **Normal repo or named-branch worktree (4 options):**
+   ```
+   Implementation complete and tests green. How do you want to integrate?
+
+   1. Merge back to <base> locally
+   2. Push and open a Pull Request
+   3. Keep the branch as-is (I'll handle it later)
+   4. Discard this work
+   ```
+
+   **Detached HEAD (3 options — no local merge):**
+   ```
+   1. Push as new branch and open a Pull Request
+   2. Keep as-is (I'll handle it later)
+   3. Discard this work
+   ```
+
+5. **Execute choice**:
+   - **Merge locally** — `cd` to main repo root → checkout base → pull → merge → re-run tests on the merged tree → if green, cleanup worktree (Step 6), then `git branch -d` the feature branch.
+   - **PR** — `git push -u origin <branch>` → `gh pr create` with summary + test plan. Do NOT cleanup the worktree — the Tech Lead needs it for review iteration.
+   - **Keep** — report worktree path and branch name. No cleanup.
+   - **Discard** — REQUIRE typed confirmation (`Type 'discard' to confirm.`) before any destructive action. Then cleanup worktree (Step 6) + `git branch -D`.
+
+6. **Cleanup workspace (Options 1 and 4 only)** — only remove worktrees you own:
+   - Path under `.worktrees/`, `worktrees/`, or `~/.config/superpowers/worktrees/` → own and remove via `git worktree remove "$WORKTREE_PATH" && git worktree prune`. Always `cd` to main repo root first — running remove from inside the worktree fails silently.
+   - Path anywhere else → harness/external tooling owns it; do not remove.
+
+### Red flags
+
+- Merging before re-verifying tests on the merged tree (the merge itself can break things — verify post-merge, not pre-merge)
+- Deleting branch before removing its worktree (`git branch -d` fails because the worktree still references the branch)
+- Force-pushing without explicit Tech Lead request
+- Cleaning up a worktree the orchestrator didn't create (provenance check)
+- Open-ended question ("what next?") instead of the structured 4-option menu
+- In autonomous `/goal` mode: defaulting to Option 2 (PR) is acceptable when DoD is met; defaulting to Option 1 (local merge) requires explicit `merge_strategy: local` in the goal doc
+
+### Relationship to retrospective gate
+
+Finish-branch is the integration decision; retrospective is the learning step. Retrospective runs AFTER the integration choice is executed — even for Option 4 (discard), because "we discarded this work" is itself a finding worth recording.
 
 ---
 
