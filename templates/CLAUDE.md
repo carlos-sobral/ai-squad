@@ -136,6 +136,36 @@ project_context:
 
 ---
 
+## Agent behavioral principles
+
+Four operating principles that apply to every agent working in this project. They override speed and the temptation to "just ship it".
+
+### 1. Understand before changing
+
+Before touching code, the agent must be able to state — in its own words — what the user actually wants and what success looks like. If the request is ambiguous, ask a clarifying question instead of guessing. A guess that compiles is still a guess.
+
+Signals you skipped this step: you reach for a file before you can describe the goal in one sentence, or you start editing and discover halfway through that the requirement was different.
+
+### 2. Simplest thing that works
+
+Default to the smallest change that solves the stated problem. No speculative abstractions, no "while we're here" cleanups, no framework introduced for a future need that hasn't been described. Three explicit lines beat a clever helper that hides two of them.
+
+If a more general design is genuinely needed, the agent says so explicitly and asks before introducing it.
+
+### 3. Surgical changes
+
+Touch only the code the task requires. Don't rename unrelated variables, don't reformat untouched files, don't refactor in passing. Each unrelated change widens the blast radius, adds noise to the diff, and forces the reviewer to verify things outside the original scope.
+
+If you find adjacent code that's genuinely broken, surface it as a follow-up — don't bundle the fix.
+
+### 4. Verify before claiming done
+
+Define what "done" looks like before starting (a passing test, a working flow, a clean build) and run that exact check before reporting success. "Should work" and "looks right" are not verification. The check goes in the same message as the claim, with the actual output quoted.
+
+This applies to results from subagents too: a subagent reporting "DONE" is a claim to verify, not evidence to relay.
+
+---
+
 ## Agent Outputs
 
 Agent outputs are saved here as a log of what was built and when.

@@ -1,0 +1,63 @@
+# Superpowers + Karpathy integration plan
+
+**Data:** 2026-05-23
+**Status:** T1 em execução · T2 sob demanda · T3 deferred
+
+## Contexto
+
+Avaliação de dois repositórios externos de skills para incorporação no ai-squad:
+
+- [obra/superpowers](https://github.com/obra/superpowers) — 16 skills cobrindo o ciclo de discovery → finish. Alto valor: cobre o gap "como executar bem dentro de cada fase" que o `sdlc-orchestrator` não detalha.
+- [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) — 1 arquivo com 4 princípios comportamentais. Valor conceitual; sem LICENSE no repo, então **reescrever do zero com palavras próprias**.
+
+Relatório completo de análise produzido pelo Explore antes do plano (não persistido — síntese abaixo).
+
+## Decisões fechadas
+
+| # | Decisão | Escolha |
+|---|---|---|
+| 1 | TDD enforcement | Técnica nos prompts de `backend-engineer` e `frontend-engineer`, com exceções narrow (hotfix/infra/scripts/spikes) — **não** vira skill separada |
+| 2 | Brainstorming overlap | Upgrade do `idea-researcher` existente com metodologia socrática do Superpowers — **não** criar skill `/brainstorm` paralela |
+| 3 | Filosofia agent-centric vs skill-centric | Manter agent-centric — skills do Superpowers reescritas como ferramentas invocadas por agents nomeados, **não** como reflexos auto-disparados |
+| 4 | Licença Karpathy | Reescrever os 4 princípios do zero — repo não tem LICENSE explícita |
+
+## Tier 1 — executado em 2026-05-23
+
+- [x] **T1.1** — `verification-before-completion` guardrail → `~/.claude/CLAUDE.md` (seção "Operational guardrails → Verification before completion claims")
+- [x] **T1.2** — `receiving-code-review` guardrail → `~/.claude/CLAUDE.md` (seção "Operational guardrails → Code review reception")
+- [x] **T1.3** — `writing-skills` (TDD pra skills) → `~/.claude/CLAUDE.md` (seção "Operational guardrails → Writing or editing skills")
+- [x] **T1.4** — Worktree safety checklist → `TEAMMODE.md` (seção "Worktree safety")
+- [x] **T1.5** — `dispatching-parallel-agents` decision tree → `TEAMMODE.md` (seção "Quando dispatch paralelo vale")
+- [x] **T1.6** — 4 princípios Karpathy reescritos do zero → `templates/CLAUDE.md` (seção "Agent behavioral principles")
+
+## Tier 2 — sob demanda (decisões tomadas, ~12-15h escalonáveis)
+
+- [ ] **T2.1** — Upgrade `idea-researcher` com brainstorming socrático (1-pergunta-por-vez, 2-3 abordagens explícitas, design doc gate antes de PRD)
+- [ ] **T2.2** — Test-first como técnica nos prompts de `backend-engineer` e `frontend-engineer` (com exceções narrow)
+- [ ] **T2.3** — Nova skill `/systematic-debugging` invocada pelo `qa-engineer` em falhas
+- [ ] **T2.4** — Nova skill `/write-plan` invocada pelo `software-architect` após spec aprovada
+- [ ] **T2.5** — Extensão do `sdlc-orchestrator` com `finish-branch` gate (fase 6b)
+- [ ] **T2.6** — Refactor do `software-architect` code-review mode pra dispatch subagent isolado (pattern `requesting-code-review`)
+
+**Regra aplicada em todas as T2:** seção "when to use" reescrita para "invocada por `<agent>` em `<fase>`" — preservando agent-centric.
+
+## Tier 3 — deferred (requer discussão estrutural)
+
+- [ ] **T3.1** — `subagent-driven-development` autonomous mode → como conviver com `/goal`? Refactor profundo do orchestrator ou pattern paralelo?
+
+## Skills do Superpowers descartadas
+
+| Skill | Motivo |
+|---|---|
+| `using-superpowers` | Filosofia skill-centric com auto-invocação — incompatível com modelo agent-centric do ai-squad |
+| `executing-plans` | Já coberto por `/goal` + `sdlc-orchestrator` (com pauses vs autônomo) |
+
+## Source materials
+
+- `/tmp/superpowers/skills/` — clone do Superpowers (licença open source no repo)
+- `/tmp/karpathy-skills/` — clone do Karpathy skills (sem LICENSE; conteúdo reescrito do zero)
+
+## Rastreamento de progresso
+
+Cada item T1/T2 deve ser marcado conforme executado. Use checkbox markdown.
+Quando todos os T1 estiverem completos, commit consolidado. T2 commits atômicos individuais.

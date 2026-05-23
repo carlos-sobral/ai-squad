@@ -137,6 +137,107 @@ Se quiser navegar entre os painéis manualmente:
 
 ---
 
+## Worktree safety — checklist antes de criar workspace isolado
+
+Antes de criar um worktree (manual ou via ferramenta nativa como `EnterWorktree`), o agente deve passar por três checagens. Pular qualquer uma delas tipicamente causa retrabalho ou polui o repo.
+
+### 1. Detectar isolamento existente
+
+Antes de criar qualquer coisa, verificar se já está em um workspace isolado:
+
+```bash
+GIT_DIR=$(cd "$(git rev-parse --git-dir)" 2>/dev/null && pwd -P)
+GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
+```
+
+Se `GIT_DIR != GIT_COMMON`, você já está em um worktree linkado — **não criar outro**, seguir para o setup.
+
+**Guard contra submódulos:** o mesmo teste é positivo dentro de submódulos. Antes de concluir "já é worktree", confirmar:
+
+```bash
+git rev-parse --show-superproject-working-tree 2>/dev/null
+```
+
+Se retornar um path, é submódulo (tratar como repo normal), não worktree.
+
+### 2. Preferir ferramentas nativas sobre `git worktree add`
+
+Se o ambiente expõe uma ferramenta nativa de worktree (`EnterWorktree`, `WorktreeCreate`, `/worktree`), usar ela. Rodar `git worktree add` quando a ferramenta nativa existe cria estado fantasma que o harness não consegue rastrear nem limpar.
+
+`git worktree add` é fallback — só usar quando não há ferramenta nativa disponível.
+
+### 3. Verificar que o diretório está ignorado (apenas worktrees project-local)
+
+Antes de criar um worktree em `.worktrees/` ou `worktrees/` no projeto:
+
+```bash
+git check-ignore -q .worktrees 2>/dev/null || git check-ignore -q worktrees 2>/dev/null
+```
+
+**Se não estiver ignorado:** adicionar ao `.gitignore`, commitar, e só então criar. Pular esse passo polui `git status` com centenas de arquivos do worktree.
+
+Worktrees em diretórios globais (`~/.config/...`) não precisam dessa verificação.
+
+### Quick reference
+
+| Situação | Ação |
+|---|---|
+| `GIT_DIR != GIT_COMMON` e não é submódulo | Já em worktree — pular criação |
+| Em submódulo | Tratar como repo normal |
+| Ferramenta nativa disponível | Usar ela (não `git worktree add`) |
+| `.worktrees/` ou `worktrees/` não está em `.gitignore` | Adicionar + commitar antes de criar |
+| Erro de permissão ao criar | Sandbox bloqueou — trabalhar no diretório atual e avisar o user |
+
+---
+
+## Quando dispatch paralelo vale (vs sequencial)
+
+`TeamCreate` paraleliza dois ou mais agents simultaneamente. Mas paralelizar problemas relacionados desperdiça contexto e gera conflitos. A decisão é binária: **os domínios são independentes?**
+
+### Decision tree
+
+```
+Múltiplas tarefas/falhas?
+  ├─ sim → São independentes?
+  │        ├─ não (relacionadas) → 1 agent investiga todas em sequência
+  │        └─ sim → Podem rodar sem estado compartilhado?
+  │                 ├─ sim → Paralelo: 1 agent por domínio
+  │                 └─ não → Sequencial (evita interferência)
+  └─ não → Agent único
+```
+
+### Use paralelo quando
+
+- 3+ test files falhando com causas diferentes
+- Backend + frontend de uma feature avançam sem compartilhar arquivo
+- Investigações em subsistemas que não se tocam (auth vs billing vs notifications)
+- Cada problema é compreensível sem o contexto dos outros
+
+### Não use paralelo quando
+
+- Falhas podem ter causa raiz comum (fixar uma pode resolver outras — investigar junto primeiro)
+- Agents precisariam editar o mesmo arquivo (conflito garantido)
+- A tarefa exige entender o sistema inteiro como uma peça
+- Você ainda não sabe o que está quebrado (debug exploratório é sequencial)
+
+### Estrutura de cada agent paralelo
+
+Cada agent precisa de prompt **focado, self-contained e específico no output**:
+
+- **Escopo:** um arquivo, um subsistema, um domínio — não "consertar os testes"
+- **Contexto:** colar mensagens de erro e nomes de testes, não confiar que o agent vai descobrir
+- **Restrições:** "não tocar em código de produção", "só ajustar testes", etc — senão um agent pode refatorar área de outro
+- **Output esperado:** "retornar resumo do root cause e mudanças feitas" — vago resulta em difícil de integrar
+
+### Depois que os agents retornam
+
+1. Ler cada resumo individualmente
+2. Verificar se editaram arquivos em comum (conflito potencial)
+3. Rodar a suite completa para confirmar integração
+4. Spot-check: agents podem cometer o mesmo erro sistemático (mesma má assunção em domínios diferentes)
+
+---
+
 ## Dica de workflow
 
 Uma forma confortável de trabalhar:
