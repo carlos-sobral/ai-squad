@@ -301,6 +301,60 @@ T3: product-manager (full) → [product-designer UX full, if UI] → software-ar
 - For changes to existing features with documented specs, recommend **delta spec** format regardless of tier.
 - The retrospective gate runs on ALL tiers. Even T1 modules produce learning.
 
+### Task-by-task impl execution mode
+
+The impl-team can run in two modes inside the Implementation stage:
+
+- **Bulk mode** (default for T1/T2 low-risk) — owner agent works through the entire writing-plans output in one dispatch, commits per-task as it goes, and the review-team reviews the whole module at the end.
+- **Task-by-task mode** — orchestrator dispatches the owner agent for one task at a time; after each task commits, the review-team runs against that single task's diff (BASE_SHA = previous task's HEAD, HEAD_SHA = current HEAD); BLOCK findings loop the owner agent with the finding back into the same task before the next task starts.
+
+#### When task-by-task is activated
+
+| Tier / Risk Surface | Mode |
+|---|---|
+| T1 (hotfix, inline spec) | Bulk — task-by-task overhead is not worth it for a 1-file change |
+| T2, standard Risk Surface | Bulk (default) — Tech Lead can opt into task-by-task per module |
+| T2, high Risk Surface (security/PII/multi-tenant/data integrity) | **Task-by-task auto-activated** |
+| T3 (full module, multi-subsystem) | **Task-by-task auto-activated** |
+
+High Risk Surface declarations come from the goal doc or the tech spec's Risk Surface section. When in doubt, ask the Tech Lead; defaulting to bulk on high-risk modules is the failure mode this gate prevents.
+
+#### Required inputs for task-by-task mode
+
+- A writing-plans output at `docs/plans/<date>-<slug>.md` with bite-sized tasks (per the `writing-plans` skill) — refuse to start task-by-task without this; either generate the plan first or fall back to bulk
+- Approved tech spec (linked from the plan header)
+- Owner agent declared in the plan header (`backend-engineer` | `frontend-engineer` | `cloud-architect`)
+
+#### Per-task loop
+
+For each task in the plan, in order:
+
+1. Capture `BASE_SHA = git rev-parse HEAD` (will be the previous task's commit, or the branch start for task 1)
+2. Dispatch the owner agent with the task N text only — not the full plan, not other tasks. Include the task header, file paths, code blocks, and expected test commands verbatim per the "Task descriptions for impl agents must quote tech spec literally" rule above.
+3. Wait for the owner agent to commit + report. Capture `HEAD_SHA = git rev-parse HEAD`. If `BASE_SHA == HEAD_SHA`, the task produced no commit — treat as BLOCKED and re-dispatch with a "no commit produced" finding.
+4. Dispatch the review-team variant (by Risk Surface) with BASE_SHA, HEAD_SHA, the task N description, and a link to the tech spec section the task implements. Reviewer reads diff from git per the SHA dispatch rule above.
+5. Verdict handling:
+   - **PASS** or **PASS_WITH_WARNINGS** → mark task N complete, advance to task N+1
+   - **BLOCK** → re-dispatch the owner agent with the finding text, looping on the SAME task. Retry cap **3** attempts.
+   - **3 failed attempts on the same task** → stop the loop, summarize attempts, escalate to the Tech Lead. In `/goal` autonomous mode, this hits the residual-stop list (unconverged retry loop).
+6. After the last task: dispatch the full module review-team (security-engineer + performance-engineer if Risk Surface warrants, plus software-architect Mode 2 against the full BASE..HEAD diff) — task-level reviews catch local issues; the module-level review catches cross-task integration issues that no per-task review can see.
+
+#### Coexistence with `/goal` autonomy
+
+When `/goal` is active and the module enters Implementation:
+- Read the goal doc and tech spec for Risk Surface declaration
+- If T3 or high Risk Surface → task-by-task auto-activates with no Tech Lead confirmation (mode is declared, not asked)
+- The residual-stop list in the `/goal` prompt already covers retry exhaustion (Step 3 above triggers it naturally)
+- The merge/finish-branch gate runs after the module-level review per the standard flow
+
+#### Why task-by-task is worth the overhead when it activates
+
+- **Earlier defect detection** — a Critical finding on task 2 surfaces immediately, before tasks 3-10 are built on top of it. Bulk-mode finds the same defect at module-end review, when the fix may require rewriting downstream tasks too.
+- **Smaller review surface per dispatch** — the reviewer sees one task's worth of diff (10-50 lines typically), not the whole module (hundreds of lines). Findings are more precise, fewer false positives.
+- **Predictable retry boundary** — if a task fails 3 times, only that task is blocked, not the whole module. Bulk-mode failures are harder to isolate.
+
+Cost: more agent invocations per module (N task reviews + 1 module review vs 1 module review). Acceptable trade for high-risk surfaces; not acceptable for T1 hotfixes.
+
 ---
 
 ## Spec sharding rule

@@ -41,9 +41,9 @@ Relatório completo de análise produzido pelo Explore antes do plano (não pers
 
 **Regra aplicada em todas as T2:** seção "when to use" reescrita para "invocada por `<agent>` em `<fase>`" — preservando agent-centric.
 
-## Tier 3 — deferred (requer discussão estrutural)
+## Tier 3 — executado em 2026-05-23
 
-- [ ] **T3.1** — `subagent-driven-development` autonomous mode → como conviver com `/goal`? Refactor profundo do orchestrator ou pattern paralelo?
+- [x] **T3.1** — `sdlc-orchestrator` v1.5 — novo "task-by-task impl execution mode" como subseção do impl phase. Auto-ativada em T3 + alta Risk Surface; opt-in em T2 standard; skip em T1. Per-task loop: dispatch owner agent com 1 task → commit → review-team com BASE_SHA/HEAD_SHA daquele task → BLOCK loop com retry cap 3 → módulo-level review depois do último task. Coexiste com `/goal` (auto-ativa conforme Risk Surface declarada). Fecha o loop com `writing-plans` (T2.4) — sem essa mode, os bite-sized tasks eram só artefato organizacional.
 
 ## Skills do Superpowers descartadas
 
