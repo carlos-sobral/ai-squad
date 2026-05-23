@@ -25,6 +25,9 @@
 Thumbs.db
 desktop.ini
 
+# Playwright MCP session artifacts (page snapshots, console logs)
+.playwright-mcp/
+
 # Engineering metrics — latest.* is volatile output of scripts/metrics/collect.sh,
 # regenerated on every run. history/ is the persisted snapshot trail and IS committed.
 docs/metrics/latest.md
