@@ -30,14 +30,14 @@ Relatório completo de análise produzido pelo Explore antes do plano (não pers
 - [x] **T1.5** — `dispatching-parallel-agents` decision tree → `TEAMMODE.md` (seção "Quando dispatch paralelo vale")
 - [x] **T1.6** — 4 princípios Karpathy reescritos do zero → `templates/CLAUDE.md` (seção "Agent behavioral principles")
 
-## Tier 2 — sob demanda (decisões tomadas, ~12-15h escalonáveis)
+## Tier 2 — executado em 2026-05-23
 
-- [ ] **T2.1** — Upgrade `idea-researcher` com brainstorming socrático (1-pergunta-por-vez, 2-3 abordagens explícitas, design doc gate antes de PRD)
-- [ ] **T2.2** — Test-first como técnica nos prompts de `backend-engineer` e `frontend-engineer` (com exceções narrow)
-- [ ] **T2.3** — Nova skill `/systematic-debugging` invocada pelo `qa-engineer` em falhas
-- [ ] **T2.4** — Nova skill `/write-plan` invocada pelo `software-architect` após spec aprovada
-- [ ] **T2.5** — Extensão do `sdlc-orchestrator` com `finish-branch` gate (fase 6b)
-- [ ] **T2.6** — Refactor do `software-architect` code-review mode pra dispatch subagent isolado (pattern `requesting-code-review`)
+- [x] **T2.1** — `idea-researcher` v1.1 — socratic 1-pergunta-por-vez, 2-3 abordagens explícitas, design gate em 3 sub-passos (apresenta seção-por-seção, self-review, user approval antes de PRD)
+- [x] **T2.2** — Test-first como técnica nos `Always` de `backend-engineer` v1.10 e `frontend-engineer` v1.4 — default em features novas, exceções narrow (hotfix/infra/scripts/spikes) com justificativa
+- [x] **T2.3** — Nova skill `systematic-debugging` — 4-fases (root cause → pattern → hypothesis → fix), invocada por qa/engineers/Tech Lead
+- [x] **T2.4** — Nova skill `writing-plans` — bite-sized tasks (2-5min) com paths exatos e código real, invocada por `software-architect` após spec aprovada, output em `docs/plans/`
+- [x] **T2.5** — `sdlc-orchestrator` v1.3 — finish-branch gate entre consistency-check e retrospective, 4-option menu (merge/PR/keep/discard) com env detection e cleanup provenance-based
+- [x] **T2.6** — `software-architect` v1.11 + `sdlc-orchestrator` v1.4 — review dispatch agora exige BASE_SHA/HEAD_SHA, reviewer lê diff via `git diff`, não de prompt; orchestrator regra parallel adicionada
 
 **Regra aplicada em todas as T2:** seção "when to use" reescrita para "invocada por `<agent>` em `<fase>`" — preservando agent-centric.
 
