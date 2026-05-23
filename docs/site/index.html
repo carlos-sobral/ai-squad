@@ -943,6 +943,9 @@
       <strong>Agentes especializados</strong> significa que cada papel é um agente diferente, com seu próprio prompt, modelo (Opus pra raciocínio, Sonnet pra execução, Haiku pra docs) e gatilho. Ninguém é generalista. Quem orquestra é uma skill (<code>/sdlc-orchestrator</code>) que conhece o fluxo, decide quem entra quando, e aplica os gates de qualidade.
     </p>
     <p>
+      Depois que as fases iniciais fecham (PRD + clarify gate), o orchestrator oferece um handoff via <code>/goal</code> que entrega o restante do fluxo de forma autônoma até o merge — pra quando você quer parar de aprovar stage por stage. A autonomia só cede em manual-only actions (signups, OAuth) ou tensão com princípios da vision do projeto.
+    </p>
+    <p>
       O loop fica assim:
     </p>
     <div class="loop-diagram">
