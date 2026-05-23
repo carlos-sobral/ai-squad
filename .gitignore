@@ -29,3 +29,8 @@ desktop.ini
 # regenerated on every run. history/ is the persisted snapshot trail and IS committed.
 docs/metrics/latest.md
 docs/metrics/latest.html
+
+# Stakeholder observability dashboard — regenerated on every run of
+# scripts/observability/render-dashboard.sh. Derived from committed sources
+# (timeline.log, orchestrator-state, goals/), so the snapshot isn't tracked.
+docs/dashboard/index.html

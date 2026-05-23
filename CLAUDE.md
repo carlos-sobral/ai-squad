@@ -18,7 +18,8 @@ ai-squad/
 ├── agents/                  # 13 custom agents (.md) — modelo fixo por papel
 │   └── {nome}.md
 ├── scripts/
-│   └── metrics/             # collect.sh — coleta DORA + engineering metrics
+│   ├── metrics/             # collect.sh — coleta DORA + engineering metrics
+│   └── observability/       # render-dashboard.sh — HTML stakeholder dashboard (opcional)
 ├── templates/
 │   ├── CLAUDE.md            # Template de contexto para projetos que usam o framework
 │   └── docs/

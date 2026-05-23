@@ -334,6 +334,39 @@ Gráfico de maturidade: `templates/docs/maturity-assessment.md` — rubrica 5×4
 
 ---
 
+## Stakeholder observability dashboard (opcional)
+
+Para acompanhar o trabalho **sem entrar no Claude Code** — útil quando alguém fora do loop de IA (PM, líder de negócio, reviewer humano) precisa ver o progresso — `scripts/observability/render-dashboard.sh` gera um HTML estático single-file a partir dos artefatos que o `sdlc-orchestrator` já produz:
+
+```bash
+bash scripts/observability/render-dashboard.sh
+# → docs/dashboard/index.html
+```
+
+O dashboard renderiza:
+- **Módulos in flight** — slug, fase atual, status (in progress / verdict / BLOCK), última atividade, nota corrente do orchestrator-state
+- **Goals** — lista de `docs/goals/*.md` ordenada por mtime, linkando direto pro arquivo
+- **Recent activity** — últimos 20 eventos do `docs/metrics/timeline.log`
+
+Inputs (todos opcionais; cada um ausente vira mensagem de onboarding na seção correspondente):
+
+| Fonte | O que extrai |
+|---|---|
+| `docs/metrics/timeline.log` | Gate enter/exit do sdlc-orchestrator |
+| `.claude/orchestrator-state/*.md` | Nota corrente por módulo |
+| `docs/goals/*.md` | Goals ativos |
+| `docs/metrics/latest.html` | Linkado no rodapé se existir |
+
+**Princípios:**
+- **Read-only, single-direction.** Não há sync bidirecional, agents não postam comments, nada vai pra rede.
+- **Zero dependências.** Bash + awk apenas — funciona em qualquer adopter sem setup adicional, sem PAT, sem GitHub App.
+- **Stale-aware.** Se o evento mais recente do timeline for >7 dias antigo, mostra banner de aviso no topo.
+- **Output gitignored** (`docs/dashboard/index.html`) — snapshot regenerável, não artefato versionado.
+
+Pra publicar pro stakeholder, sirva via GitHub Pages, S3, ou mande o HTML por email — é self-contained com CSS inline e sem JS.
+
+---
+
 ## Suporte a brownfield — one-shot discovery + inventory
 
 Para **codebases pré-existentes**, rode `/onboard-brownfield` uma única vez, antes de `/sdlc-orchestrator`:
