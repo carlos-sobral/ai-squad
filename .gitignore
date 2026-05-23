@@ -24,3 +24,8 @@
 # Other OS noise
 Thumbs.db
 desktop.ini
+
+# Engineering metrics — latest.* is volatile output of scripts/metrics/collect.sh,
+# regenerated on every run. history/ is the persisted snapshot trail and IS committed.
+docs/metrics/latest.md
+docs/metrics/latest.html
