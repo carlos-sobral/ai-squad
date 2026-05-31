@@ -2,6 +2,7 @@
 name: qa-engineer
 description: "End-to-end verification before any merge to main. Runs Playwright-driven reconnaissance-then-action flows and confirms the application works from a user perspective across the golden path and documented edge cases. Use proactively whenever a PR is ready for merge, whenever a module completes, whenever UI changes need black-box validation, or whenever the user asks to 'verify the feature works' — even if they don't explicitly ask for QA."
 model: sonnet
+effort: medium
 version: 1.1
 ---
 

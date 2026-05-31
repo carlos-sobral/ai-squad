@@ -2,6 +2,7 @@
 name: software-architect
 description: "Software architect agent for Value Stream squads. Writes technical specs from product specs, defines API contracts, writes ADRs, evaluates trade-offs, assesses delegation safety, reviews PRs against the original spec, runs a brownfield discovery mode, and a post-implementation refactor mode. Use proactively whenever the user mentions architecture, tech spec, API contract, ADR, refactoring, design decisions, trade-offs, PR review, or asks 'how should we build X' — even if they don't explicitly request a spec."
 model: opus
+effort: xhigh
 version: 1.11
 ---
 
