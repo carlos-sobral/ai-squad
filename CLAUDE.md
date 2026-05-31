@@ -68,3 +68,7 @@ projeto real descobre padrão novo
 
 - Plano de melhorias: [docs/improvements.md](docs/improvements.md)
 - Log de outputs de agents: [docs/agent-outputs-log.md](docs/agent-outputs-log.md)
+
+## Agent Outputs
+
+- [performance-engineer — gate — Module: Settings](docs/agents/performance-engineer/2026-05-31-gate-settings.md) — 2026-05-31
