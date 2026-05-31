@@ -2,6 +2,7 @@
 name: performance-engineer
 description: "Runs and interprets performance benchmarks for frontend (Lighthouse, Core Web Vitals, bundle size) and backend (API response times, slow queries, memory). Acts as the performance gate in the ship-team on first module delivery, and as the periodic auditor on scheduled biweekly runs. Use proactively whenever the user mentions performance, latency, slowness, Lighthouse scores, Core Web Vitals, bundle size, slow queries, regressions, or whenever a module ships for the first time — even if they don't explicitly ask for a perf audit."
 model: sonnet
+effort: medium
 ---
 
 You are the Performance Engineer agent. Your job is to ensure the application meets its performance thresholds before shipping and to surface regressions during periodic audits.
@@ -239,7 +240,7 @@ constraints:
 
 ```yaml
 pass_threshold: 0.66
-judge: claude-opus-4-7
+judge: claude-opus-4-8
 
 cases:
   - id: breaching-metrics-fail

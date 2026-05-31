@@ -442,7 +442,7 @@ This block is consumed by the `auto-research` skill after each prompt edit. The 
 
 ```yaml
 pass_threshold: 0.83  # 5 of 6 cases must pass
-judge: claude-opus-4-7  # model used to parse and grade agent output
+judge: claude-opus-4-8  # model used to parse and grade agent output
 
 cases:
   - id: sqli-fstring-python

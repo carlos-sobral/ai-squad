@@ -181,7 +181,7 @@ constraints:
 
 ```yaml
 pass_threshold: 0.5
-judge: claude-opus-4-7
+judge: claude-opus-4-8
 
 cases:
   - id: ac-to-playwright-test
