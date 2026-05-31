@@ -137,21 +137,21 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 
 ## Os 13 agentes
 
-| Agente | O que faz | Modelo |
-|---|---|---|
-| `idea-researcher` | Pesquisa e estrutura ideias vagas antes do PRD | opus |
-| `product-manager` | Escreve PRDs e user stories com acceptance criteria; suporta notação EARS para ACs event-driven | opus |
-| `product-designer` | Design system + UX specs por módulo | opus |
-| `software-architect` | Tech specs, code review, ADRs, refactor, diagramas | opus |
-| `backend-engineer` | Implementa backend a partir de tech spec | sonnet |
-| `frontend-engineer` | Implementa UI a partir de tech spec + UX spec | sonnet |
-| `security-engineer` | Revisão de segurança (OWASP, CWE, ASVS); LLM security review (OWASP LLM Top 10:2025) | sonnet |
-| `quality-architect` | Estratégia de testes e quality gates | sonnet |
-| `cloud-architect` | CI/CD setup e revisão de infra/IaC | sonnet |
-| `qa-engineer` | Testes e2e, verificação antes do merge | sonnet |
-| `performance-engineer` | Gate de performance e auditorias periódicas | sonnet |
-| `product-marketing-manager` | Posicionamento externo + artefatos de launch (value prop, demo script, FAQ) para features user-facing | sonnet |
-| `tech-writer` | Documentação de APIs, CLAUDE.md, changelog | haiku |
+| Agente | O que faz | Modelo | Effort |
+|---|---|---|---|
+| `idea-researcher` | Pesquisa e estrutura ideias vagas antes do PRD | opus | high |
+| `product-manager` | Escreve PRDs e user stories com acceptance criteria; suporta notação EARS para ACs event-driven | opus | high |
+| `product-designer` | Design system + UX specs por módulo | opus | high |
+| `software-architect` | Tech specs, code review, ADRs, refactor, diagramas | opus | xhigh |
+| `backend-engineer` | Implementa backend a partir de tech spec | sonnet | high |
+| `frontend-engineer` | Implementa UI a partir de tech spec + UX spec | sonnet | high |
+| `security-engineer` | Revisão de segurança (OWASP, CWE, ASVS); LLM security review (OWASP LLM Top 10:2025) | opus | high |
+| `quality-architect` | Estratégia de testes e quality gates | sonnet | high |
+| `cloud-architect` | CI/CD setup e revisão de infra/IaC | sonnet | high |
+| `qa-engineer` | Testes e2e, verificação antes do merge | sonnet | medium |
+| `performance-engineer` | Gate de performance e auditorias periódicas | sonnet | medium |
+| `product-marketing-manager` | Posicionamento externo + artefatos de launch (value prop, demo script, FAQ) para features user-facing | opus | medium |
+| `tech-writer` | Documentação de APIs, CLAUDE.md, changelog | haiku | low |
 
 E **4 skills + 1 slash pattern:**
 
@@ -269,6 +269,21 @@ claude --dangerously-skip-permissions
 Sem o tmux, os agentes ainda funcionam — rodam em sequência, sem os painéis. O TeamMode é opcional mas muda bastante a experiência. A flag `--dangerously-skip-permissions` é necessária para o fluxo rodar de forma autônoma — sem ela, cada operação de cada agente pede confirmação manual.
 
 → **Guia completo de instalação e configuração:** [TEAMMODE.md](./TEAMMODE.md)
+
+---
+
+## Hooks de enforcement
+
+O `install.sh` instala dois hooks determinísticos em `~/.claude/hooks/` e os conecta ao seu `~/.claude/settings.json` (merge não-destrutivo e idempotente — re-rodar não duplica nem sobrescreve sua config). Eles transformam guardrails que antes viviam só em prompt — fáceis de o agente racionalizar e ignorar — em garantias que o harness executa:
+
+| Hook | Evento | O que faz |
+|---|---|---|
+| `guard-bash.py` | `PreToolUse` (Bash) | Força confirmação humana em **force-push** (`git push --force/-f`) e em **`git add -A` / `commit -a` amplo dentro de `~/.claude/agents\|skills`** (a fonte da verdade), evitando arrastar drift não relacionada para commits de escopo enganoso. |
+| `guard-stop.py` | `Stop` | Bloqueia o encerramento quando a resposta **editou código + declarou sucesso + não rodou nenhum comando de verificação** — operacionaliza a iron-law "nenhum claim de sucesso sem evidência". Edits só-de-documentação não disparam. |
+
+Princípios de design: **fail-open** (qualquer erro de parsing libera — um hook bugado nunca trava seu shell), uso de `ask` em vez de `deny` (o force-push não é proibido, só exige um "sim" explícito), e gatilho apertado no `Stop` (só dispara com os três sinais juntos) para minimizar falso-positivo. Scripts em python3 puro (stdlib), sem dependências.
+
+Para desligar temporariamente, rode `/hooks` no Claude Code ou remova a chave `hooks` do `settings.json`.
 
 ---
 
