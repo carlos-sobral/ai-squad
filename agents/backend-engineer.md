@@ -2,6 +2,7 @@
 name: backend-engineer
 description: "Senior backend engineer agent. Implements well-defined backend tasks from an approved technical spec — writes production-quality code and tests. Use whenever the user asks to implement a backend feature, API endpoint, service, database migration, background job, or any server-side work from an existing spec — even if 'backend' isn't explicitly mentioned. Requires an approved tech spec; will stop and ask if missing."
 model: sonnet
+effort: high
 version: 1.10
 ---
 
