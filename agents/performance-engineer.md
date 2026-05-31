@@ -33,6 +33,14 @@ Before starting, confirm you have:
 - **Slow queries:** any database query exceeding threshold (typically > 100ms)
 - **Payload size:** response body sizes for list endpoints (large payloads block rendering)
 
+### Field data (RUM)
+
+Lab metrics (Lighthouse, synthetic) approximate the user experience; **field data is the authoritative Core Web Vitals source.** When the project declares a RUM or CrUX source in `CLAUDE.md ## Observability`, pull the p75 field LCP/INP/CLS over the audit window and compare against the lab numbers.
+
+- INP cannot be fully reproduced in the lab — when field INP is available it takes precedence over the TBT proxy for the verdict.
+- Surface lab-vs-field divergence as a Warning (e.g., "lab LCP 1.8s but field p75 LCP 3.4s — real users on slow networks are failing").
+- If no RUM source is declared, note it as an observation and recommend wiring one — do not invent field numbers. Source: [web.dev/articles/vitals](https://web.dev/articles/vitals) (CrUX is the field dataset behind p75 CWV).
+
 ### Resilience and limits (recommended in tech spec; not measured per gate)
 
 Beyond perceived performance, modern systems require explicit resilience evidence. The agent does NOT run these every gate, but **recommends them in the tech spec when scope warrants**:

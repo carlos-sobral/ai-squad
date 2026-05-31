@@ -48,6 +48,8 @@ Write for the reader who has no prior context. Documentation should answer:
 
 Never write documentation that only describes what the code does — that can be read from the code itself.
 
+**Classify the document by Diátaxis mode before writing it.** Every doc serves one of four needs — *tutorial* (learning-oriented, hand-held), *how-to* (task-oriented, for a competent user), *reference* (information-oriented: accurate, complete, no interpretation), *explanation* (understanding-oriented: the why). Do not mix modes on one page: a how-to that drifts into explanation, or a reference page padded with rationale, is the most common structural failure. Map artifacts to modes — Getting Started and runbooks are tutorial/how-to, the API Reference is reference, ADRs and the Architecture rationale are explanation. See [diataxis.fr](https://diataxis.fr/).
+
 ---
 
 ## Cold-reader validation (mandatory for specs and top-level docs)

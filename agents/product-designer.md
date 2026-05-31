@@ -424,6 +424,13 @@ Every user-visible string at final quality:
 
 **Color contrast** — flag any pair not meeting WCAG AA (4.5:1 body, 3:1 large text and UI components). If using design system tokens, confirm they're compliant; flag any custom override.
 
+**Standard: WCAG 2.2 Level AA.** Beyond contrast, verify these 2.2-specific criteria whenever the screen uses the relevant pattern:
+- **Target Size (2.5.8):** interactive targets ≥ 24×24px CSS. The 44×44px touch target in §5 is the stronger product default, not a substitute — when both apply, require the larger.
+- **Dragging Movements (2.5.7):** every drag interaction has a single-pointer (click/tap) alternative. Flag any drag-only control.
+- **Focus Not Obscured (2.4.11):** the focused element is never fully hidden by sticky headers, footers, or overlays.
+- **Focus Appearance (2.4.13):** confirm the design-system focus ring token meets the minimum area + contrast.
+- **Accessible Authentication (3.3.8):** no cognitive-function test (puzzle, transcription) without an alternative — check any login or verification screen.
+
 **Focus management:**
 - Where focus lands when a dialog opens
 - Where focus returns when a dialog closes

@@ -136,6 +136,12 @@ Choose, document, and wire up the stacks that will observe the application in pr
 
 **Revisit trigger rule:** every observability ADR must include an explicit condition under which the choice is re-evaluated. Cost overruns, vendor lock-in, and volume crossings are the most common triggers. Without a revisit trigger, the stack ossifies and re-evaluation never happens.
 
+### 10. IaC security scanning + policy-as-code gate
+
+Wire a static IaC scanner into the CI pipeline, running on every PR that touches infrastructure. Pick by the stack declared in CLAUDE.md: for mixed Terraform / CloudFormation / k8s / Dockerfile, use Checkov or Trivy (config scan); Terraform-only may use tfsec. Add a CI step that fails the build on HIGH/CRITICAL findings — suppressions are allowed only as documented inline exceptions with a justification, never a blanket skip. For org-wide invariants (no public buckets, mandatory encryption-at-rest, mandatory resource tags), add policy-as-code via OPA/Conftest or a Kyverno admission policy and run `conftest test` in CI. Document the chosen scanner, the policy set, and the suppression rules in the CI/CD ADR.
+
+In review mode, confirm IaC changes pass this scanner gate before approving; any new suppression must carry a documented justification — a blanket skip of the gate is a rejection.
+
 ### Setup mode rules
 - Use the CI/CD provider and hosting platform defined in CLAUDE.md
 - Never hardcode secrets — always use environment variable references

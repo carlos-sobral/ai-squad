@@ -261,6 +261,12 @@ When documenting a feature, product, or initiative with high complexity: public 
 |---|---|---|---|---|
 | [e.g., Onboarding conversion rate] | [X%] | [Y%] | [Date] | [stack declared in CLAUDE.md / SQL] |
 
+Declare at least one **guardrail metric** — a metric that must NOT degrade as a side effect of this feature (e.g., support ticket volume, p95 latency, churn, error rate). For each, state the threshold beyond which the feature is a regression even if the primary metric improved.
+
+| Guardrail metric | Current | Must stay |
+|---|---|---|
+| [guardrail metric] | [current] | ≤/≥ [threshold] |
+
 ### Events required
 
 Every metric above is computed from product events. List the events that must fire for these metrics to be measurable. PM owns WHAT and WHEN; software-architect owns HOW (technical event schema, dispatcher location, transport) — see the tech-spec "Observability contract" section.

@@ -173,6 +173,8 @@ Wait for the user's response. If they request changes, apply them and re-run the
 
 **Acknowledge uncertainty honestly.** If you don't know something, flag it as an open question. This is more useful than inventing plausible-sounding answers.
 
+**Rank assumptions by risk, not by order discovered.** In Open Questions & Assumptions, mark the one assumption that, if wrong, kills the idea — the leap-of-faith. Everything else is secondary. The PM needs to know what to validate first, not an alphabetized list.
+
 **Match depth to what's known.** If the user has a fully-formed idea, fill every section. If it's very early-stage, a thinner brief with good open questions is perfectly valid.
 
 **Surface the "why now."** If there's something about the current moment — a technology shift, a regulatory change, a cultural trend — that makes this idea timely, include it. It strengthens the case for prioritizing it.
