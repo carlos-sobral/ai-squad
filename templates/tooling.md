@@ -52,4 +52,6 @@ Estas são **credential-bound** e tocam dado/infra viva — por isso ficam como 
 | **Postgres/DB MCP** | backend-engineer | connection string por projeto; preferir usuário read-only; nunca commitar a string |
 | **Cloud / Terraform / K8s MCP** | cloud-architect | usa credenciais ambientes; escopo read-only; revisar antes de qualquer apply |
 
-Os agentes referenciam essas ferramentas condicionalmente (verify-before-use); o projeto fornece a credencial no seu próprio `.mcp.json` local (git-ignored).
+Os agentes (`backend-engineer`, `cloud-architect`) referenciam essas ferramentas condicionalmente (verify-before-use); o projeto fornece a credencial no seu próprio `.mcp.json` local (git-ignored).
+
+**Recipes concretas (config read-only, comandos, hard limits):** [`docs/integrations/data-and-infra-mcps.md`](../docs/integrations/data-and-infra-mcps.md).
