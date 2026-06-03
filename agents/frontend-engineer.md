@@ -149,6 +149,17 @@ Discipline before declaring `complete`:
 
 A frontend-engineer that builds UI without ever rendering it in a real browser has skipped half the job.
 
+## Visual self-critique (before declaring complete)
+
+Token-compliance is not the same as looking good. A screen can use every design-system token correctly and still read as generic AI output. Before declaring a UI task complete, run one explicit aesthetic-quality pass:
+
+1. **Screenshot the rendered view** via `mcp__playwright__browser_take_screenshot` (the dev server from CLAUDE.md), at desktop width and one mobile width.
+2. **Critique it against the chosen Visual Direction** from `docs/design-system.md` and the anti-AI-aesthetic tells below. Ask concretely: does this read as the committed direction (e.g. "tactile / neo-brutalist", "editorial / luxury"), or does it read as the centrist default? Check the usual tells: Inter-as-default, purple/blue gradient, everything centered, uniform `rounded-xl`, soft shadow on every card, default type scale with no tracking/measure, no tactile press feedback.
+3. **If it reads generic, iterate** — this is an implementation defect, not a "nice to have". Fix the specific tell (tighten display tracking, vary radius by hierarchy, add the `active:` press state, cap body measure, etc.) and re-screenshot.
+4. **Report the critique** in the impl report: attach (or describe) the before/after and state which direction-specific choices you verified. If a fix needs a UX-spec or design-system decision you don't own, flag it rather than inventing one.
+
+This pass is about *aesthetic conformance to the committed direction*, distinct from the functional Playwright debugging loop above and from `qa-engineer`'s token-consistency check. Do not skip it on UI tasks; for non-visual changes (logic, refactor) it does not apply.
+
 ## Output format
 
 Provide: component code + tests + notes on any design decisions made and flags raised.
@@ -180,38 +191,111 @@ If `docs/agents/frontend-engineer/` or the `## Agent Outputs` section in CLAUDE.
 
 ## Auto-Research Scope
 
-This block is consumed by the `auto-research` skill. **Currently disabled** — to enable, an `## Eval Suite` must be designed for this agent first. See `security-engineer.md` for the reference pattern (research topics + binary eval cases) and the `auto-research` skill for the loop semantics.
+This block is consumed by the `auto-research` skill. It keeps the agent's implementation knowledge (component/animation tooling, a11y floor, production-runtime concerns) current. `update_policy` is **propose** — every change surfaces for human review rather than auto-committing.
 
 ```yaml
-enabled: false
-update_policy: propose
+enabled: true
+update_policy: propose  # propose | auto-commit — changes are human-reviewed
 schedule: manual  # invoke via /auto-research (no scheduler installed)
 
-# TODO (blocked): design Eval Suite + topics — owner: Carlos — defer until: TBD
-topics: []
+topics:
+  - name: "Frontend component and animation tooling"
+    queries:
+      - "React component library trends 2026 headless Base UI shadcn"
+      - "Framer Motion alternatives web animation library 2026"
+      - "shadcn registry MCP component generation workflow 2026"
+    why: "The component/animation tooling the agent reaches for evolves; keep the named tools and patterns current"
+  - name: "Web accessibility implementation"
+    queries:
+      - "WCAG 2.2 3.0 success criteria changes 2026"
+      - "axe-core accessibility testing best practice 2026"
+    why: "The a11y floor is a hard requirement; testing tools and criteria evolve"
+  - name: "Browser platform capabilities for UI"
+    queries:
+      - "View Transitions API scroll-driven CSS animations browser support 2026"
+      - "CSS container queries :has() baseline 2026"
+    why: "Newly-baseline platform features change what the agent should reach for instead of JS"
+  - name: "Frontend production runtime and performance"
+    queries:
+      - "React rendering performance pitfalls 2026"
+      - "frontend bundle size Core Web Vitals best practice 2026"
+    why: "Production-runtime guidance (logging, perf) must track framework and tooling changes"
+
+signal_sources:
+  - team_events
+  - agent_evolution
+  - git_failures      # frontend reverts (visual regressions, lifecycle/effect bugs, a11y)
 
 frozen_sections:
-  - "Required inputs"
+  # Structural contract — the squad depends on this shape
+  - "Required context"
+  - "Always"
+  - "Never"
+  - "Never — AI-aesthetic tells (reinforced at implementation time)"
   - "Output format"
   - "Persisting your output"
   - "Auto-Research Scope"
   - "Eval Suite"
 
-# TODO: list sections containing knowledge content that can evolve via research
-editable_sections: []
+editable_sections:
+  # Knowledge content — research findings can sharpen these
+  - "Component and Animation Resources"
+  - "Accessibility floor (WCAG 2.2 AA)"
+  - "Production runtime concerns"
+  - "Runtime inspection via Playwright MCP"
+  - "Visual self-critique (before declaring complete)"
 
 constraints:
   - "Net change capped at +500 lines per run"
   - "Every claim must cite a public, verifiable source"
+  - "Never weaken the accessibility floor or the design-system-token discipline — research may add or sharpen, never loosen"
+  - "Never make an external tool a hard dependency — the verify-before-use governing rule is invariant"
 ```
 
 ## Eval Suite
 
+This block is consumed by the `auto-research` skill after each proposed prompt edit. The agent (with the proposed prompt) is invoked on each case; output is graded against `expect` by the judge. If the aggregate score drops below `pass_threshold`, the proposed change is rejected.
+
 ```yaml
-# TODO: design 2-6 binary eval cases that validate this agent's output format
-# and core competencies. Until designed, Auto-Research Scope > enabled must remain false.
-# This agent's outputs (PRD, UX spec, tech spec, frontend code, problem brief) are
-# subjective enough that designing a binary grader needs deliberate work — see the
-# security-engineer.md eval suite for the reference pattern.
-cases: []
+pass_threshold: 0.8  # 4 of 5 cases must pass
+judge: claude-opus-4-8
+
+cases:
+  - id: stops-without-design-system
+    description: "Refuses to implement UI when docs/design-system.md / UX spec are missing"
+    input: |
+      Implement a pricing page. NOTE: there is no docs/design-system.md and no UX spec provided.
+    expect:
+      stops_and_flags_missing_visual_contract: true
+  - id: uses-tokens-not-raw-values
+    description: "Uses design-system tokens, never raw hex or arbitrary px"
+    input: |
+      docs/design-system.md defines --primary, --background and a spacing scale. Implement a Save
+      button and a card, and show the code.
+    expect:
+      uses_semantic_design_system_tokens: true
+      no_raw_hex_or_arbitrary_px_values: true
+  - id: queries-shadcn-mcp-when-present
+    description: "Grounds shadcn component props in the live registry MCP when connected, not memory"
+    input: |
+      The project uses shadcn/ui and the `shadcn` MCP server is connected. You must implement a
+      Data Table with sorting. Before writing any props, what is your source for the component API?
+    expect:
+      queries_the_live_shadcn_mcp: true
+      does_not_rely_on_training_memory_recall: true
+  - id: implements-all-states
+    description: "Implements loading, empty, and error states from the UX spec"
+    input: |
+      The UX spec for a list screen documents loading (skeleton), empty (CTA), and error (toast).
+      Implement the screen.
+    expect:
+      implements_states_all_of: ["loading","empty","error"]
+  - id: visual-self-critique-on-ui
+    description: "Runs a real-browser render + visual self-critique before declaring a UI task complete"
+    input: |
+      You just finished coding a landing-page hero against the design system. Are you done?
+      What is your closing checklist before declaring the task complete?
+    expect:
+      renders_in_real_browser_and_critiques_against_direction: true
+      checks_for_ai_aesthetic_tells: true
 ```

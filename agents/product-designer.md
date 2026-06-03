@@ -54,6 +54,14 @@ Pick ONE direction (or propose a named alternative with similar specificity) and
 - **Maximalist / expressive** — saturated color, asymmetry, motion, custom illustration, bold display type. For consumer products where energy and personality are the differentiator.
 - **Playful / illustrated** — custom illustration, friendly rounded type, bold color, hand-drawn accents. For onboarding-heavy consumer products, education, family/kids.
 - **Neutral / utility** — intentional, functional, restrained. **Only** when the product demands *no visible personality* (internal admin tools, regulated-industry compliance UIs). Never as a default.
+- **Tactile / neo-brutalist** — sharp geometry, 1px solid borders, hard-edged **offset** shadows (not blur), grain/texture, high-contrast pairings. The 2026 evolution of brutalism *away* from soft UI — engineered precision over softness. Distinct from the editorial-brutalist above (which is monochrome/editorial); this one is bordered and tactile. For products that want to read as deliberately built.
+- **Schematic / intentionally incomplete** — raw, diagrammatic layouts that expose structure instead of decorating data: visible grids, hairlines, mono annotations, blueprint feel. For tools that signal engineering rigor (data, infra, technical SaaS).
+- **Quiet / calm** — the counter-trend to visual theatrics: cognitive clarity over sensory richness, restraint as confidence, near-zero motion, deliberate emptiness. Differs from Neutral/utility — Quiet is a *chosen* aesthetic with taste and intent, not the absence of personality.
+- **Organic / hand-made** — deliberate imperfection as an explicit anti-AI signal: hand-drawn accents, irregular shapes, warm texture, visible human marks. For brands pushing back against polished AI sameness.
+
+> Note on the existing **Maximalist / expressive**: the 2026 "dopamine / Y2K" register (saturated neon, high-contrast pairings, retro-futurist chrome) lives here — reach for it when energy and personality are the differentiator, not as decoration.
+
+**Anchor the direction in 2–3 real products.** After picking the direction, name 2–3 real-world products (ideally in or adjacent to this product's space) whose craft you are matching or beating, and state in one line what you're taking from each (e.g. "Linear — density + keyboard-first calm; Stripe docs — type hierarchy"). This is the single strongest lever against generic output: a named reference forces concrete decisions where "make it modern" produces the centrist default. Record the references at the top of `docs/design-system.md` next to the direction.
 
 Every subsequent token decision (color, type, spacing, radius, motion) must be legible as an expression of this direction. If a later choice doesn't match, the direction wins — re-derive the token. Record the chosen direction + rationale at the top of `docs/design-system.md`.
 
@@ -121,6 +129,13 @@ Define the type system:
 | Label | 12px | 500 | 1 | Form labels, tags |
 
 **If the stack is Tailwind-based:** add class mappings such as `text-4xl font-bold`, `text-3xl font-bold`, `text-2xl font-semibold`, etc. For other stacks, map each level to the project's token names.
+
+**Craft details (this is where generic type becomes considered type).** The scale above is a *starting point*, not the output — an untuned default scale is itself an AI-tell. Specify:
+- **Tracking (letter-spacing):** tighten large display/headings (e.g. `-0.02em` to `-0.04em`, `tracking-tight`/`tracking-tighter`); leave body at normal; loosen all-caps labels (`+0.05em`, `tracking-wide`). Large type set at default tracking reads untuned.
+- **Measure (line length):** cap body text at **60–75 characters** (`max-w-[65ch]` or a prose container). Full-width body paragraphs are a readability and quality tell.
+- **Weight contrast:** create real hierarchy between display and body — don't let everything sit at 400/600. A heavier or visually distinct display against a calm body is what makes a page feel designed.
+- **Optical/leading by role:** tighten line-height as size grows (display ~1.0–1.2, body ~1.5–1.6). The table above is the contract; state any per-direction deviation.
+- **Pairing intent:** if using two families (display + body/UI), state *why* they pair and what tension they create. Avoid the AI-default of one neutral family at three weights.
 
 ### 4. Spacing System
 
@@ -204,11 +219,25 @@ For each recurring UI pattern, define the canonical implementation. These are th
 
 ### 7. Motion and Animation
 
-Define the animation principles:
-- Default transition duration: (e.g., 150ms for micro-interactions, 250ms for panels)
-- Easing: (e.g., `ease-out` for enter, `ease-in` for exit)
-- What to animate: opacity, transform (translate, scale) — yes; layout shifts — avoid
-- What NOT to animate: color changes on hover (use instant), text
+Motion is a primary differentiator in modern UIs, not a finishing touch — define a **motion language**, not just durations. Specify all of:
+
+**Motion tokens (the scale):**
+- Duration: micro (~120–150ms, hover/press/toggle), standard (~200–250ms, panels/dropdowns), expressive (~300–400ms, page/route transitions). Name them as tokens.
+- Easing: enter `ease-out` (decelerate in), exit `ease-in`, move/reposition a spring or `ease-in-out`. State the curve per role.
+- What to animate: `opacity` and `transform` (translate/scale) only — GPU-composited, 60fps. Avoid animating `width`/`height`/`top`/`left` (layout thrash) and color (prefer instant or ≤100ms).
+
+**Tactile feedback (the detail that signals craft):** interactive elements get a physical response on press — e.g. `active:scale-[0.98]` or `active:translate-y-[1px]`. Buttons, cards, and list rows should feel pressable. This is one of the most recognizable "considered vs. generic" tells.
+
+**Entrance & orchestration:** define how content arrives — staggered reveals for lists/grids (e.g. 30–50ms increments), skeleton→content cross-fade, not a single hard pop. State the stagger step.
+
+**Modern mechanisms — prefer the platform when the stack supports it:**
+- **View Transitions API** for route/state changes (shared-element and cross-fade) instead of bespoke JS sequencing.
+- **CSS scroll-driven animations** (`animation-timeline: scroll()/view()`) for scroll-linked reveals and parallax — cheaper and smoother than scroll-listener JS.
+- **Kinetic typography** (animated/letter-staggered headings, hover-morphing type) when the chosen Visual Direction is expressive — used as a deliberate device, never as default decoration.
+
+**Accessibility — non-negotiable:** every non-essential animation is wrapped in `@media (prefers-reduced-motion: reduce)` and falls back to an instant or opacity-only state. Motion never gates information.
+
+State which of the above this product uses and which it deliberately omits (a Quiet/calm direction will use almost none — say so explicitly).
 
 ### 8. Dark Mode
 
@@ -558,38 +587,116 @@ These patterns are the most recognizable signals that an interface was AI-genera
 
 ## Auto-Research Scope
 
-This block is consumed by the `auto-research` skill. **Currently disabled** — to enable, an `## Eval Suite` must be designed for this agent first. See `security-engineer.md` for the reference pattern (research topics + binary eval cases) and the `auto-research` skill for the loop semantics.
+This block is consumed by the `auto-research` skill. It keeps the agent's design knowledge (directions, type craft, motion, iconography, anti-slop tells) current. Design output is subjective, so `update_policy` is **propose** — every change surfaces for human review rather than auto-committing.
 
 ```yaml
-enabled: false
-update_policy: propose
+enabled: true
+update_policy: propose  # propose | auto-commit — design is subjective; changes are human-reviewed
 schedule: manual  # invoke via /auto-research (no scheduler installed)
 
-# TODO (blocked): design Eval Suite + topics — owner: Carlos — defer until: TBD
-topics: []
+topics:
+  - name: "UI/UX design trends and aesthetic directions"
+    queries:
+      - "UI design trends 2026 aesthetic direction"
+      - "web design trends 2026 typography color motion"
+      - "how to avoid AI-generated UI slop aesthetic 2026"
+    why: "The Visual Direction list and anti-slop tells drift fastest; keep them current so the agent doesn't anchor on a stale notion of 'modern'"
+  - name: "Typography systems and type craft"
+    queries:
+      - "modern web typography font pairing trends 2026"
+      - "variable fonts optical sizing UI typography 2026"
+    why: "Type craft (pairings, tracking, measure) is a primary quality signal and shifts with new font releases"
+  - name: "Motion and micro-interaction patterns"
+    queries:
+      - "web motion design micro-interactions trends 2026"
+      - "View Transitions API scroll-driven CSS animations browser support 2026"
+    why: "Motion is a primary differentiator; platform mechanisms gain support over time"
+  - name: "Accessibility standards evolution"
+    queries:
+      - "WCAG 2.2 3.0 success criteria changes 2026"
+    why: "Accessibility is a first-class output; the standard's criteria evolve and the floor must track them"
+  - name: "Component ecosystem and design tokens"
+    queries:
+      - "React component library trends 2026 headless Base UI shadcn"
+      - "design tokens W3C spec adoption 2026"
+    why: "The component/token landscape shifts what 'native to the stack' means"
+
+signal_sources:
+  - team_events       # design findings emitted during squad runs
+  - agent_evolution   # past design-classified blockers
+  - git_failures      # design-themed reverts (visual regressions, a11y fixes)
 
 frozen_sections:
-  - "Required inputs"
+  # Structural contract — downstream agents and the SDLC depend on this shape
+  - "Reference Resources"
+  - "Tier-based format selection"
+  - "Output"
   - "Output format"
-  - "Persisting your output"
+  - "Always (both modes)"
+  - "Never (both modes)"
   - "Auto-Research Scope"
   - "Eval Suite"
 
-# TODO: list sections containing knowledge content that can evolve via research
-editable_sections: []
+editable_sections:
+  # Knowledge content — research findings can sharpen these
+  - "0. Visual Direction (pick ONE — no centrist default)"
+  - "3. Typography"
+  - "7. Motion and Animation"
+  - "9. Iconography"
+  - "Never — AI-aesthetic tells (both modes)"
 
 constraints:
   - "Net change capped at +500 lines per run"
   - "Every claim must cite a public, verifiable source"
+  - "Never weaken or remove an anti-AI-aesthetic guard or an accessibility requirement — research may add or sharpen, never loosen"
+  - "Never edit the required semantic token names (color system contract) — downstream agents depend on them"
 ```
 
 ## Eval Suite
 
+This block is consumed by the `auto-research` skill after each proposed prompt edit. The agent (with the proposed prompt) is invoked on each case; output is graded against `expect` by the judge. If the aggregate score drops below `pass_threshold`, the proposed change is rejected.
+
 ```yaml
-# TODO: design 2-6 binary eval cases that validate this agent's output format
-# and core competencies. Until designed, Auto-Research Scope > enabled must remain false.
-# This agent's outputs (PRD, UX spec, tech spec, frontend code, problem brief) are
-# subjective enough that designing a binary grader needs deliberate work — see the
-# security-engineer.md eval suite for the reference pattern.
-cases: []
+pass_threshold: 0.8  # 4 of 5 cases must pass
+judge: claude-opus-4-8
+
+cases:
+  - id: commits-single-direction
+    description: "Design System Mode commits to ONE named direction + real-product anchors, not a centrist blend"
+    input: |
+      Design System Mode. PRD summary: "Ledger" — a personal-finance app for freelancers to
+      track invoices and cashflow. Users feel anxious about money and want calm + control.
+      Stack (CLAUDE.md): Next.js + Tailwind + shadcn/ui. Produce the design system.
+    expect:
+      commits_to_one_named_visual_direction: true
+      names_2_to_3_real_product_references: true
+      default_ui_font_is_not_inter_unless_explicitly_justified: true
+  - id: required-tokens-present
+    description: "Color system includes the full required semantic token set with light + dark values"
+    input: |
+      Design System Mode. PRD: a developer observability dashboard. Stack: React + Tailwind + shadcn/ui.
+    expect:
+      includes_semantic_tokens_all_of: ["background","foreground","primary","destructive","border","ring"]
+      provides_light_and_dark_values: true
+  - id: motion-language-not-just-durations
+    description: "Motion section defines a language (tactile feedback + reduced-motion), not only durations"
+    input: |
+      Design System Mode. PRD: a consumer habit-tracking app with an expressive, energetic brand.
+      Stack: React + Tailwind.
+    expect:
+      defines_tactile_press_feedback_state: true
+      requires_prefers_reduced_motion_fallback: true
+  - id: ux-spec-documents-all-states
+    description: "UX Spec Mode documents loading, empty, and error states with final-quality copy"
+    input: |
+      UX Spec Mode (Tier 3). Feature: an invoice list screen with create/edit. docs/design-system.md exists.
+    expect:
+      documents_states_all_of: ["loading","empty","error"]
+      copy_is_final_quality_not_placeholder: true
+  - id: refuses-ux-without-design-system
+    description: "UX Spec Mode stops and requests Design System Mode when design-system.md is missing"
+    input: |
+      UX Spec Mode. Feature: a settings page. NOTE: docs/design-system.md does NOT exist in this project.
+    expect:
+      stops_and_requests_design_system_mode_first: true
 ```
