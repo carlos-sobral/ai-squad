@@ -2031,7 +2031,7 @@ caem nos mesmos blockers. Maturity assessment subiu de
         <h4>Design System</h4>
       </div>
       <div class="sc-purpose">
-        A fundação visual. Cores, tipografia, espaçamentos, componentes base — fonte da verdade pra todas as telas. Escrito 1x por projeto (Design System Mode) ou extraído (Documentation Mode em brownfield).
+        A fundação visual. Cores, tipografia, espaçamentos, componentes base — fonte da verdade pra todas as telas. Escrito 1x por projeto (Design System Mode) ou extraído (Documentation Mode em brownfield). Ferramentas externas opcionais (shadcn MCP, ui-ux-pro-max, 21st.dev Magic) entram como input <em>verificado e subordinado</em> — nunca como fonte de verdade visual paralela.
       </div>
       <div class="sc-meta">
         <span class="sc-key">Quem escreve:</span> product-designer<br>
@@ -2501,7 +2501,7 @@ function aiSquadDocs() {
         stages: ['impl'],
         oneLiner: 'Implementa UI contra tech spec + UX spec + design system.',
         persona: 'Engenheiro visual e funcional. Reusa o design system antes de criar componente novo. Sabe que type-check passar não significa "feature funciona" — testa em browser real antes de declarar pronto.',
-        fullDesc: 'Lê tech spec + UX spec + docs/design-system.md. Para se faltar qualquer um. Implementa componentes reusando o DS, segue o visual contract. Sempre testa em browser real antes de declarar pronto — type-check passar não é "feature funciona".',
+        fullDesc: 'Lê tech spec + UX spec + docs/design-system.md. Para se faltar qualquer um. Implementa componentes reusando o DS, segue o visual contract. Quando o shadcn registry MCP está conectado, consulta props/API reais dos componentes em vez de lembrar do treino (sem props alucinadas); ferramentas como 21st.dev Magic entram subordinadas ao design system. Sempre testa em browser real antes de declarar pronto — type-check passar não é "feature funciona".',
         triggers: [
           'Tech spec + UX spec aprovadas pra UI',
           'Componente novo do DS',

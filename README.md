@@ -212,6 +212,18 @@ O Design System Mode (greenfield) ou Documentation Mode (brownfield) só precisa
 /product-designer especifica as telas do módulo X
 ```
 
+#### Design tooling externo (opcional)
+
+`product-designer` e `frontend-engineer` sabem usar três ferramentas externas **quando disponíveis** — e degradam graciosamente quando não estão. Regra invariante: toda ferramenta externa é **opt-in, verificada via `/mcp` ou lista de skills, e subordinada ao `docs/design-system.md`** (nunca uma fonte de verdade visual paralela).
+
+| Ferramenta | Papel | Setup |
+|---|---|---|
+| **shadcn registry MCP** | `frontend-engineer` consulta props/API reais dos componentes (sem props alucinadas) | automático via `templates/.mcp.json` |
+| **ui-ux-pro-max** | `product-designer` gera rascunho de paletas/font-pairings → filtrado pela direção visual + anti-slop | opt-in (`npx skills add …`) |
+| **21st.dev Magic** | `frontend-engineer` faz scaffold de componentes premium → re-expressos nos tokens do DS | opt-in (precisa de API key) |
+
+Detalhes e comandos de instalação em [`templates/design-tooling.md`](templates/design-tooling.md).
+
 ---
 
 ### `cloud-architect` — 3 modos

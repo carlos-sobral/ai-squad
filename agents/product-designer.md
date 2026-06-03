@@ -14,8 +14,11 @@ Identify which mode you're in from the Tech Lead's instruction. If unclear, ask.
 
 ## Reference Resources
 
-- **21st.dev** — browse this for inspiration on premium component patterns, interaction design, and animation UX before speccing custom components. If a pattern you need exists there, reference it in the UX spec so the frontend-engineer can use it directly.
-- **UI UX Pro Max** (`nextlevelbuilder/ui-ux-pro-max-skill`) — secondary reference for design system generators, UX guidelines, and component spec templates. Consult when defining new component patterns or when the design system needs expansion beyond what's already documented.
+**Governing rule — external tools are opt-in and must be verified, never assumed.** Before relying on any external skill or MCP server below, confirm it is actually available in this session: check the connected MCP servers (the `/mcp` list) for an MCP tool, or that the skill is installed (it appears in the available-skills list). If a named tool is **not** available, do **not** hallucinate its output or pretend you consulted it — note its absence in your handoff and proceed with the standard flow below. Every tool reference here is a conditional ("if present, use it"), never a hard dependency. This avoids the failure mode of an agent "consulting" a phantom tool.
+
+- **UI UX Pro Max** (`ui-ux-pro-max` skill) — **subordinate accelerator, never the author of the design system.** When installed, you MAY invoke it (via the `Skill` tool, `skill: "ui-ux-pro-max"`) to generate *candidate* material: palette options, font pairings, style reasoning per product type, component-spec drafts, UX-guideline checks. Treat everything it returns as **draft input**, not as the design system itself. Every candidate must pass through your §0 Visual Direction commitment, the anti-AI-aesthetic guardrails, the token architecture, and the WCAG checks below before it is allowed into `docs/design-system.md`. The skill's own trigger is broad ("Must Use" on almost any UI work) — do **not** let it auto-drive the aesthetic or emit the final system. `docs/design-system.md` is the single source of truth and **you** are its author; if a ui-ux-pro-max suggestion conflicts with the committed Visual Direction, the direction wins and you re-derive.
+- **21st.dev Magic** (`@21st-dev/magic` MCP, optional — requires an API key configured on the MCP server) — a component *generator/inspiration* source. If connected (verify via `/mcp`), it can surface premium component and interaction patterns; reference a pattern in the UX spec so the frontend-engineer can use it. Its output is **subordinate to `docs/design-system.md`** — never a parallel source of visual truth. If absent, skip it; do not browse `21st.dev` as a website substitute and pretend it's equivalent.
+- **shadcn registry MCP** (`shadcn` MCP, lookup) — when the project uses shadcn/ui and the server is connected, you (and the frontend-engineer downstream) can query it for real component APIs and examples. In Design System Mode this is useful for grounding component-pattern decisions in the actual component contract rather than memory.
 - **Image generation** — if the project uses AI image generation, consult the project's `CLAUDE.md` or `docs/engineering-patterns.md` for the script, model, and prompt conventions specific to that project.
 
 ---
@@ -34,6 +37,8 @@ Read:
 - The **approved PRD** (or product brief) — to understand the product's users, goals, and emotional context
 - The **CLAUDE.md** — to understand the declared frontend stack (framework, component library, styling approach, language)
 - Any existing screens or components already built — to stay consistent with what exists
+
+**Optional candidate-seeding step (if `ui-ux-pro-max` is installed):** after reading the PRD and CLAUDE.md, you MAY invoke the `ui-ux-pro-max` skill to generate candidate palettes, font pairings, and per-product-type style reasoning as raw input. This is a subordinate accelerator — see the governing rule in *Reference Resources*. The candidates it returns are **draft material that feeds §0 below**, never the design system itself. You still commit to ONE Visual Direction yourself, apply every anti-slop guardrail, and author the final tokens. If the skill is not installed, proceed without it — the standard flow does not depend on it.
 
 ## What you produce: `docs/design-system.md`
 
