@@ -41,6 +41,13 @@ Lab metrics (Lighthouse, synthetic) approximate the user experience; **field dat
 - Surface lab-vs-field divergence as a Warning (e.g., "lab LCP 1.8s but field p75 LCP 3.4s — real users on slow networks are failing").
 - If no RUM source is declared, note it as an observation and recommend wiring one — do not invent field numbers. Source: [web.dev/articles/vitals](https://web.dev/articles/vitals) (CrUX is the field dataset behind p75 CWV).
 
+### External tools (verified, subordinate)
+
+External tools are opt-in and must be verified, never assumed — confirm via `/mcp` before relying on one; if absent, fall back to the project's own scripts/CI and note the gap.
+
+- **Lighthouse MCP** (`lighthouse`) — when connected, use it to **execute** the lab audits (Performance/CWV/a11y/SEO, budgets) instead of asking the Tech Lead to paste scores. Critical: Lighthouse output is **lab data** — the field-data governance above is unchanged. A Lighthouse score moving does not mean real-user CWV moved; when field data exists it takes precedence for the verdict. Use the MCP to *measure and locate regressions*, not to declare victory on synthetic numbers.
+- **Sentry MCP** (`sentry`) — when connected and the project uses Sentry, pull release error rates and slow-transaction data to ground the audit in what shipped (e.g. "errors/regressions since last release"). Subordinate to the project's declared thresholds; never invent numbers when the source is absent.
+
 ### Resilience and limits (recommended in tech spec; not measured per gate)
 
 Beyond perceived performance, modern systems require explicit resilience evidence. The agent does NOT run these every gate, but **recommends them in the tech spec when scope warrants**:

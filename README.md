@@ -212,17 +212,21 @@ O Design System Mode (greenfield) ou Documentation Mode (brownfield) só precisa
 /product-designer especifica as telas do módulo X
 ```
 
-#### Design tooling externo (opcional)
+#### Tooling externo (MCPs + skills, opcional)
 
-`product-designer` e `frontend-engineer` sabem usar três ferramentas externas **quando disponíveis** — e degradam graciosamente quando não estão. Regra invariante: toda ferramenta externa é **opt-in, verificada via `/mcp` ou lista de skills, e subordinada ao `docs/design-system.md`** (nunca uma fonte de verdade visual paralela).
+Vários agentes sabem usar ferramentas externas **quando disponíveis** — e degradam graciosamente quando não estão. Regra invariante para todos: toda ferramenta externa é **opt-in, verificada via `/mcp` (ou lista de skills), e subordinada à fonte da verdade** (código real, `docs/design-system.md`, tech spec, julgamento do agente) — nunca uma fonte de verdade paralela, nunca dependência rígida.
 
-| Ferramenta | Papel | Setup |
-|---|---|---|
-| **shadcn registry MCP** | `frontend-engineer` consulta props/API reais dos componentes (sem props alucinadas) | automático via `templates/.mcp.json` |
-| **ui-ux-pro-max** | `product-designer` gera rascunho de paletas/font-pairings → filtrado pela direção visual + anti-slop | opt-in (`npx skills add …`) |
-| **21st.dev Magic** | `frontend-engineer` faz scaffold de componentes premium → re-expressos nos tokens do DS | opt-in (precisa de API key) |
+| Ferramenta | Agente(s) | Papel | Setup |
+|---|---|---|---|
+| **shadcn registry MCP** | frontend-engineer, product-designer | props/API reais de componentes | `.mcp.json` |
+| **Context7 MCP** | backend-eng, frontend-eng, software-architect, tech-writer | docs version-specific de libs (anti-alucinação) | `.mcp.json` |
+| **Lighthouse MCP** | performance-engineer | auditorias lab CWV/perf (field data governa o veredito) | `.mcp.json` |
+| **Sentry MCP** | performance-engineer, quality-architect | erros/releases reais de produção | `.mcp.json` + OAuth |
+| **ui-ux-pro-max** | product-designer | rascunho de paletas/pairings → filtrado pela direção + anti-slop | opt-in |
+| **Trail of Bits SAST** | security-engineer | dirige Semgrep/CodeQL como engine do Pass 1 | opt-in (precisa de semgrep) |
+| **21st.dev Magic** | frontend-engineer | scaffold de componentes → re-expressos nos tokens do DS | opt-in (API key) |
 
-Detalhes e comandos de instalação em [`templates/design-tooling.md`](templates/design-tooling.md).
+Ferramentas per-projeto de alto blast-radius (Postgres/DB, cloud/Terraform/K8s) ficam como **recipes read-only**, nunca no global. Mapa completo + comandos de instalação em [`templates/tooling.md`](templates/tooling.md).
 
 ---
 

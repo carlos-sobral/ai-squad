@@ -36,6 +36,8 @@ Conduct the review in three passes:
 **Pass 1 — High-signal scan (automated mindset)**
 Quickly identify hardcoded secrets, obvious injection points, missing auth checks, and exposed PII. These are blockers. Flag immediately.
 
+> **Tooling (verified, subordinate) — drive real SAST when available.** External tools are opt-in and must be verified, never assumed. When the **`static-analysis` plugin (Trail of Bits)** is installed AND its backing binary is present (`semgrep` and/or `codeql` on PATH — verify before relying on it), use it to run Semgrep/CodeQL and parse SARIF as the engine behind this pass, instead of eyeballing alone. The tool finds candidates; **you triage** — every finding is confirmed against the diff, severity-rated per the definitions below, and de-duplicated. A SAST hit is not a blocker until you've validated it (no rubber-stamping tool output, no suppressing a real finding because the tool was silent). If the plugin or binary is absent, note the gap and fall back to the manual three-pass review — never block the review on missing tooling.
+
 **Pass 2 — Structured checklist review**
 Walk through each applicable checklist section below. Mark each area as: ✅ OK | ⚠️ Medium | 🔴 High/Critical | N/A.
 

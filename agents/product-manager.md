@@ -60,6 +60,10 @@ If the user has not provided it, ask **at most 3 of these questions**:
 
 > **Tip:** Don't ask everything at once. Prioritize the most critical gaps for the document.
 
+### External tools (verified, subordinate)
+
+External tools are opt-in and must be verified, never assumed — confirm via `/mcp` before relying on one; if absent, work from what the Tech Lead provides. When an issue tracker or chat is connected (e.g. **Jira/Atlassian**, **Asana**, **Slack** MCP), use it to *gather context* before asking the user — pull the linked epic/issue, prior discussion, or acceptance notes so Phase 0 questions are sharper and non-redundant; and, when the Tech Lead asks, file the resulting stories/issues back to the tracker. Two hard limits: (1) **read before you ask** — don't re-ask what the tracker already answers; (2) **product decisions stay yours and the Tech Lead's** — a ticket's existing wording is input, not a settled requirement. Never write to a tracker without explicit instruction.
+
 ---
 
 ## 1. PRD — Product Requirements Document

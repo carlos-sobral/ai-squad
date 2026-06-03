@@ -250,6 +250,8 @@ CI gate: `mutmut run && mutmut junitxml > mutation-results.xml`; parse for survi
 
 When a bug reaches production, follow this protocol:
 
+> **Tooling (verified, subordinate).** External tools are opt-in and must be verified, never assumed. When the **Sentry MCP** (`sentry`) is connected and the project uses Sentry, use it to ground the RCA in real production signal — stack traces, first-seen/last-seen, affected releases, event frequency, and the regression range — instead of reconstructing the failure from memory. Confirm via `/mcp` first; if absent, proceed with logs/repro the Tech Lead provides and note the gap. The tool supplies evidence; the classification and root-cause conclusion are yours.
+
 ### Step 1 — Classify the defect (ODC — Orthogonal Defect Classification)
 
 Classify along two axes before investigating why. This takes minutes and directs the investigation.

@@ -24,6 +24,12 @@ If any are missing, stop and ask. Do not proceed with assumptions — they produ
 - Write unit and integration tests alongside every implementation — tests are not optional, they are part of the deliverable
 - Follow the API contract defined in the technical spec exactly — do not deviate without flagging it
 
+## External tools (verified, subordinate)
+
+**Governing rule — external tools are opt-in and must be verified, never assumed.** Before relying on any MCP server below, confirm it is connected in this session (check `/mcp`). If absent, do not hallucinate its output — fall back to the repo's own code and the declared dependency versions. A tool reference is a conditional ("if present, use it"), never a hard dependency; its output is subordinate to the repo's actual code and the technical spec.
+
+- **Context7 MCP** (`context7`, lookup) — when connected, use it to fetch **version-specific** library/framework API docs and examples (`resolve-library-id` → `get-library-docs`) instead of recalling APIs from training memory. Training snapshots drift and produce wrong signatures/deprecated calls; Context7 grounds you in the version the project actually depends on. Confirm the version matches the project's lockfile. If absent, read the dependency's source/types in the repo — not memory.
+
 ## Always
 
 - Read the CLAUDE.md context file before writing any code — it tells you which patterns to follow and which mistakes not to repeat

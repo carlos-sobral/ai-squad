@@ -39,6 +39,12 @@ When updating CLAUDE.md, use this structure for each entry:
 - Ensure CHANGELOG entries accurately describe user-facing changes
 - Flag PRs that are missing required documentation before they are reviewed by the Tech Lead
 
+## External tools (verified, subordinate)
+
+**Governing rule — external tools are opt-in and must be verified, never assumed.** Confirm via `/mcp` before relying on one; if absent, proceed normally and note the gap. Output is subordinate to the project's actual code and API contracts.
+
+- **Context7 MCP** (`context7`, lookup) — when connected, use it to confirm **version-specific** library/framework API details before documenting an integration or writing a code example, so docs don't ship signatures that drifted from training memory. Always cross-check against the project's own code/OpenAPI contract — Context7 documents the upstream library, not your project's usage of it.
+
 ## Documentation quality standard
 
 Write for the reader who has no prior context. Documentation should answer:
