@@ -149,6 +149,8 @@ A module is **done** only when ALL of the following are true:
 
 Whenever two or more agents can run in parallel, **always** use the TeamCreate + Agent (with `team_name`) pattern. This spawns each agent as a teammate in a tmux split pane, enabling real parallelism and visibility.
 
+**One exception:** the narrow set of well-posed sub-phases delegated to the Workflow tool (see "Execution engine for well-posed sub-phases" below). There, the workflow runtime owns parallelism and agent lifecycle instead of TeamCreate, and visibility moves from tmux panes to the `/workflows` view. Everywhere else — and by default — TeamCreate is mandatory. The two are alternatives for a given sub-phase, never run concurrently over the same files.
+
 ### Pattern for parallel stages
 
 ```
@@ -254,6 +256,47 @@ When any signal is present, tell the Tech Lead: "This module touches LLM code �
 **Performance audit (biweekly):** `performance-engineer` in audit mode runs on a scheduled cron job every 2 weeks across the full application — independent of any module flow. Set this up via `/schedule`. This is separate from the gate mode that runs in `ship-team` on first module delivery.
 
 **When in doubt about review depth**, default to adding `quality-architect`. It catches gaps that `software-architect (code review mode)` and `security-engineer` do not — test coverage, mutation score, flakiness — and runs in parallel at no time cost.
+
+## Execution engine for well-posed sub-phases (Workflow tool)
+
+The TeamCreate + teammates pattern above is the **default** for parallel work — it is model-driven, gives tmux visibility, and degrades gracefully to sequential. For a narrow class of sub-phases where the *shape* of the work is fixed and known before execution, the orchestrator MAY instead call the **Workflow tool** (deterministic multi-agent orchestration) as an execution engine. This is an optimization for coordination, **not** a replacement for the orchestrator's judgment. The Workflow tool is a motor; this skill remains the baton.
+
+**Use it only when ALL of these hold:**
+- The fan-out shape is known a priori (N reviewers, N modules, N files) — only the data varies, not the structure.
+- There is **no human gate in the middle** of the sub-phase.
+- The work benefits from one of: guaranteed parallelism, structured/validated output, or cheap cache-hit re-execution on resume.
+
+**The boundary rule (load-bearing):** a workflow **never contains a human gate, and never owns a merge/ship decision.** It returns *data* — findings plus a *recommended* verdict — and the orchestrator retains the actual verdict and every human checkpoint. The moment a sub-phase needs to stop and ask the Tech Lead, it does not belong in a workflow. Violating this collapses the layer that creates value (judgment, "stop and ask," prompt evolution) into a blind executor.
+
+### The four fits
+
+| Sub-phase | Workflow pattern | Notes |
+|---|---|---|
+| **review-team** (Risk Surface critical/full) | fan-out + barrier + schema-validated verdict | Reference implementation: `sdlc-orchestrator/workflows/review-team.workflow.js`. Each reviewer runs `git diff BASE..HEAD` itself; verdicts return as `{verdict, findings}` typed objects, not prose the orchestrator must re-parse — this kills the "orchestrator mis-read the verdict" bug class. The aggregated verdict is a **recommendation**; the merge gate stays with orchestrator + Tech Lead. |
+| **PRD sharding** (independent modules) | fan-out at scale (+ worktree isolation) | `workflows/prd-sharding.workflow.js`. Closes the named gap "sharding produces independent modules but the orchestrator processes them serially" (see Spec sharding rule below). Parallelize *execution* only; the retrospective gate keeps serializing the *learning* between modules. |
+| **Brownfield inventory** (`/onboard-brownfield`) | read-only fan-out | `workflows/brownfield-inventory.workflow.js`. Read-only, well-posed on entry, no human gate mid-flight — near-perfect fit. Reproducible and cheap to re-run when the repo changes little. Produces findings only; the skill + Tech Lead write the baseline docs and claim maturity. |
+| **QA sweep by AC / parallel refactor by module** | fan-out / pipeline (+ worktree isolation) | `workflows/qa-sweep.workflow.js` (verify N ACs) and `workflows/refactor-by-module.workflow.js` (worktree-isolated refactor, no behavior change). Worktree isolation enforces the manual "don't parallelize agents that edit the same file" rule by construction. CAVEAT: `MANUAL_PENDING` on a mandatory-invariant AC and perf "PASS WITH WARNINGS" are human gates that stay OUT of the workflow — the tool runs the measurement and *flags*, the orchestrator holds the verdict. |
+
+All four fits ship as runnable reference scripts under `sdlc-orchestrator/workflows/`. They are **args-driven**: the project-specific shape (SHAs, module list, AC list, repo path) is passed in by the orchestrator at call time, so the script bodies stay universal. Each returns *data* and ends with an explicit boundary note — none merges, none resolves a human gate.
+
+**Judgment gates are NOT a fifth fit.** Wrapping the perf gate or consistency-check in a judge-panel / adversarial-verify is tempting, but those gates carry a human verdict (`PASS WITH WARNINGS` approval, deviation acceptance). A workflow may run the *measurement or verification fan-out* feeding such a gate, but the gate's verdict stays with the orchestrator + Tech Lead. Do not build a workflow that emits a gate verdict — and remember judge panels of one base model reduce variance, not systematic bias (see conventions below).
+
+### Conventions when using the Workflow tool
+
+- **Cache-stale guard.** The resume journal serves cache when the prompt *text* is unchanged, even if its *semantics* changed (a file referenced by path was edited). Always embed the `HEAD_SHA` (and any input file's git SHA) verbatim in each agent's prompt — when the diff changes, the prompt text changes, invalidating the cache. Treat SHAs as part of the cache key, consistent with the "review dispatches pass git SHAs" rule below.
+- **Anti-straggler.** `parallel()` is a barrier: one hung agent stalls the whole phase, and the tool exposes no per-agent timeout. Keep fan-out width bounded (review-team N≤4) and prefer `pipeline()` over `parallel()` when stages don't need a cross-item barrier, so a slow item doesn't block the fast ones. For wide fan-outs, `log()` what was dropped rather than silently capping.
+- **Don't oversell judge panels.** N instances of the same base model share the same bias — voting reduces variance, not systematic error. Use adversarial-verify / judge-panel only where variance reduction already pays; never present it to the Tech Lead as "quality codified."
+- **Inside a ported phase, the manual workarounds are retired — only there.** The anti-race rule (`TaskUpdate{owner}` before `Agent`) and the in-the-model's-head retry counting exist to compensate for non-deterministic conversational orchestration. Inside a workflow they are replaced by the primitive's own semantics: `parallel()`/`pipeline()` give the barrier for free, and a `while` loop with a counter gives a real retry cap. Do not re-apply the manual workarounds inside a workflow. They remain mandatory in every non-ported (conversational, TeamCreate-based) phase.
+
+### What must NOT be ported to a workflow
+
+Structurally incompatible with deterministic, fire-and-forget execution — not a matter of integration effort:
+- **Clarify gate and PRD** — they exist to interrogate human ambiguity and wait for an inline answer; a script has nowhere to put the Tech Lead's reply, and phase 2 often reveals phase 1 asked the wrong question.
+- **Human gates mid-flow** — PRD approval, each gate verdict, `MANUAL_PENDING` hard-stop, finish-branch typed confirmation, OAuth consent.
+- **Retrospective gate / auto-research / sdlc-practices-evolve** — these *evolve the prompts*. Determinism is hostile to them: the journal's value is that nothing changes; the retro's value is that something does.
+- **`/goal` residual-stop list** — "does this violate the single-user vision principle?" is a product judgment, not a branch on a boolean.
+
+The default remains TeamCreate + teammates. Reach for the Workflow tool only at the four fits above, and only with the boundary rule intact.
 
 ## Complexity Triage
 
@@ -437,7 +480,7 @@ Use these consistently across all stages:
 - When an agent output has a blocker finding, stop and resolve it before moving to the next stage
 - Remind the Tech Lead to update CLAUDE.md with any agent mistakes or new conventions discovered
 - Track what was delegated to agents vs. what was done by humans — this feeds the productivity metrics
-- **Use TeamCreate + teammates for every parallel stage** — never run parallel agents as independent background subagents
+- **Use TeamCreate + teammates for every parallel stage** — never run parallel agents as independent, *orphaned* background subagents. The Workflow tool is not an exception to this *intent*: its agents are runtime-managed, concurrency-capped, and visible in `/workflows`, not orphaned. Use it only for the documented well-posed sub-phases; every other parallel stage uses TeamCreate.
 - **Offer `/goal` handoff at autonomy-ready milestones.** After the Clarify gate closes (T2/T3) or the inline spec is approved (T1), the artifact is complete enough for the rest of the flow to run unattended. At that point, ask the Tech Lead one line: *"Posso continuar fase-por-fase com você, OU gero um prompt `/goal` pra entrega autônoma até o merge. Qual prefere?"* If autonomous is chosen, generate the `/goal` prompt per the anatomy in `~/.claude/CLAUDE.md` (Goal-driven autonomy section) — derived from the project's vision doc principles, with explicit residual-stop list. If interactive is chosen, continue as normal. Never assume autonomy; always ask. Interactive remains the default when no answer is given.
 - Always run `tech-writer` in parallel with `qa-engineer` via `ship-team` — documentation is not optional
 - **Run the retrospective gate after every module's ship-team.** Classify each blocker as (a) universal agent pattern, (b) spec gap, (c) ADR, or (d) project-specific knowledge. Propose diffs. This is how the squad learns — skipping it means the next module starts from the same baseline.
@@ -457,7 +500,7 @@ Use these consistently across all stages:
 - Let execution begin on a vague or incomplete spec — push back clearly and helpfully
 - Skip `software-architect` review mode, even for "small" tasks — small tasks with bad specs generate the most rework
 - Skip `product-designer` for UI modules — design artifacts are required input for both `software-architect` (API shape decisions) and `frontend-engineer` (implementation without guessing)
-- Run parallel agents without a team — always use TeamCreate so they appear as tmux split panes
+- Run parallel agents as loose, unmanaged, orphaned background subagents. Use TeamCreate so they appear as tmux split panes — OR the Workflow tool for the documented well-posed sub-phases (its agents are runtime-managed and visible in `/workflows`). What is forbidden is parallel agents with neither a team nor a workflow behind them.
 - Approve moving to merge without qa-engineer having run
 - Skip `tech-writer` after a merge that touches APIs, context files, or critical components
 - Advance to a new module while a previous UI module has no frontend — flag the debt and resolve it first
