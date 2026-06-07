@@ -1242,7 +1242,7 @@
         <span class="stage-tag">implementação</span>
         <h3>Backend + Frontend em paralelo</h3>
       </div>
-      <div class="stage-desc">Engenheiros implementam contra a spec aprovada, com test-first como default em código de feature novo. Quando ambos rodam, viram <strong>teammates</strong> com painéis tmux separados — você acompanha em tempo real. Em falha inesperada ou bug, alcançam <code>systematic-debugging</code> antes de propor fix.</div>
+      <div class="stage-desc">Engenheiros implementam contra a spec aprovada, com test-first como default em código de feature novo. Quando ambos rodam, viram <strong>teammates</strong> com painéis tmux separados — você acompanha em tempo real. Em falha inesperada ou bug, alcançam <code>systematic-debugging</code> antes de propor fix. Para sub-fases de forma fixa (review-team, QA sweep por AC, PRD sharding), o orchestrator pode delegar ao <strong>Workflow tool</strong> — orquestração determinística com output validado por schema; o workflow devolve dados, o veredito e os checkpoints humanos ficam com o orchestrator.</div>
       <div class="stage-agents">
         <span class="agent-chip parallel">backend-engineer ⇆</span>
         <span class="agent-chip parallel">⇆ frontend-engineer</span>
@@ -1396,7 +1396,7 @@
     <div class="discipline">
       <div class="icon" style="background: #fce7f3;">🔄</div>
       <h3>Self-evolution</h3>
-      <p>Retrospective gate ao fim de cada módulo: blockers viram diffs nos próprios agentes ou no CLAUDE.md. Auto-research loop investiga padrões que escapam. <strong>A squad fica mais rápida a cada módulo</strong> — não fica parada.</p>
+      <p>Retrospective gate ao fim de cada módulo: blockers viram diffs nos próprios agentes ou no CLAUDE.md. Três skills dedicadas fecham o loop: <code>auto-research</code> (profundidade — atualiza cada agente com fontes autoritativas recentes, validado por eval suite), <code>sdlc-practices-evolve</code> (escopo — questiona se o agente faz as coisas certas vs o estado da arte da disciplina) e <code>agents-improvement-audit</code> (audita a saúde do próprio loop). <strong>A squad fica mais rápida a cada módulo</strong> — não fica parada.</p>
       <div class="who">sdlc-orchestrator</div>
     </div>
 

@@ -2,7 +2,7 @@
 
 **Uma squad de engenharia virtual para o seu projeto — movida por IA.**
 
-ai-squad é um conjunto de **13 agentes especializados** e **4 skills** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto, product marketing e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
+ai-squad é um conjunto de **13 agentes especializados** e **7 skills** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto, product marketing e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
 
 Em vez de mandar um prompt solto e torcer pelo melhor, você segue um fluxo: **escreva o que quer construir → deixe o arquiteto planejar → deixe os engenheiros implementar → deixe o QA validar**. Cada etapa tem critérios de qualidade. O resultado é mais consistente e menos retrabalho.
 
@@ -153,15 +153,20 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 | `product-marketing-manager` | Posicionamento externo + artefatos de launch (value prop, demo script, FAQ) para features user-facing | opus | medium |
 | `tech-writer` | Documentação de APIs, CLAUDE.md, changelog | haiku | low |
 
-E **4 skills + 1 slash pattern:**
+E **7 skills + 1 slash pattern:**
 
 *User-invocáveis (Tech Lead chama via slash):*
-- **`/sdlc-orchestrator`** — guia o Tech Lead pelo fluxo completo de módulos, decide quais agentes rodar e quando, aplica gates de qualidade
+- **`/sdlc-orchestrator`** — guia o Tech Lead pelo fluxo completo de módulos, decide quais agentes rodar e quando, aplica gates de qualidade. Para um conjunto restrito de sub-fases bem-postas (review-team, PRD sharding, brownfield inventory, QA sweep / refactor paralelo), pode delegar a execução ao **Workflow tool** — orquestração determinística com scripts de referência em `skills/sdlc-orchestrator/workflows/`. O workflow devolve *dados* (findings + verdict recomendado); o veredito real e todo checkpoint humano ficam com o orchestrator
 - **`/onboard-brownfield`** — onboarding de uma única vez em codebases pré-existentes, inventária stack + CI/CD + convenções + hotspots, produz baseline de documentação e maturity assessment
 
 *Agent-invocáveis (outros agents chamam quando precisam):*
 - **`systematic-debugging`** — 4-fases de investigação de root cause (read errors, reproduce, check changes, gather boundary evidence → pattern analysis → hypothesis → fix). Invocada por qa-engineer em falhas E2E, por engineers em surpresas de runtime, ou pelo Tech Lead em produção
 - **`writing-plans`** — decompõe uma tech spec aprovada em tarefas executáveis de 2-5 min com caminhos exatos, código real e comandos verificáveis. Invocada pelo software-architect após spec aprovada, antes da delegação aos engineers
+
+*Self-improvement (Tech Lead chama via slash, ou o orchestrator dispara por heurística):*
+- **`/auto-research`** — loop de auto-melhoria de um agente: lê o Auto-Research Scope do agente, busca as fontes autoritativas mais recentes por tópico, propõe edits em seções não-congeladas, valida contra a Eval Suite do agente e commita ou reverte. Melhora a **profundidade** (cada agente no que já faz)
+- **`/sdlc-practices-evolve`** — observa a cobertura de práticas do SDLC vs o universo de práticas conhecidas em cada disciplina (QA, performance, security, arquitetura, docs), identifica gaps, aplica mudanças T1/T2 dentro de limites e escala T3 estruturais para decisão humana. Melhora o **escopo** (questiona se o agente faz as coisas certas)
+- **`/agents-improvement-audit`** — audita a saúde do próprio loop de auto-melhoria: tendências de eval score, padrões de accept/reject, qualidade de fontes, indicadores de drift. Aplica só tuning T1 puramente aditivo; o resto vira recomendação
 
 *Slash pattern:*
 - **`/goal`** — handoff autônomo: depois que as fases iniciais (PRD + clarify gate) fecham, esse pattern entrega o restante do fluxo (design → spec → impl → review → ship → retro) sem pedir confirmação a cada stage. Para parar só em manual-only actions ou tensão com princípios da vision do projeto. O orchestrator oferece esse handoff automaticamente quando o gate fecha.
@@ -285,6 +290,21 @@ claude --dangerously-skip-permissions
 Sem o tmux, os agentes ainda funcionam — rodam em sequência, sem os painéis. O TeamMode é opcional mas muda bastante a experiência. A flag `--dangerously-skip-permissions` é necessária para o fluxo rodar de forma autônoma — sem ela, cada operação de cada agente pede confirmação manual.
 
 → **Guia completo de instalação e configuração:** [TEAMMODE.md](./TEAMMODE.md)
+
+### Workflow tool — execução determinística para sub-fases bem-postas
+
+O TeamMode (TeamCreate + teammates) continua sendo o **default** para trabalho paralelo. Mas para uma classe restrita de sub-fases onde a *forma* do trabalho é fixa e conhecida antes da execução — fan-out de N reviewers, N módulos, N ACs — o orchestrator pode delegar ao **Workflow tool**: orquestração multi-agente determinística, com paralelismo garantido, output estruturado/validado por schema e re-execução barata via cache de resume.
+
+Os quatro fits documentados (com scripts de referência em [`skills/sdlc-orchestrator/workflows/`](./skills/sdlc-orchestrator/workflows/)):
+
+| Sub-fase | Script |
+|---|---|
+| Review-team (Risk Surface critical/full) | `review-team.workflow.js` |
+| PRD sharding (módulos independentes) | `prd-sharding.workflow.js` |
+| Brownfield inventory (read-only fan-out) | `brownfield-inventory.workflow.js` |
+| QA sweep por AC / refactor paralelo por módulo | `qa-sweep.workflow.js` / `refactor-by-module.workflow.js` |
+
+**Regra de fronteira (invariante):** um workflow nunca contém um gate humano e nunca é dono de uma decisão de merge/ship. Ele devolve *dados* — findings + verdict *recomendado* — e o orchestrator retém o veredito real e todo checkpoint humano. A partir do momento em que uma sub-fase precisa parar e perguntar ao Tech Lead, ela não pertence a um workflow.
 
 ---
 
@@ -452,10 +472,13 @@ ai-squad/
 │   ├── backend-engineer.md
 │   ├── frontend-engineer.md
 │   └── ...
-├── skills/                  # 4 skills: sdlc-orchestrator + onboard-brownfield + systematic-debugging + writing-plans
+├── skills/                  # 7 skills: sdlc-orchestrator + onboard-brownfield + systematic-debugging
+│   │                        #   + writing-plans + auto-research + sdlc-practices-evolve + agents-improvement-audit
 │   ├── sdlc-orchestrator/
+│   │   └── workflows/       # Scripts de referência do Workflow tool (review-team, prd-sharding, qa-sweep, ...)
 │   └── onboard-brownfield/
 ├── scripts/
+│   ├── hooks/               # Enforcement hooks (guard-bash, guard-stop) — iron laws como hard-enforcement
 │   └── metrics/             # collect.sh — coleta DORA + engineering metrics
 ├── templates/
 │   ├── CLAUDE.md            # Template de contexto para o seu projeto
