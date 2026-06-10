@@ -110,6 +110,17 @@ project_context:
   codebase_age: greenfield   # greenfield | brownfield
   legacy_coverage_baseline_pct: 0   # only meaningful when brownfield — coverage at onboarding; new code must not regress it
   hotspots_doc: null         # path to discovery-report when brownfield (e.g., docs/onboarding/discovery-report.md); null when greenfield
+
+# Optional: external policy your org wants agents to enforce, without baking org-specific
+# rules into the universal agent definitions. The review-team agent whose domain matches a
+# source's `scope` loads it and treats its mandatory rules as ADDITIONAL gates (stricter wins;
+# an unreachable mandatory source is a reported missing input, not a silent pass). Omit entirely
+# if you have none — the framework runs exactly the same.
+policy_sources: []
+  # - name: org-security-rules
+  #   scope: security        # security | architecture | infra | quality | docs
+  #   location: ./docs/policy/security-rules.md   # path, repo, or URL the agent can read
+  #   mandatory: true
 ```
 
 ---

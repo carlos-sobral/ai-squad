@@ -150,6 +150,16 @@ Wire a static IaC scanner into the CI pipeline, running on every PR that touches
 
 In review mode, confirm IaC changes pass this scanner gate before approving; any new suppression must carry a documented justification — a blanket skip of the gate is a rejection.
 
+### 10b. Secret scanning + software supply-chain gates
+
+Two more gates belong in the CI baseline alongside the IaC scanner — both **mandatory in Módulo 0, not opt-in**. The squad's `security-engineer` reviews code per-PR, but these gates are the automated floor that runs on every PR without waiting for a human reviewer.
+
+**Secret scanning.** Wire a secret scanner (`gitleaks` or `trufflehog`) as a CI step on every PR, AND install it as a pre-commit hook so a leak is caught before it reaches history. The CI step fails the build on any verified finding. A secret already committed is not "removed" by deleting the line — flag it for rotation at the provider. Document the scanner and its allowlist (with a justification per entry) in the CI/CD ADR.
+
+**Software supply-chain controls.** On every PR that adds, bumps, or newly consumes a dependency: (a) a lockfile is present and committed — no floating ranges resolved at build time; (b) a dependency vulnerability scan runs against the lockfile (`pnpm audit --prod`, `trivy fs`, or `osv-scanner`) and fails on HIGH/CRITICAL with no triaged exception; (c) for projects that ship container images or published artifacts, generate an SBOM (`syft`, `cdxgen`) and scan the built image before promotion (`trivy image`), failing promotion on Critical with no approved exception. Pin third-party CI actions to a commit SHA, not a moving tag. Record the chosen tools and the exception path in the CI/CD ADR.
+
+An exception to any of these gates follows the **Security Exception Record** contract (scope, owner, compensating control, expiry, follow-up — see `sdlc-orchestrator`); never an open-ended blanket skip. In review mode, confirm both gates are present and green before approving an infra/CI change, and reject any PR that disables one without a recorded exception.
+
 ### 11. Environment topology (local / staging / production)
 
 Deploy targets are not a single "hosting platform" — they are a **topology** that the project must declare explicitly in Módulo 0. Decide and wire this up before the first deploy, and record it in `CLAUDE.md ## Tooling > environments` plus the CI/CD ADR.

@@ -165,6 +165,13 @@ When given an approved product spec, produce a technical spec (T1 inline, T2 sta
   - **Format:** T1 inline specs include a 3-line block at the bottom of the spec; T2/T3 specs include a dedicated `## Task Contract` section.
   - **Why:** explicit boundaries reduce "agent decided to also touch X" surprises, make rollback rehearsable rather than improvised, and turn "what is the agent allowed to do" from implicit trust into a contract the code review can verify.
 - **Risk Surface Declaration** — list which of the following surfaces the module touches (mark all that apply): `auth`, `permissions`, `payments`, `PII / personal data`, `secrets / credentials`, `production-data migration`, `public API contract`, `external integration`, `infrastructure / IaC`, `LLM / agent / RAG`. If none apply, write "none — internal change only." This list is consumed by `sdlc-orchestrator` to pick the right review-team variant and by `security-engineer` to scope the threat model. The Tech Lead may add a surface; never remove one without justification. **Why:** review depth follows *what the change can break in production*, not tier alone — a T2 module that touches `payments` deserves the same review intensity as a T3 internal helper does not.
+- **Security risk level** — in addition to the surface list, assign the module one level — `low` / `medium` / `high` / `critical` — classified by the *highest* trigger it touches, not the average:
+  - **critical** — `auth`, `permissions`, `secrets / credentials`, `payments`, `PII / personal data`, `production-data migration`, or multi-tenant isolation
+  - **high** — `public API contract`, `external integration`, `infrastructure / IaC`, `LLM / agent / RAG`
+  - **medium** — processes untrusted input but touches no sensitive surface above
+  - **low** — no security trigger (internal refactor, docs, copy, pure helper with no external input)
+
+  Classify conservatively: never lower the level because the evidence is inconvenient to produce, or because no finding has surfaced yet — *absence of a finding is not evidence of safety*. This level is consumed by `security-engineer` to set the **evidence expectations** for the review (proportional to risk), not only to scope the threat model. The surface list answers *what could break*; the level answers *how much proof we owe before merge*.
 - **Open questions for Tech Lead** — anything that needs a decision before implementation can begin
 
 #### Observability contract (T2+ only)
@@ -521,7 +528,7 @@ Before marking a technical spec as ready to delegate, every API endpoint must sa
 - [ ] Provider key/credential validation is specified for ALL write operations (create AND update), not just implicitly. If the spec defines key validation on create, it must also be explicit about update behavior — agents will not infer that validation applies to both.
 - [ ] When the spec defines an explicit validation order (e.g., "check A before B, return error X for A and error Y for B"), include step numbers in the spec that map directly to error codes. Without numbered steps, implementations may reorder checks, producing incorrect error semantics.
 - [ ] **Task Contract present** — every spec that delegates implementation declares `allowed_files`, `forbidden_commands`, and `rollback_plan`. A spec without a Task Contract is incomplete regardless of tier; T1 may collapse it into a 3-line block, T2/T3 require a dedicated section.
-- [ ] **Risk Surface Declaration present** — every T2+ spec lists the production surfaces touched (or "none — internal change only"). A spec that touches `auth`, `payments`, `PII`, `secrets`, or `LLM/agent/RAG` without declaring it leaves the orchestrator unable to pick the correct review-team depth, and the gap is invisible until production.
+- [ ] **Risk Surface Declaration present, with a security risk level** — every T2+ spec lists the production surfaces touched (or "none — internal change only") AND assigns a `low`/`medium`/`high`/`critical` security risk level classified by the highest trigger. A spec that touches `auth`, `payments`, `PII`, `secrets`, or `LLM/agent/RAG` without declaring it leaves the orchestrator unable to pick the correct review-team depth; a spec that declares the surface but omits the level leaves `security-engineer` unable to calibrate how much validation evidence is owed before merge — both gaps are invisible until production.
 
 ### Spec completeness checklist — additions (from Module 2 blockers)
 

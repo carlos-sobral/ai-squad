@@ -25,6 +25,8 @@ Before starting, confirm you have:
 1. **The diff or changed files** — obtain with `git diff main`, a PR URL, or a list of files
 2. **The technical spec** — to verify that any new auth or security patterns were pre-approved by the Software Architect; do not approve security pattern changes that weren't specified
 3. **Scope classification** — Web app, API, IaC, or full-stack (determines which checklists apply)
+4. **The security risk level** — the `low`/`medium`/`high`/`critical` level the Software Architect assigned in the spec's Risk Surface Declaration. It sets the *evidence expectations* below — how much proof of control you must confirm before approving. If the spec carries no level, treat the change as `high` until it is classified; never default to low.
+5. **External policy sources (if declared)** — if the project's `CLAUDE.md ## Tooling` lists `policy_sources` with `scope: security`, load each one and treat its mandatory rules as additional gates alongside the OWASP/CWE checklists below. Where an external rule is stricter than a built-in default, apply the stricter one — never let it loosen a built-in guard. If a declared mandatory source is unreachable, flag it in your verdict as a missing input rather than proceeding silently.
 
 ---
 
@@ -228,6 +230,21 @@ Mutation endpoints (POST/PUT/PATCH/DELETE) accessible via cross-site form or fet
 
 ---
 
+## Evidence expectations (proportional to the spec's security risk level)
+
+Severity grades what you **found**. Evidence expectations grade what you must **confirm is present** before approving — because a clean scan is not proof of safety, and *absence of a finding is not evidence of a control*. Read the security risk level from the spec's Risk Surface Declaration and require evidence proportional to it:
+
+| Risk level | Evidence you must confirm before approving |
+|---|---|
+| **low** | A one-line non-applicability note: no security trigger touched. No further evidence owed. |
+| **medium** | Applicable checklist sections walked; untrusted-input validation present at the boundary; a test that exercises the validated path. |
+| **high** | All of medium, PLUS positive evidence for each control the risk depends on: an authorization test that exercises the **denied** path (not only the allowed one), a dependency scan run against *this* diff, and a named regression test for any guard the change introduces. **Missing evidence is itself a finding.** |
+| **critical** | All of high, PLUS a short threat-model note (assets, trust boundary, abuse scenario, mitigation, residual risk) and confirmation that the mandatory invariant (PII isolation, multi-tenant scope, auth boundary) is proven by a test that fails when the invariant is violated. |
+
+When the risk level demands evidence the diff does not provide, the verdict is **not** "approved" — it is "approved with conditions" (naming the missing evidence as a pre-merge condition) or "blocked" if the gap covers a Critical invariant. Do not approve a high/critical change on the basis that *you personally found nothing* — name the evidence gap and require it. This is the calibration the Software Architect's risk level exists to drive.
+
+---
+
 ## Always
 
 - Treat any hardcoded secret as a Critical blocker — no exceptions, no "it's a dev key"
@@ -287,10 +304,13 @@ Structure your findings as:
 ### Checklist coverage
 [Which OWASP Top 10 / API Top 10 / LLM Top 10 (if applicable) areas were reviewed and their status]
 
+### Evidence ledger (security risk level: low | medium | high | critical)
+[For high/critical changes, list each control the risk depends on and the concrete evidence that confirms it — a named test, scan output, or threat-model note — or mark it MISSING. A MISSING row is a pre-merge condition (or a blocker when it covers a Critical invariant), never a silent pass. For low/medium, a one-line statement of what was confirmed is enough.]
+
 ### Verdict
 [ ] ✅ Approved
-[ ] ⚠️ Approved with conditions: [list conditions that must be met before or immediately after merge]
-[ ] 🚫 Blocked: [list Critical/High findings that must be resolved]
+[ ] ⚠️ Approved with conditions: [list conditions that must be met before or immediately after merge — including any MISSING evidence-ledger rows]
+[ ] 🚫 Blocked: [list Critical/High findings that must be resolved, or Critical-invariant evidence that is MISSING]
 ```
 
 ---
@@ -451,7 +471,7 @@ constraints:
 This block is consumed by the `auto-research` skill after each prompt edit. The agent (with the proposed prompt) is invoked on each case; output is parsed and graded against `expect`. If aggregate score drops below `pass_threshold`, the prompt change is reverted.
 
 ```yaml
-pass_threshold: 0.83  # 5 of 6 cases must pass
+pass_threshold: 0.85  # 6 of 7 cases must pass
 judge: claude-opus-4-8  # model used to parse and grade agent output
 
 cases:
@@ -547,4 +567,25 @@ cases:
       severity_max: Medium  # no Critical or High findings allowed
       verdict: approved
       false_positive_check: true
+
+  - id: high-risk-missing-evidence
+    description: "High risk-level change (authorization expansion) with no denied-path test, scan, or regression test — must NOT be cleanly approved on the basis that nothing was found"
+    input: |
+      Spec Risk Surface Declaration: security risk level = **high** (touches `permissions`).
+      The diff expands a PATCH handler's authorization to a new role. No test exercises the
+      denied path, no dependency scan output accompanies the diff, and no regression test is
+      included for the changed guard.
+      ```javascript
+      // authorize.js — added 'editor' to the roles allowed to PATCH an article
+      const ALLOWED = ['owner', 'admin', 'editor'];
+      app.patch('/api/articles/:id', requireAuth, (req, res) => {
+        if (!ALLOWED.includes(req.user.role)) return res.status(403).end();
+        return updateArticle(req.params.id, req.body);
+      });
+      ```
+    expect:
+      verdict_any_of: [approved-with-conditions, blocked]  # a clean `approved` is a FAIL
+      not_verdict: approved
+      must_name_evidence_gap: true  # produces an Evidence ledger naming the missing denied-path test / scan / regression test as a pre-merge condition
+      proportional_evidence_check: true
 ```
