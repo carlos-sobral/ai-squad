@@ -84,6 +84,28 @@ observability:
   # Required: condition that forces re-evaluation of the obs stack choice
   revisit_trigger: "monthly cost > $50 OR vendor lock-in concern"
 
+environments:
+  # Deploy topology. Declared in Módulo 0 by cloud-architect. Set staging.provider: none
+  # for a single-target flow (merge → prod) and keep the orchestrator's staging gate dormant.
+  # Declare a staging target to activate the staging validation gate
+  # (merge → deploy staging → qa e2e + smoke on staging → gated promotion → prod).
+  local:
+    url: http://localhost:3000
+  staging:
+    provider: none        # the hosting platform's staging target | none
+    url: ""               # staging base URL — qa-engineer points e2e here for the staging gate
+    deploy_trigger: ""    # what deploys to staging (e.g. "merge to main")
+  production:
+    url: ""
+  # Parity: what a staging build must mirror from prod for validation to be meaningful
+  parity:
+    data: synthetic       # synthetic | masked-prod-snapshot | none
+    notes: ""             # known divergences staging does NOT mirror (3rd-party sandboxes, reduced infra, flags)
+  # Promotion: how a validated staging build reaches production
+  promotion:
+    gate: manual          # manual | auto-on-green | none
+    smoke_command: ""     # command/URL that proves staging is healthy before promotion
+
 project_context:
   codebase_age: greenfield   # greenfield | brownfield
   legacy_coverage_baseline_pct: 0   # only meaningful when brownfield — coverage at onboarding; new code must not regress it

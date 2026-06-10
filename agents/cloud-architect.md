@@ -28,12 +28,13 @@ Triggered when the project has no CI/CD pipeline yet (Módulo 0). Your job is to
 Check CLAUDE.md for the project's CI/CD provider, hosting platform, and e2e testing tool before creating any files.
 
 1. **CI pipeline config** — on PR: lint, type-check, build, run the migration command declared in CLAUDE.md (production-safe variant), e2e tests
-2. **Deploy pipeline config** — on merge to main: deploy to hosting platform
+2. **Deploy pipeline config** — on merge to main: deploy to the target declared in `CLAUDE.md ## Tooling > environments`. When a shared staging environment is declared (`staging.provider != none`), the merge deploys to **staging**, and a **separate, gated promotion step** deploys staging→production per `environments.promotion`. When `staging.provider: none`, the merge deploys straight to production (single-target). Never collapse a declared staging topology into a single-target deploy.
 3. **Migrations runner** — the production-safe migration command declared in CLAUDE.md runs in CI before tests and before deploy (never the dev/interactive variant)
 4. **Environment variables documentation** — update `.env.example` with all required vars; document where each secret goes (CI secrets, hosting platform)
 5. **E2e test config** (`playwright.config.ts` or equivalent) — base URL from env, headless, single worker for CI
 6. **Local dev setup script** — `scripts/setup-local.sh` that bootstraps the developer environment (see below)
 7. **ADR** documenting the CI/CD stack choices
+8. **Environment topology declaration** — declare local/staging/production in `CLAUDE.md ## Tooling > environments` and configure the deploy pipeline to match it (see section 11)
 
 ### Local dev setup script (`scripts/setup-local.sh`)
 
@@ -149,10 +150,28 @@ Wire a static IaC scanner into the CI pipeline, running on every PR that touches
 
 In review mode, confirm IaC changes pass this scanner gate before approving; any new suppression must carry a documented justification — a blanket skip of the gate is a rejection.
 
+### 11. Environment topology (local / staging / production)
+
+Deploy targets are not a single "hosting platform" — they are a **topology** that the project must declare explicitly in Módulo 0. Decide and wire this up before the first deploy, and record it in `CLAUDE.md ## Tooling > environments` plus the CI/CD ADR.
+
+**Choose the topology with the Tech Lead — two shapes:**
+
+1. **Single-target (`staging.provider: none`)** — merge to main deploys straight to production. Correct for local-first / single-user products, internal tools with trivial blast radius, or anything where a staging mirror is not worth the cost. The orchestrator's staging gate stays dormant. This is the legacy default; do not impose staging on a project that doesn't want it.
+
+2. **Shared staging (`staging.provider: <target>`)** — a persistent staging environment that mirrors production. Merge to main auto-deploys to **staging**; promotion to production is a **separate, validated step**. This is the right shape whenever a bad deploy to prod is expensive (multi-user apps, customer-facing surfaces). Wire it as follows:
+   - **Two deploy targets, not one.** The merge-to-main workflow deploys to staging only. Production deploy is a distinct job gated on `environments.promotion.gate` (`manual` = requires explicit approval/tag; `auto-on-green` = promotes automatically once the staging gate passes). Never let a merge reach production directly when staging is declared.
+   - **Environment parity** (`environments.parity`) — record what staging must mirror from prod for validation to mean anything: data shape (`synthetic` | `masked-prod-snapshot`), and the **known divergences staging does NOT mirror** (third-party sandboxes vs. live integrations, reduced infra size, feature flags). Validation against a staging that silently diverges from prod is false confidence — name the divergences so downstream agents account for them.
+   - **Promotion strategy** (`environments.promotion`) — declare `gate` and a `smoke_command` (a command or URL that proves the staging build is healthy before promotion). The smoke runs against staging; the orchestrator's staging gate consumes it.
+
+**Distinguish from PR preview.** Ephemeral per-PR preview environments (next rule below) are **complementary**, not a substitute for shared staging: preview validates a branch in isolation before merge; staging validates the merged, integrated build before production. A project can have both, one, or neither.
+
+**Deliverable:** populate `CLAUDE.md ## Tooling > environments` (local/staging/production URLs, parity, promotion), document the topology choice in the CI/CD ADR (including why single-target vs. staging), and — for shared-staging projects — ensure the deploy workflow has the two-target structure above.
+
 ### Setup mode rules
 - Use the CI/CD provider and hosting platform defined in CLAUDE.md
 - Never hardcode secrets — always use environment variable references
-- Preview environments: use the hosting platform's native PR preview feature if available
+- **Environment topology must be declared in Módulo 0** (`CLAUDE.md ## Tooling > environments`). If the project uses a shared staging environment, the deploy pipeline must distinguish staging (on merge) from production (on a separate gated promotion) — never a single-target deploy that pushes merges straight to prod. Set `staging.provider: none` only for projects that genuinely deploy straight to production (local-first, single-user, trivial blast radius). See section 11.
+- Preview environments: use the hosting platform's native PR preview feature if available (complementary to shared staging, not a replacement)
 - Synthetic observability tooling (Lighthouse CI + load test runner) must be configured before the first `ship-team` runs — without it, the performance gate will block unconditionally
 - Production observability stacks must be chosen and wired before the first production deploy — without them, the post-deploy health check in the orchestrator's DoD cannot run
 
@@ -224,6 +243,7 @@ Triggered when reviewing a PR that includes infrastructure or CI/CD changes.
 - Validate that new environment variables are documented in `.env.example`
 - Flag any infrastructure change made manually outside the pipeline
 - Ensure the production-safe migration command declared in CLAUDE.md is still in the CI pipeline after any workflow changes
+- **When `environments.staging.provider != none`, reject workflow changes that collapse the two-target topology into a single-target deploy** (merge reaching production directly) or that remove the production-promotion gate. The staging→production boundary is a deliberate safety gate, not pipeline overhead to optimize away.
 
 ### Always
 
