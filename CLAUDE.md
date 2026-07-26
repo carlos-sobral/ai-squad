@@ -1,6 +1,6 @@
 # ai-squad — Project Context
 
-ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. Fornece 13 agents especializados + 7 skills (2 user-invocáveis: sdlc-orchestrator + onboard-brownfield; 2 agent-invocáveis: systematic-debugging + writing-plans; 3 de self-improvement: auto-research + sdlc-practices-evolve + agents-improvement-audit) + 1 slash pattern (`/goal` para handoff autônomo), um processo completo de SDLC com gates de qualidade, suporte a paralelismo via TeamMode + tmux (com Workflow tool como motor determinístico para sub-fases bem-postas), e onboarding automático de codebases pré-existentes.
+ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. Fornece 13 agents especializados + 8 skills (3 user-invocáveis: sdlc-orchestrator + onboard-brownfield + product-backlog; 2 agent-invocáveis: systematic-debugging + writing-plans; 3 de self-improvement: auto-research + sdlc-practices-evolve + agents-improvement-audit) + 1 slash pattern (`/goal` para handoff autônomo), um processo completo de SDLC com gates de qualidade, suporte a paralelismo via TeamMode + tmux (com Workflow tool como motor determinístico para sub-fases bem-postas), e onboarding automático de codebases pré-existentes.
 
 ## Stack
 
@@ -13,8 +13,9 @@ ai-squad é um framework de desenvolvimento ágil spec-driven para Claude Code. 
 
 ```
 ai-squad/
-├── skills/                  # 7 skills (sdlc-orchestrator, onboard-brownfield, systematic-debugging,
-│   │                        #   writing-plans, auto-research, sdlc-practices-evolve, agents-improvement-audit)
+├── skills/                  # 8 skills (sdlc-orchestrator, onboard-brownfield, product-backlog,
+│   │                        #   systematic-debugging, writing-plans, auto-research,
+│   │                        #   sdlc-practices-evolve, agents-improvement-audit)
 │   ├── {nome}/SKILL.md
 │   └── sdlc-orchestrator/workflows/  # Scripts de referência do Workflow tool (review-team, prd-sharding, ...)
 ├── agents/                  # 13 custom agents (.md) — modelo fixo por papel

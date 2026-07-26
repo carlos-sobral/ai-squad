@@ -2,7 +2,7 @@
 
 **Uma squad de engenharia virtual para o seu projeto — movida por IA.**
 
-ai-squad é um conjunto de **13 agentes especializados** e **7 skills** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto, product marketing e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
+ai-squad é um conjunto de **13 agentes especializados** e **8 skills** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto, product marketing e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
 
 Em vez de mandar um prompt solto e torcer pelo melhor, você segue um fluxo: **escreva o que quer construir → deixe o arquiteto planejar → deixe os engenheiros implementar → deixe o QA validar**. Cada etapa tem critérios de qualidade. O resultado é mais consistente e menos retrabalho.
 
@@ -153,11 +153,12 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 | `product-marketing-manager` | Posicionamento externo + artefatos de launch (value prop, demo script, FAQ) para features user-facing | opus | medium |
 | `tech-writer` | Documentação de APIs, CLAUDE.md, changelog | haiku | low |
 
-E **7 skills + 1 slash pattern:**
+E **8 skills + 1 slash pattern:**
 
 *User-invocáveis (Tech Lead chama via slash):*
 - **`/sdlc-orchestrator`** — guia o Tech Lead pelo fluxo completo de módulos, decide quais agentes rodar e quando, aplica gates de qualidade. Para um conjunto restrito de sub-fases bem-postas (review-team, PRD sharding, brownfield inventory, QA sweep / refactor paralelo), pode delegar a execução ao **Workflow tool** — orquestração determinística com scripts de referência em `skills/sdlc-orchestrator/workflows/`. O workflow devolve *dados* (findings + verdict recomendado); o veredito real e todo checkpoint humano ficam com o orchestrator
 - **`/onboard-brownfield`** — onboarding de uma única vez em codebases pré-existentes, inventária stack + CI/CD + convenções + hotspots, produz baseline de documentação e maturity assessment
+- **`/product-backlog`** — o ritual de Product Owner do SDLC: mantém o backlog priorizado e o roadmap num único `docs/roadmap.md` canônico, pontua candidatos com **RICE**, gateia por fit com os princípios da visão, e decide o próximo goal (que alimenta o `/goal`). Delega ao `product-manager` o julgamento de produto (brief + estimativa RICE); nunca executa nem faz merge — recomenda, o Tech Lead confirma. Preenche o gap de "o que construir a seguir e por quê"
 
 *Agent-invocáveis (outros agents chamam quando precisam):*
 - **`systematic-debugging`** — 4-fases de investigação de root cause (read errors, reproduce, check changes, gather boundary evidence → pattern analysis → hypothesis → fix). Invocada por qa-engineer em falhas E2E, por engineers em surpresas de runtime, ou pelo Tech Lead em produção
@@ -472,8 +473,9 @@ ai-squad/
 │   ├── backend-engineer.md
 │   ├── frontend-engineer.md
 │   └── ...
-├── skills/                  # 7 skills: sdlc-orchestrator + onboard-brownfield + systematic-debugging
-│   │                        #   + writing-plans + auto-research + sdlc-practices-evolve + agents-improvement-audit
+├── skills/                  # 8 skills: sdlc-orchestrator + onboard-brownfield + product-backlog
+│   │                        #   + systematic-debugging + writing-plans + auto-research
+│   │                        #   + sdlc-practices-evolve + agents-improvement-audit
 │   ├── sdlc-orchestrator/
 │   │   └── workflows/       # Scripts de referência do Workflow tool (review-team, prd-sharding, qa-sweep, ...)
 │   └── onboard-brownfield/

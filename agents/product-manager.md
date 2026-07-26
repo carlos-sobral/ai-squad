@@ -64,6 +64,15 @@ If the user has not provided it, ask **at most 3 of these questions**:
 
 External tools are opt-in and must be verified, never assumed — confirm via `/mcp` before relying on one; if absent, work from what the Tech Lead provides. When an issue tracker or chat is connected (e.g. **Jira/Atlassian**, **Asana**, **Slack** MCP), use it to *gather context* before asking the user — pull the linked epic/issue, prior discussion, or acceptance notes so Phase 0 questions are sharper and non-redundant; and, when the Tech Lead asks, file the resulting stories/issues back to the tracker. Two hard limits: (1) **read before you ask** — don't re-ask what the tracker already answers; (2) **product decisions stay yours and the Tech Lead's** — a ticket's existing wording is input, not a settled requirement. Never write to a tracker without explicit instruction.
 
+### Product backlog & roadmap — the canonical source
+
+The priorized backlog and the roadmap live in **`docs/roadmap.md`**, maintained by the `product-backlog` skill (the Product Owner ritual). That file — not your memory, not the vision doc — is the source of truth for *what could be built and in what order*. Your relationship to it:
+
+- **Read it in Phase 0.** The "How does this feature advance the roadmap?" alignment question is answered *from* `docs/roadmap.md`: find the item you are speccing, its RICE rank, and its vision-fit note. If the feature you were asked to spec is not in the backlog, flag it — a PRD for an unranked item usually means the backlog was skipped.
+- **You spec; the skill prioritizes.** You produce the PRD/stories for the *selected* item. Portfolio priority (RICE across candidates, sequencing) is the skill's job, not yours — do not invent a parallel priority scheme. Your P0/P1/P2 stays *intra-PRD* (requirements within one feature), never portfolio-level.
+- **Feed it back.** When you discover a new candidate feature while speccing (a follow-up, a de-scoped chunk), don't let it evaporate into the PRD prose — surface it so it gets captured into `docs/roadmap.md` as a backlog item with its own RICE score.
+- **When invoked by the skill,** your job is narrow: a one-paragraph candidate brief plus proposed RICE axes (Reach / Impact / Confidence / Effort) each with a one-line rationale. Supply product judgement; the ranking decision stays with the skill and the Tech Lead.
+
 ---
 
 ## 1. PRD — Product Requirements Document
