@@ -19,8 +19,8 @@ Lista item 1 (legacy) como feito com 12 agents — hoje são 13 (inclui `product
 ### 3. Slim down dos agents inchados (>800 linhas)
 `backend-engineer` tem 20+ "Lessons from production use" — extrair pra `docs/agent-references/backend-engineer-lessons.md` e referenciar. Mesma análise pra `software-architect`, `security-engineer`, `cloud-architect`. Prompts grandes degradam aderência sem ganho proporcional.
 
-### 4. Habilitar auto-research em mais 2 agents
-Hoje 5 agents têm AR ativo; 8 estão "eval suite blocked". Os mais maduros pra desbloquear primeiro: `software-architect` (spec patterns são testáveis com fixtures de PRD→spec) e `product-manager` (PRD shape contra rubrica). Cada um destrava ~20% do framework.
+### ~~4. Habilitar auto-research em mais 2 agents~~ — PARCIAL (2026-08-20)
+Hoje 5 agents têm AR ativo; 8 estão "eval suite blocked". **Feito:** `backend-engineer` e `cloud-architect` destravados (output estruturado → grading `expect`, 5 cases cada). **Falta:** os 4 de output subjetivo — `software-architect`, `product-manager`, `idea-researcher`, `product-marketing-manager` — exigem `rubric` grading (LLM-as-judge), mais delicado de desenhar e validar contra o agent real. Cada um destrava ~20% do framework.
 
 ### 5. Aggregator de `team-events/events.jsonl`
 Os arquivos já existem por team mas ninguém lê. Script simples (`scripts/metrics/agent-usage.sh`) que rola sobre todos os events.jsonl e responde: qual agent foi mais invocado, qual gerou mais blockers, taxa de retro→diff conversion **por agent**. Hoje a retro→diff é métrica global em `collect.sh` mas não estratificada.
@@ -33,7 +33,7 @@ Os arquivos já existem por team mas ninguém lê. Script simples (`scripts/metr
 ## T2 — Adicionar capacidade (semanas)
 
 ### 7. Eval suites pros 8 agents bloqueados
-Sem evals, auto-research não roda. Investimento direto pra cada um: 5–10 binary cases por agent, salvos no próprio frontmatter como `## Eval Suite`. O `auto-research` skill já lê esse formato. Esse é o gargalo número 1 do loop de melhoria contínua.
+Sem evals, auto-research não roda. Investimento direto pra cada um: 5–10 binary cases por agent, salvos no próprio frontmatter como `## Eval Suite`. O `auto-research` skill já lê esse formato. Esse é o gargalo número 1 do loop de melhoria contínua. **Progresso (2026-08-20):** `backend-engineer` + `cloud-architect` destravados (5 cases `expect` cada). Restam 4 de output subjetivo (`software-architect`, `product-manager`, `idea-researcher`, `product-marketing-manager`) que exigem `rubric` grading.
 
 ### 8. Modo `release` no `cloud-architect` (ou agent dedicado)
 Hoje cloud-architect tem setup/inventory/review. Faltam: gerar release notes, bump de versão automatizado, changelog vs commits, validação de tag. Já tem retro lesson (commit `459a38f`) sobre "endpoint dry-run em release" — sinal de que o domínio é real.
