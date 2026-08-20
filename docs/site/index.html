@@ -1424,6 +1424,13 @@
     </div>
 
     <div class="discipline">
+      <div class="icon" style="background: #ecfccb;">🧭</div>
+      <h3>Norte vivo</h3>
+      <p>Vision doc e roadmap não são consultados só na seleção do goal — o orchestrator <strong>rechecka o norte em 3 pontos do fluxo</strong>: no clarify gate (o PRD ainda avança o roadmap?), no consistency-check pré-merge (a implementação ainda respeita a vision?) e na retrospective (o roadmap absorve o que o módulo ensinou). Assim o módulo não deriva do norte no meio da execução — e o roadmap reflete o aprendizado em vez de ficar stale até o próximo goal.</p>
+      <div class="who">sdlc-orchestrator • product-backlog</div>
+    </div>
+
+    <div class="discipline">
       <div class="icon" style="background: #fee2e2;">🛡️</div>
       <h3>Enforcement determinístico</h3>
       <p>Guardrails que viviam só em prompt — fáceis de o agente racionalizar e ignorar — viram hooks que o harness executa: <code>guard-bash</code> força confirmação humana em force-push e em <code>git add -A</code> amplo na fonte da verdade; <code>guard-stop</code> bloqueia encerramento quando houve edição de código + claim de sucesso + nenhum comando de verificação rodado. Fail-open por design, <code>ask</code> em vez de <code>deny</code>. O <code>install.sh</code> instala e conecta tudo com merge idempotente no <code>settings.json</code>.</p>

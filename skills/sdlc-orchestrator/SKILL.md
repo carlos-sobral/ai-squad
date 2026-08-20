@@ -702,6 +702,7 @@ Kill ambiguity before it becomes an architectural bet. A PRD that reads fine to 
 2. Tech Lead answers each question inline.
 3. Answers are appended to the PRD as a **Clarifications** section (or to the compact PRD as a closing block).
 4. If any answer surfaces a new functional requirement or changes scope, return to `product-manager` for a PRD revision before proceeding.
+5. **North-alignment check (vision + roadmap).** Before the tech spec locks in, re-check the module against the project's north: read `docs/vision-*.md` (principles) and `docs/roadmap.md` (the goal's RICE rank + vision-fit note). Confirm in one line that the module still advances the roadmap and does not contradict a vision principle. If the PRD drifted from the roadmap (scope grew, the goal is no longer the ranked priority, or a decision now tensions a vision principle), surface it to the Tech Lead and return to `product-manager` / `product-backlog` before proceeding. Do not silently absorb drift — the north is rechecked here precisely so a module doesn't wander off-course mid-execution.
 
 ### Output format
 
@@ -761,6 +762,7 @@ Catch silent drift between what was specified (PRD + tech spec) and what was imp
 
    Note: class (e) is only available when `project_context.codebase_age == brownfield`. If `project_context` is absent or set to greenfield, only (a)–(d) apply.
 3. Tech Lead resolves all (c) and (d) items before merge.
+4. **North-alignment check (vision + roadmap).** Before merge, re-check the implemented module against the north: read `docs/vision-*.md` (principles) and `docs/roadmap.md`. Confirm the module still advances the roadmap and does not contradict a vision principle — especially if the scope drifted during implementation. If the implementation wandered off-north (a decision now tensions a vision principle, or the module no longer serves the ranked goal), surface it to the Tech Lead before merge; do not merge a module that silently contradicts the north. This is the second north check (the first was at the clarify gate) — it catches drift that accumulated during implementation.
 
 ### Output format
 
@@ -857,7 +859,8 @@ Before advancing to the next module, run this gate. Do not skip it on "clean" mo
 4. For each approved diff, instruct the Tech Lead to save a record to `docs/agent-evolution/YYYY-MM-DD-<agent>-<slug>.md` using the format in the **Diff record format** section below.
 5. Increment the affected agent definition's `version` field (minor bump for additions, major for behavioral changes).
 6. Only after this gate is complete, mark the module as done and advance.
-7. **Update maturity assessment** (only if o projeto declara `engineering_metrics.provider` no `## Tooling`):
+7. **Update the roadmap with what this module taught.** Re-check the north and feed the learning back: read `docs/roadmap.md` and update it with (a) any new candidate features surfaced during the module (follow-ups, de-scoped chunks — don't let them evaporate), (b) any shift in the shipped goal's status (done, partially delivered, de-scoped), and (c) any change in priority revealed by the module's outcome. If the module revealed a vision-principle tension or a roadmap item that no longer makes sense, surface it to the Tech Lead and route to `product-backlog` for re-ranking. The roadmap is the living north — it must reflect what was learned, not sit stale until the next goal selection.
+8. **Update maturity assessment** (only if o projeto declara `engineering_metrics.provider` no `## Tooling`):
    1. Se `docs/maturity-assessment.md` não existe, copiar do template do ai-squad (`templates/docs/maturity-assessment.md`).
    2. Ler `docs/metrics/latest.md` (gerado pelo `scripts/metrics/collect.sh` rodado pelo `performance-engineer` em audit mode). Se não existir ou estiver stale (>7 dias), recomendar rodar audit antes de prosseguir.
    3. Para cada uma das 5 dimensões da rubrica, avaliar se este módulo cumpriu a evidência objetiva do nível atual ou do próximo:
@@ -870,7 +873,7 @@ Before advancing to the next module, run this gate. Do not skip it on "clean" mo
    5. Apresentar ao Tech Lead uma tabela curta — Dimensão | Nível atual | Sinal deste módulo (atende próximo nível? não? regrediu?) | Recomendação. Tech Lead aprova qualquer transição **antes** de gravar.
    6. Registrar transições aprovadas em "Histórico de transições" do mesmo arquivo (append-only).
    7. **Brownfield projects** (`project_context.codebase_age == brownfield`): the initial maturity baseline comes from auto-claim by the discovery skill (`/onboard-brownfield`). Subsequent promotions/regressions follow the standard 3-consecutive / 2-consecutive rule normally. The first `performance-engineer` audit biweekly validates auto-claimed levels above L1; if evidence does not hold, regress immediately (exception to the 2-consecutive rule, because the original claim was speculative). Greenfield projects (or absent `project_context`) follow the standard rule from the start.
-8. **Refresh stakeholder dashboard** (silent, best-effort). After all retrospective work is complete (diffs approved, maturity updated), run the stakeholder observability dashboard renderer if it is present in the project root:
+9. **Refresh stakeholder dashboard** (silent, best-effort). After all retrospective work is complete (diffs approved, maturity updated), run the stakeholder observability dashboard renderer if it is present in the project root:
    ```bash
    [ -x scripts/observability/render-dashboard.sh ] && bash scripts/observability/render-dashboard.sh --quiet || true
    ```
