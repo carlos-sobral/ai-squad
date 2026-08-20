@@ -1241,11 +1241,12 @@
         <span class="stage-tag">design</span>
         <h3>UX + Tech Spec</h3>
       </div>
-      <div class="stage-desc">Telas, fluxos e copy (se tem UI). Tech spec com contratos de API, schema, ADRs, contrato de observabilidade. <strong>Clarify gate</strong> levanta top-5 ambiguidades antes de escrever spec. Spec aprovada vira plano executável via <code>writing-plans</code> antes de delegar aos engineers.</div>
+      <div class="stage-desc">Telas, fluxos e copy (se tem UI). Tech spec com contratos de API, schema, ADRs, contrato de observabilidade. <strong>Clarify gate</strong> levanta top-5 ambiguidades antes de escrever spec. Spec aprovada vira plano executável via <code>writing-plans</code> antes de delegar aos engineers. Em decisões de alto custo de erro (T3, ambiguidade real, risco crítico), o <code>deliberate-confrontation</code> roda uma segunda opinião autor-vs-challenger antes do artefato travar.</div>
       <div class="stage-agents">
         <span class="agent-chip">product-designer</span>
         <span class="agent-chip">software-architect</span>
         <span class="agent-chip">writing-plans</span>
+        <span class="agent-chip">deliberate-confrontation</span>
       </div>
     </div>
 
@@ -1271,12 +1272,13 @@
         <span class="stage-tag">revisão</span>
         <h3>Gates antes do merge</h3>
       </div>
-      <div class="stage-desc">Code review contra spec, security review (OWASP/CWE/ASVS), perf gate na primeira entrega. <strong>Consistency-check gate</strong> classifica deltas em 5 classes: aligned / minor drift / divergent / undefined / legacy preservation. Risco aceito num gate só é válido como <strong>Security Exception Record</strong> (escopo, dono, rationale, controle compensatório, autoridade, expiração, follow-up) — sem expiração é inválido, e achado Critical nunca é aceito. Quando o projeto declara staging, o merge vai pra staging e a promoção a produção é gate separado (QA e2e + smoke contra a URL de staging).</div>
+      <div class="stage-desc">Code review contra spec, security review (OWASP/CWE/ASVS), perf gate na primeira entrega. <strong>Consistency-check gate</strong> classifica deltas em 5 classes: aligned / minor drift / divergent / undefined / legacy preservation. Risco aceito num gate só é válido como <strong>Security Exception Record</strong> (escopo, dono, rationale, controle compensatório, autoridade, expiração, follow-up) — sem expiração é inválido, e achado Critical nunca é aceito. Quando o projeto declara staging, o merge vai pra staging e a promoção a produção é gate separado (QA e2e + smoke contra a URL de staging). No subconjunto de alto custo de erro, o <code>deliberate-confrontation</code> adiciona o ataque/réplica que o fan-out do review-team não tem.</div>
       <div class="stage-agents">
         <span class="agent-chip">software-architect</span>
         <span class="agent-chip">security-engineer</span>
         <span class="agent-chip">performance-engineer</span>
         <span class="agent-chip">quality-architect</span>
+        <span class="agent-chip">deliberate-confrontation</span>
       </div>
     </div>
 
@@ -1411,6 +1413,13 @@
       <div class="icon" style="background: #fce7f3;">🔄</div>
       <h3>Self-evolution</h3>
       <p>Retrospective gate ao fim de cada módulo: blockers viram diffs nos próprios agentes ou no CLAUDE.md. Três skills dedicadas fecham o loop: <code>/auto-research</code> (profundidade — atualiza cada agente com fontes autoritativas recentes, validado por eval suite), <code>/sdlc-practices-evolve</code> (escopo — questiona se o agente faz as coisas certas vs o estado da arte da disciplina) e <code>/agents-improvement-audit</code> (audita a saúde do próprio loop). <strong>A squad fica mais rápida a cada módulo</strong> — não fica parada.</p>
+      <div class="who">sdlc-orchestrator</div>
+    </div>
+
+    <div class="discipline">
+      <div class="icon" style="background: #ede9fe;">⚖️</div>
+      <h3>Confronte deliberadamente</h3>
+      <p>Segunda opinião com ângulo genuinamente diferente nas fases de criação (idea brief, PRD, tech spec) e revisão — para decisões de alto custo de erro. O <code>deliberate-confrontation</code> roda um confronto estruturado autor-vs-challenger (ataque + réplica) e entrega a decisão ao Tech Lead. Disparado pelo orchestrator quando um gatilho aciona (T3, ambiguidade real, alto custo de erro, blocker recorrente de 3+ retros, ou pedido do Tech Lead) — nunca rotineiramente. Complementa o fan-out do review-team: fan-out dá amplitude, confronto dá profundidade.</p>
       <div class="who">sdlc-orchestrator</div>
     </div>
 

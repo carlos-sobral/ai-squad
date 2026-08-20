@@ -2,7 +2,7 @@
 
 **Uma squad de engenharia virtual para o seu projeto — movida por IA.**
 
-ai-squad é um conjunto de **13 agentes especializados** e **8 skills** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto, product marketing e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
+ai-squad é um conjunto de **13 agentes especializados** e **9 skills** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto, product marketing e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
 
 Em vez de mandar um prompt solto e torcer pelo melhor, você segue um fluxo: **escreva o que quer construir → deixe o arquiteto planejar → deixe os engenheiros implementar → deixe o QA validar**. Cada etapa tem critérios de qualidade. O resultado é mais consistente e menos retrabalho.
 
@@ -153,7 +153,7 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 | `product-marketing-manager` | Posicionamento externo + artefatos de launch (value prop, demo script, FAQ) para features user-facing | opus | medium |
 | `tech-writer` | Documentação de APIs, CLAUDE.md, changelog | haiku | low |
 
-E **8 skills + 1 slash pattern:**
+E **9 skills + 1 slash pattern:**
 
 *User-invocáveis (Tech Lead chama via slash):*
 - **`/sdlc-orchestrator`** — guia o Tech Lead pelo fluxo completo de módulos, decide quais agentes rodar e quando, aplica gates de qualidade. Para um conjunto restrito de sub-fases bem-postas (review-team, PRD sharding, brownfield inventory, QA sweep / refactor paralelo), pode delegar a execução ao **Workflow tool** — orquestração determinística com scripts de referência em `skills/sdlc-orchestrator/workflows/`. O workflow devolve *dados* (findings + verdict recomendado); o veredito real e todo checkpoint humano ficam com o orchestrator
@@ -163,6 +163,7 @@ E **8 skills + 1 slash pattern:**
 *Agent-invocáveis (outros agents chamam quando precisam):*
 - **`systematic-debugging`** — 4-fases de investigação de root cause (read errors, reproduce, check changes, gather boundary evidence → pattern analysis → hypothesis → fix). Invocada por qa-engineer em falhas E2E, por engineers em surpresas de runtime, ou pelo Tech Lead em produção
 - **`writing-plans`** — decompõe uma tech spec aprovada em tarefas executáveis de 2-5 min com caminhos exatos, código real e comandos verificáveis. Invocada pelo software-architect após spec aprovada, antes da delegação aos engineers
+- **`deliberate-confrontation`** — segunda opinião com ângulo genuinamente diferente nas fases de criação (idea brief, PRD, tech spec) e revisão, para decisões de alto custo de erro. Roda um confronto estruturado autor-vs-challenger (ataque + réplica) e entrega a decisão ao Tech Lead. Invocada pelo `sdlc-orchestrator` quando um gatilho dispara (T3, ambiguidade real, alto custo de erro, blocker recorrente de 3+ retros, ou pedido do Tech Lead) — nunca rotineiramente
 
 *Self-improvement (Tech Lead chama via slash, ou o orchestrator dispara por heurística):*
 - **`/auto-research`** — loop de auto-melhoria de um agente: lê o Auto-Research Scope do agente, busca as fontes autoritativas mais recentes por tópico, propõe edits em seções não-congeladas, valida contra a Eval Suite do agente e commita ou reverte. Melhora a **profundidade** (cada agente no que já faz)
@@ -473,9 +474,9 @@ ai-squad/
 │   ├── backend-engineer.md
 │   ├── frontend-engineer.md
 │   └── ...
-├── skills/                  # 8 skills: sdlc-orchestrator + onboard-brownfield + product-backlog
-│   │                        #   + systematic-debugging + writing-plans + auto-research
-│   │                        #   + sdlc-practices-evolve + agents-improvement-audit
+├── skills/                  # 9 skills: sdlc-orchestrator + onboard-brownfield + product-backlog
+│   │                        #   + systematic-debugging + writing-plans + deliberate-confrontation
+│   │                        #   + auto-research + sdlc-practices-evolve + agents-improvement-audit
 │   ├── sdlc-orchestrator/
 │   │   └── workflows/       # Scripts de referência do Workflow tool (review-team, prd-sharding, qa-sweep, ...)
 │   └── onboard-brownfield/
