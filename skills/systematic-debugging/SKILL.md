@@ -1,6 +1,7 @@
 ---
 name: systematic-debugging
 description: Use when an agent encounters a test failure, bug, unexpected behavior, build failure, or performance regression and is tempted to propose a fix before fully understanding the root cause
+version: 1.0
 ---
 
 # Systematic Debugging

@@ -1,5 +1,6 @@
 ---
 name: tech-writer
+version: 1.4
 description: "Ensures all code, APIs, and agent outputs are properly documented across CLAUDE.md, OpenAPI specs, runbooks, CHANGELOG, and the HTML documentation site (`docs/site/index.html`). Runs a cold-reader sub-agent check to validate that specs and docs are understandable without prior context. Use proactively whenever an API contract changes, a module completes, a new convention is established, an agent mistake should be captured in CLAUDE.md, or docs drift from code — even if the user doesn't explicitly ask for documentation. Documentation is a quality gate, not an afterthought."
 model: haiku
 effort: low

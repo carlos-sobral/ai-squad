@@ -1,6 +1,7 @@
 ---
 name: writing-plans
 description: Use when a tech spec is approved and the implementation needs to be decomposed into bite-sized executable tasks before any engineer touches code
+version: 1.0
 ---
 
 # Writing Plans

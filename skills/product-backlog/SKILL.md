@@ -1,6 +1,7 @@
 ---
 name: product-backlog
 description: "Use when the user wants to organize what to build next, groom or reprioritize the product backlog, decide the next goal, capture a feature idea into the backlog, or asks 'what should we build next / why this order' — for a product using the ai-squad SDLC. Also when a goal ships and the next one must be chosen, or when product ideas are scattered across memory, vision doc, and conversations. NOT for the user's personal to-dos (that is task-manager), and NOT for writing a single feature's PRD (that is product-manager)."
+version: 1.0
 ---
 
 # Product Backlog & Roadmap — steward
