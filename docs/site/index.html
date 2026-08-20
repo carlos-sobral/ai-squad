@@ -1213,7 +1213,7 @@
         <span class="stage-tag optional">contínuo</span>
         <h3>Backlog &amp; Roadmap</h3>
       </div>
-      <div class="stage-desc">O ritual de Product Owner: decide <em>o quê</em> antes do <em>como</em>. Backlog priorizado + roadmap num único <code>docs/roadmap.md</code> canônico, pontuado por <strong>RICE</strong> e gateado pelos princípios da visão. Escolhe o próximo goal (que alimenta o <code>/goal</code>) — recomenda, o Tech Lead confirma. Delega ao <code>product-manager</code> o julgamento de produto; nunca executa nem faz merge.</div>
+      <div class="stage-desc">O ritual de Product Owner (<code>/product-backlog</code>): decide <em>o quê</em> antes do <em>como</em>. Backlog priorizado + roadmap num único <code>docs/roadmap.md</code> canônico, pontuado por <strong>RICE</strong> e gateado pelos princípios da visão. Escolhe o próximo goal (que alimenta o <code>/goal</code>) — recomenda, o Tech Lead confirma. Delega ao <code>product-manager</code> o julgamento de produto; nunca executa nem faz merge.</div>
       <div class="stage-agents">
         <span class="agent-chip">product-backlog</span>
         <span class="agent-chip">product-manager</span>
@@ -1256,7 +1256,7 @@
         <span class="stage-tag">implementação</span>
         <h3>Backend + Frontend em paralelo</h3>
       </div>
-      <div class="stage-desc">Engenheiros implementam contra a spec aprovada, com test-first como default em código de feature novo. Quando ambos rodam, viram <strong>teammates</strong> com painéis tmux separados — você acompanha em tempo real. Em falha inesperada ou bug, alcançam <code>systematic-debugging</code> antes de propor fix. Para sub-fases de forma fixa (review-team, QA sweep por AC, PRD sharding), o orchestrator pode delegar ao <strong>Workflow tool</strong> — orquestração determinística com output validado por schema; o workflow devolve dados, o veredito e os checkpoints humanos ficam com o orchestrator.</div>
+      <div class="stage-desc">Engenheiros implementam contra a spec aprovada, com test-first como default em código de feature novo. Quando ambos rodam, viram <strong>teammates</strong> com painéis tmux separados — você acompanha em tempo real. Em falha inesperada ou bug, alcançam <code>systematic-debugging</code> antes de propor fix. Para sub-fases de forma fixa (review-team, QA sweep por AC, PRD sharding), o orchestrator pode delegar ao <strong>Workflow tool</strong> — orquestração determinística com output validado por schema; o workflow devolve dados, o veredito e os checkpoints humanos ficam com o orchestrator. Um terceiro eixo de paralelismo (<strong>Axis 3</strong>) abre streams independentes em worktrees separados via <code>claude -w</code> — para um bug urgente que não deve derrubar o contexto de uma feature longa; cada sessão roda seu próprio fluxo SDLC.</div>
       <div class="stage-agents">
         <span class="agent-chip parallel">backend-engineer ⇆</span>
         <span class="agent-chip parallel">⇆ frontend-engineer</span>
@@ -1271,7 +1271,7 @@
         <span class="stage-tag">revisão</span>
         <h3>Gates antes do merge</h3>
       </div>
-      <div class="stage-desc">Code review contra spec, security review (OWASP/CWE/ASVS), perf gate na primeira entrega. <strong>Consistency-check gate</strong> classifica deltas em 5 classes: aligned / minor drift / divergent / undefined / legacy preservation.</div>
+      <div class="stage-desc">Code review contra spec, security review (OWASP/CWE/ASVS), perf gate na primeira entrega. <strong>Consistency-check gate</strong> classifica deltas em 5 classes: aligned / minor drift / divergent / undefined / legacy preservation. Risco aceito num gate só é válido como <strong>Security Exception Record</strong> (escopo, dono, rationale, controle compensatório, autoridade, expiração, follow-up) — sem expiração é inválido, e achado Critical nunca é aceito. Quando o projeto declara staging, o merge vai pra staging e a promoção a produção é gate separado (QA e2e + smoke contra a URL de staging).</div>
       <div class="stage-agents">
         <span class="agent-chip">software-architect</span>
         <span class="agent-chip">security-engineer</span>
@@ -1410,7 +1410,7 @@
     <div class="discipline">
       <div class="icon" style="background: #fce7f3;">🔄</div>
       <h3>Self-evolution</h3>
-      <p>Retrospective gate ao fim de cada módulo: blockers viram diffs nos próprios agentes ou no CLAUDE.md. Três skills dedicadas fecham o loop: <code>auto-research</code> (profundidade — atualiza cada agente com fontes autoritativas recentes, validado por eval suite), <code>sdlc-practices-evolve</code> (escopo — questiona se o agente faz as coisas certas vs o estado da arte da disciplina) e <code>agents-improvement-audit</code> (audita a saúde do próprio loop). <strong>A squad fica mais rápida a cada módulo</strong> — não fica parada.</p>
+      <p>Retrospective gate ao fim de cada módulo: blockers viram diffs nos próprios agentes ou no CLAUDE.md. Três skills dedicadas fecham o loop: <code>/auto-research</code> (profundidade — atualiza cada agente com fontes autoritativas recentes, validado por eval suite), <code>/sdlc-practices-evolve</code> (escopo — questiona se o agente faz as coisas certas vs o estado da arte da disciplina) e <code>/agents-improvement-audit</code> (audita a saúde do próprio loop). <strong>A squad fica mais rápida a cada módulo</strong> — não fica parada.</p>
       <div class="who">sdlc-orchestrator</div>
     </div>
 
