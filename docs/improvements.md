@@ -25,8 +25,8 @@ Hoje 5 agents têm AR ativo; 8 estão "eval suite blocked". Os mais maduros pra 
 ### 5. Aggregator de `team-events/events.jsonl`
 Os arquivos já existem por team mas ninguém lê. Script simples (`scripts/metrics/agent-usage.sh`) que rola sobre todos os events.jsonl e responde: qual agent foi mais invocado, qual gerou mais blockers, taxa de retro→diff conversion **por agent**. Hoje a retro→diff é métrica global em `collect.sh` mas não estratificada.
 
-### 6. Versão do framework no `install.sh`
-Não tem `--version`; impossível saber qual snapshot um projeto está usando. Adicionar tag de release + `install.sh --version` que ecoa o último commit.
+### ~~6. Versão do framework no `install.sh`~~ — FEITO (2026-08-20)
+`install.sh --version` (e `-v`) ecoa o último commit + data do snapshot. Tag de release semântica ainda não existe — o `--version` cobre o caso de "qual snapshot estou usando".
 
 ---
 

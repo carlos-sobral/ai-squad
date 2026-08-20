@@ -5,6 +5,19 @@ SKILLS_DIR="$HOME/.claude/skills"
 AGENTS_DIR="$HOME/.claude/agents"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# --version: echo the snapshot this repo represents (last commit + date), then exit.
+# Lets an adopter know exactly which ai-squad snapshot a project is running.
+if [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ]; then
+  if command -v git >/dev/null 2>&1 && git -C "$SCRIPT_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+    sha="$(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")"
+    date="$(git -C "$SCRIPT_DIR" log -1 --format=%cs 2>/dev/null || echo "unknown")"
+    echo "ai-squad snapshot: $sha ($date)"
+  else
+    echo "ai-squad snapshot: unknown (not a git checkout)"
+  fi
+  exit 0
+fi
+
 echo ""
 echo "Installing ai-squad skills..."
 echo ""
