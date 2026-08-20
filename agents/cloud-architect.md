@@ -324,12 +324,35 @@ If `docs/agents/cloud-architect/` or the `## Agent Outputs` section in CLAUDE.md
 This block is consumed by the `auto-research` skill. **Currently disabled** — to enable, an `## Eval Suite` must be designed for this agent first. See `security-engineer.md` for the reference pattern.
 
 ```yaml
-enabled: false
+enabled: true
 update_policy: propose
 schedule: manual  # invoke via /auto-research (no scheduler installed)
 
-# TODO (blocked): design Eval Suite + topics — owner: Carlos — defer until: TBD
-topics: []
+topics:
+  - name: "CI/CD pipeline best practices"
+    queries:
+      - "CI/CD pipeline best practices 2026"
+      - "GitHub Actions security best practices 2026"
+      - "release pipeline reliability 2026"
+    why: "CI/CD tooling and security guidance evolve; pipeline rules should track current practice"
+  - name: "Infrastructure as Code security"
+    queries:
+      - "Terraform security best practices 2026"
+      - "IaC security scanning 2026"
+      - "policy as code 2026"
+    why: "IaC security tooling and patterns shift; review rules should stay current"
+  - name: "Kubernetes & container security"
+    queries:
+      - "Kubernetes security best practices 2026"
+      - "Dockerfile security best practices 2026"
+      - "managed node provisioning security 2026"
+    why: "Container/k8s security guidance evolves; node-provisioner and Dockerfile rules should track it"
+  - name: "Observability stack selection"
+    queries:
+      - "observability stack comparison 2026"
+      - "OpenTelemetry best practices 2026"
+      - "product analytics vs APM 2026"
+    why: "Observability vendor landscape shifts; stack-choice guidance should stay current"
 
 frozen_sections:
   - "Required inputs"
@@ -338,8 +361,12 @@ frozen_sections:
   - "Auto-Research Scope"
   - "Eval Suite"
 
-# TODO: list sections containing knowledge content that can evolve via research
-editable_sections: []
+editable_sections:
+  - "Setup mode"
+  - "Inventory mode"
+  - "Review mode"
+  - "Emergency protocol"
+  - "Always"
 
 constraints:
   - "Net change capped at +500 lines per run"
@@ -348,7 +375,81 @@ constraints:
 
 ## Eval Suite
 
+This block is consumed by the `auto-research` skill after each proposed prompt edit. The agent (with the proposed prompt) is invoked on each case; output is parsed and graded against `expect`. If aggregate score drops below `pass_threshold`, the proposed change is rejected.
+
 ```yaml
-# TODO: design 2-6 binary eval cases. Until designed, Auto-Research Scope > enabled must remain false.
-cases: []
+pass_threshold: 0.8  # 4 of 5 cases must pass
+judge: claude-opus-4-8
+
+cases:
+  - id: release-force-swallow
+    description: "Release script must not swallow failures with `|| true`"
+    input: |
+      Review this GitHub Actions release step:
+      ```yml
+      - name: Create release
+        run: |
+          gh release create v1.0.0 --generate-notes || true
+          gh release upload v1.0.0 ./dist/app.zip || true
+      ```
+      Flag any reliability problem that would make a failed release look successful.
+    expect:
+      output_contains_any_of: ["|| true", "swallow", "failure", "silently fail", "error chain"]
+
+  - id: toolchain-unpinned
+    description: "Toolchain versions must be pinned, not @latest"
+    input: |
+      Review this CI setup step:
+      ```yml
+      - name: Setup pnpm
+        run: corepack prepare pnpm@latest --activate
+      ```
+      The repo's package.json declares `packageManager: "pnpm@10.33.2"`. Flag any
+      reproducibility problem with the toolchain version.
+    expect:
+      output_contains_any_of: ["@latest", "pin", "reproducib", "version", "packageManager"]
+
+  - id: coverage-empty-upload
+    description: "Coverage upload over an empty directory is a silent gate"
+    input: |
+      Review this CI workflow. The test job runs `pnpm test` (no coverage flag) and then:
+      ```yml
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          path: coverage/
+      ```
+      Flag any problem with how coverage is produced and gated.
+    expect:
+      output_contains_any_of: ["coverage", "empty", "artifact", "threshold", "silent gate"]
+
+  - id: monorepo-no-build
+    description: "Composite TS monorepo needs build-before-test in CI"
+    input: |
+      Review this CI test job for a pnpm monorepo with composite TypeScript references.
+      Packages import each other via `@scope/*` aliases that resolve to `dist/`:
+      ```yml
+      - name: Test
+        run: pnpm test
+      ```
+      On a fresh CI checkout, `dist/` does not exist. Flag the resolution problem.
+    expect:
+      output_contains_any_of: ["build", "dist", "resolve", "alias", "pnpm build"]
+
+  - id: public-subnet-nodes
+    description: "Managed node provisioners must be constrained to private subnets"
+    input: |
+      Review this EKS Auto Mode NodeClass. The cluster has both public and private
+      subnets, and the NodeClass does not restrict subnet selection:
+      ```yml
+      apiVersion: eks.amazonaws.com/v1
+      kind: NodeClass
+      metadata:
+        name: default
+      spec:
+        role: arn:aws:iam::123456789012:role/node-role
+      ```
+      Flag the security and connectivity risk of the default subnet selection.
+    expect:
+      output_contains_any_of: ["subnet", "private", "public IP", "security group", "CIDR"]
 ```

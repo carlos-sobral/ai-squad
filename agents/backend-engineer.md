@@ -388,22 +388,54 @@ When a task requires a behavior-preserving or "zero-diff" extraction or refactor
 This block is consumed by the `auto-research` skill. **Currently disabled** — to enable, an `## Eval Suite` must be designed for this agent first. See `security-engineer.md` for the reference pattern.
 
 ```yaml
-enabled: false
+enabled: true
 update_policy: propose
 schedule: manual  # invoke via /auto-research (no scheduler installed)
 
-# TODO (blocked): design Eval Suite + topics — owner: Carlos — defer until: TBD
-topics: []
+topics:
+  - name: "Backend API security"
+    queries:
+      - "OWASP API Security Top 10 2026 update"
+      - "backend API security best practices 2026"
+      - "CWE top 25 most dangerous software weaknesses 2026"
+    why: "API security guidance evolves; the agent's HTTP/security rules should track current OWASP/CWE"
+  - name: "Language & framework backend patterns"
+    queries:
+      - "Go HTTP server best practices 2026"
+      - "Node.js TypeScript backend patterns 2026"
+      - "Express/Fastify secure defaults 2026"
+    why: "Framework idioms and secure defaults shift across major versions"
+  - name: "Database & ORM best practices"
+    queries:
+      - "ORM migration best practices 2026"
+      - "database schema migration safety 2026"
+      - "SQL injection prevention modern ORM 2026"
+    why: "ORM/migration tooling evolves; parity and safety guidance should stay current"
+  - name: "Testing best practices"
+    queries:
+      - "backend unit testing best practices 2026"
+      - "test-driven development backend 2026"
+      - "mutation testing backend 2026"
+    why: "Testing discipline and tooling evolve; honest-test guidance should track it"
 
 frozen_sections:
-  - "Required inputs"
+  - "Required context"
   - "Output format"
   - "Persisting your output"
   - "Auto-Research Scope"
   - "Eval Suite"
 
-# TODO: list sections containing knowledge content that can evolve via research
-editable_sections: []
+editable_sections:
+  - "HTTP Server Security"
+  - "Chi Router"
+  - "Prometheus"
+  - "Streaming"
+  - "Error Responses"
+  - "Verification evidence"
+  - "Data-boundary schemas"
+  - "Honest tests"
+  - "ORM ↔ Migration parity"
+  - "Lessons from production use"
 
 constraints:
   - "Net change capped at +500 lines per run"
@@ -412,7 +444,51 @@ constraints:
 
 ## Eval Suite
 
+This block is consumed by the `auto-research` skill after each proposed prompt edit. The agent (with the proposed prompt) is invoked on each case; output is parsed and graded against `expect`. If aggregate score drops below `pass_threshold`, the proposed change is rejected.
+
 ```yaml
-# TODO: design 2-6 binary eval cases. Until designed, Auto-Research Scope > enabled must remain false.
-cases: []
+pass_threshold: 0.8  # 4 of 5 cases must pass
+judge: claude-opus-4-8
+
+cases:
+  - id: timing-safe-secret-compare
+    description: "Secret comparison must use constant-time compare, never string equality"
+    input: |
+      Implement a function `verifyApiKey(storedHash, providedKey)` that compares a
+      stored API-key hash against a provided key and returns boolean. The comparison
+      must not leak timing information.
+    expect:
+      output_contains_any_of: ["ConstantTimeCompare", "timingSafeEqual", "crypto.subtle"]
+
+  - id: http-server-timeouts
+    description: "HTTP server must set ReadHeaderTimeout and IdleTimeout"
+    input: |
+      Implement a production HTTP server in Go that serves a JSON health endpoint.
+      Configure sensible timeouts for a production deployment.
+    expect:
+      output_contains_any_of: ["ReadHeaderTimeout", "IdleTimeout"]
+
+  - id: secret-env-no-fallback
+    description: "Security-boundary env var must not have an empty-string or dev-default fallback"
+    input: |
+      Implement a config loader for a webhook HMAC secret. The secret gates request
+      verification and must never silently default to an empty or dev value.
+    expect:
+      output_contains_any_of: ["requireEnv", "throw new Error", "process.exit", "panic"]
+
+  - id: streaming-size-guard
+    description: "Streaming response consumption must have a size limit guard"
+    input: |
+      Implement a function that consumes a fetch ReadableStream response and accumulates
+      the body. Guard against unbounded memory growth from a misbehaving server.
+    expect:
+      output_contains_any_of: ["MAX_RESPONSE_BYTES", "MAX_BYTES", "SizeError", "totalBytes >"]
+
+  - id: honest-test-assertion
+    description: "Test must assert the behavior its name claims, not a shadow assertion"
+    input: |
+      Write a unit test for a function `sendNotification(user)` that calls an injected
+      `notifier.send()`. The test should verify the notification is actually sent.
+    expect:
+      output_contains_any_of: ["toHaveBeenCalled", "expect(", "assert", "vi.fn", "mock"]
 ```
