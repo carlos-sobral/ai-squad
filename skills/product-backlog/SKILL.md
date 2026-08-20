@@ -24,7 +24,7 @@ Single file, this structure (create it if missing; migrate into it if a roadmap 
 # Roadmap & Backlog — <Product>
 
 Last groomed: <YYYY-MM-DD> (by product-backlog skill)
-Prioritization: RICE. Vision guardrails: docs/vision-*.md §<principles>
+Prioritization: RICE. Vision guardrails: docs/vision.md (ou docs/vision-*.md) §<principles>
 
 ## Now / Next / Later  ← the sequence
 - **Now:** <current goal or "—">
@@ -57,7 +57,7 @@ Record the *rationale* for Reach, Impact, Confidence, Effort next to the item �
 
 ## Vision-fit traffic light (guardrail column)
 
-Read the project's vision principles (`docs/vision-*.md`) and tag every item:
+Read the project's vision principles (`docs/vision.md` or `docs/vision-*.md`) and tag every item:
 - 🟢 **Aligned** — respects every non-negotiable principle.
 - 🟡 **Conditional** — allowed but needs an explicit guardrail (e.g. opt-in, an ADR) *before* it becomes a goal; name the condition in Notes.
 - 🔴 **In tension** — conflicts with a principle → goes to **Parked**, never ranked, never selected.
@@ -90,7 +90,7 @@ Apply this rule, in order — it must be reproducible, not vibes:
 
 ## Relationship to the rest of ai-squad
 
-- **vision doc** keeps *principles + long-term strategy*. The *sequencing* migrates here on first run: replace the roadmap section in `docs/vision-*.md` with a one-line pointer to `docs/roadmap.md`. Principles stay in the vision doc and are read as guardrails.
+- **vision doc** keeps *principles + long-term strategy*. The *sequencing* migrates here on first run: replace the roadmap section in the vision doc (`docs/vision.md` or `docs/vision-*.md`) with a one-line pointer to `docs/roadmap.md`. Principles stay in the vision doc and are read as guardrails.
 - **`/goal` handoff** pulls its next goal and its residual-stop guardrail from the `Next` line and the item's 🟡 condition — so "next goal queued" stops being a manual guess.
 - **`product-manager`** turns the selected item into a full PRD (this skill produces the *candidate brief + score*, the PM produces the *spec*). Add items you capture to the backlog; the PM reads from it rather than inventing loose items.
 - **`sdlc-orchestrator`** is the entry point for executing a goal. This skill decides *which* goal; the orchestrator runs it.
