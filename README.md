@@ -73,6 +73,32 @@ O orquestrador vai te guiar pelo resto.
 
 ---
 
+## Usando com o opencode
+
+O framework também funciona no [opencode](https://opencode.ai). A porta é parcialmente automática:
+
+- **Skills** — o opencode lê `~/.claude/skills/*/SKILL.md` nativamente (formato Claude-compatible). Nenhuma conversão necessária: os 9 skills já ficam disponíveis.
+- **Agents** — o opencode **não** lê `~/.claude/agents/`. Ele carrega agents de `~/.config/opencode/agents/*.md` (global) ou `.opencode/agents/` (projeto), em formato markdown com frontmatter YAML.
+
+Para sincronizar os 13 agents do Claude para o opencode:
+
+```bash
+bash scripts/sync-opencode-agents.sh
+```
+
+O script converte cada agent de `~/.claude/agents/` para `~/.config/opencode/agents/`, aplicando as regras de conversão:
+
+- `model` → `sensedia/sensedia` (override com `--model <id>` ou `OPCODE_MODEL`)
+- `mode: subagent` → permite invocação via Task tool / `@menção`
+- `version` / `effort` → removidos (o opencode ignora)
+- corpo do prompt → preservado byte-a-byte
+
+É idempotente — seguro re-rodar sempre que o global mudar. Depois de sincronizar, os agents aparecem como subagents no opencode (`opencode agent list`).
+
+> **Nota:** o TeamMode com tmux e os enforcement hooks (`install.sh`) são específicos do Claude Code. No opencode, o paralelismo usa o mecanismo nativo de subagents/Task tool.
+
+---
+
 ## Como funciona — o fluxo completo
 
 O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente manualmente — ele te diz o que fazer em cada etapa.
@@ -482,7 +508,8 @@ ai-squad/
 │   └── onboard-brownfield/
 ├── scripts/
 │   ├── hooks/               # Enforcement hooks (guard-bash, guard-stop) — iron laws como hard-enforcement
-│   └── metrics/             # collect.sh — coleta DORA + engineering metrics
+│   ├── metrics/             # collect.sh — coleta DORA + engineering metrics
+│   └── sync-opencode-agents.sh  # Converte agents do Claude → opencode (~/.config/opencode/agents)
 ├── templates/
 │   ├── CLAUDE.md            # Template de contexto para o seu projeto
 │   └── docs/
