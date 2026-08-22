@@ -22,7 +22,8 @@ ai-squad/
 │   └── {nome}.md
 ├── scripts/
 │   ├── hooks/               # Enforcement hooks (guard-bash, guard-stop)
-│   ├── metrics/             # collect.sh — coleta DORA + engineering metrics
+│   ├── metrics/             # collect.sh — DORA + engineering metrics
+│   │                        # validate-events.sh — conformidade do event log
 │   └── observability/       # render-dashboard.sh — HTML stakeholder dashboard (opcional)
 ├── templates/
 │   ├── CLAUDE.md            # Template de contexto para projetos que usam o framework

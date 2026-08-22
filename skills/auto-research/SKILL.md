@@ -51,7 +51,7 @@ The optional `signal_sources` block declares which real-world signal sources Ste
 
 ```yaml
 signal_sources:
-  - team_events           # .claude/team-events/**/events.jsonl
+  - team_events           # .claude/team-events/**/events.jsonl (solo + parallel runs)
   - agent_evolution       # docs/agent-evolution/*.md filtered by agent
   - consistency_reports   # docs/agents/software-architect/*consistency*.md
   - metrics_history       # docs/metrics/history/*.md
@@ -105,7 +105,7 @@ If the agent's `Auto-Research Scope > signal_sources` block declares any of the 
 
 | Source key | What you read | What you extract |
 |---|---|---|
-| `team_events` | `.claude/team-events/**/events.jsonl` from teams completed since the last auto-research run for this agent | recurring `blocked` events whose payload mentions topics in this agent's scope; `finding` events at severity `blocker`/`critical` |
+| `team_events` | `.claude/team-events/**/events.jsonl` since the last auto-research run for this agent — **every** run, solo or parallel, writes there (the directory name is historical) | recurring `blocked` events whose payload mentions topics in this agent's scope; `finding` events at severity `blocker`/`critical`; `started` with no matching `completed`, which marks a run that died or gave up. Legacy lines may carry `timestamp` instead of `ts` and fields at the top level instead of inside `payload` — read tolerantly, and do not treat a schema miss as absence of signal |
 | `agent_evolution` | `docs/agent-evolution/*.md` whose `agent:` frontmatter matches the agent under research | the "Rationale" section of each diff — these describe *why* a real blocker happened, the strongest possible signal for what the agent should learn |
 | `consistency_reports` | `docs/agents/software-architect/*consistency*.md` since last run | (c) and (d) classified deviations — they point to spec→code gaps the agent could prevent |
 | `metrics_history` | `docs/metrics/history/*.md` last 3 snapshots | metrics regressing in this agent's lane (e.g., rising rework rate for an implementation agent; rising CFR for a review agent) |

@@ -312,7 +312,7 @@ tmux new-session -s meu-projeto
 claude --dangerously-skip-permissions
 ```
 
-O "dentro do tmux" não é detalhe: a escolha do backend de painel acontece uma vez, no spawn do agente. Fora do tmux, o Claude Code 2.1.239 ainda seleciona o backend `tmux` e atribui aos agentes um pane que **não existe** — eles rodam, mas sem canal de progresso ao vivo, e da sua cadeira parece um agente travado em "processando". O trabalho não se perde — o output ainda pode chegar depois como mensagem de teammate, então peça o resultado ao agente em vez de re-spawnar. Checagem antes do primeiro dispatch paralelo: `[ -n "$TMUX" ]`.
+O "dentro do tmux" não é detalhe: a escolha do backend de painel acontece uma vez, no spawn do agente. Fora do tmux, o Claude Code 2.1.239 ainda seleciona o backend `tmux` e atribui aos agentes um pane que **não existe** — eles rodam, mas sem canal de progresso ao vivo, e da sua cadeira parece um agente travado em "processando". O trabalho não se perde — o output ainda pode chegar depois como mensagem de teammate, então peça o resultado ao agente em vez de re-spawnar. E todo agente escreve seu progresso em `.claude/team-events/<scope>/events.jsonl`: é o canal que não depende de painel nenhum (`tail -f` para acompanhar, `scripts/metrics/validate-events.sh` para checar a saúde do log). Checagem antes do primeiro dispatch paralelo: `[ -n "$TMUX" ]`.
 
 A flag `--dangerously-skip-permissions` é necessária para o fluxo rodar de forma autônoma — sem ela, cada operação de cada agente pede confirmação manual.
 
@@ -509,7 +509,8 @@ ai-squad/
 │   └── onboard-brownfield/
 ├── scripts/
 │   ├── hooks/               # Enforcement hooks (guard-bash, guard-stop) — iron laws como hard-enforcement
-│   ├── metrics/             # collect.sh — coleta DORA + engineering metrics
+│   ├── metrics/             # collect.sh — DORA + engineering metrics
+│   │                        # validate-events.sh — conformidade do event log
 │   └── sync-opencode-agents.sh  # Converte agents do Claude → opencode (~/.config/opencode/agents)
 ├── templates/
 │   ├── CLAUDE.md            # Template de contexto para o seu projeto

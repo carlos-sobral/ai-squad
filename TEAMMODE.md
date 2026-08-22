@@ -129,7 +129,7 @@ Da cadeira do Tech Lead isso é indistinguível de um agente travado: você entr
 Se voltar vazio, há duas opções honestas:
 
 1. **Relançar dentro do tmux** — `tmux new-session -s <projeto>` e depois `claude`. É o caminho recomendado.
-2. **Seguir sem painel**, sabendo que o progresso só vai aparecer no event log da etapa (`.claude/team-events/<stage>/events.jsonl`). O JSONL é o único canal que funciona independente de backend, de painel e de compactação de contexto.
+2. **Seguir sem painel**, sabendo que o progresso só vai aparecer no event log (`.claude/team-events/<scope>/events.jsonl`). O JSONL é o único canal que funciona independente de backend, de painel e de compactação de contexto — e desde 2026-08-22 **todo** agente escreve nele, solo ou em paralelo, justamente porque o agente solo era o caso sem nenhum outro canal. Acompanhe com `tail -f .claude/team-events/*/events.jsonl`, e cheque a saúde do log com `scripts/metrics/validate-events.sh`.
 
 O que **não** é opção é prometer painéis sem ter rodado a checagem.
 

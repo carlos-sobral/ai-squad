@@ -22,8 +22,8 @@ Lista item 1 (legacy) como feito com 12 agents — hoje são 13 (inclui `product
 ### ~~4. Habilitar auto-research em mais 2 agents~~ — PARCIAL (2026-08-20)
 Hoje 5 agents têm AR ativo; 8 estão "eval suite blocked". **Feito:** `backend-engineer` e `cloud-architect` destravados (output estruturado → grading `expect`, 5 cases cada). **Falta:** os 4 de output subjetivo — `software-architect`, `product-manager`, `idea-researcher`, `product-marketing-manager` — exigem `rubric` grading (LLM-as-judge), mais delicado de desenhar e validar contra o agent real. Cada um destrava ~20% do framework.
 
-### 5. Aggregator de `team-events/events.jsonl`
-Os arquivos já existem por team mas ninguém lê. Script simples (`scripts/metrics/agent-usage.sh`) que rola sobre todos os events.jsonl e responde: qual agent foi mais invocado, qual gerou mais blockers, taxa de retro→diff conversion **por agent**. Hoje a retro→diff é métrica global em `collect.sh` mas não estratificada.
+### 5. Aggregator de `team-events/events.jsonl` — PARCIAL (2026-08-22)
+Os arquivos existem e são muitos (1647 linhas, 93 agents distintos, 7 projetos), mas ninguém lia. **Feito:** `scripts/metrics/validate-events.sh` — lê todos os events.jsonl e reporta conformidade de schema (chave fora do contrato, `timestamp` em vez de `ts`, event fora do vocabulário, JSON malformado, `started` sem `completed`). Isso era pré-requisito: o schema tinha derretido em quatro grafias de "review terminou" e `payload` ausente em dois terços das linhas, então qualquer agregação daria número errado. **Falta:** o agregador de fato (`scripts/metrics/agent-usage.sh`) — qual agent foi mais invocado, qual gerou mais blockers, taxa de retro→diff **por agent**. Hoje a retro→diff é métrica global em `collect.sh` mas não estratificada.
 
 ### ~~6. Versão do framework no `install.sh`~~ — FEITO (2026-08-20)
 `install.sh --version` (e `-v`) ecoa o último commit + data do snapshot. Tag de release semântica ainda não existe — o `--version` cobre o caso de "qual snapshot estou usando".
@@ -42,7 +42,7 @@ Hoje cloud-architect tem setup/inventory/review. Faltam: gerar release notes, bu
 Auto-research e retros propõem diffs. O sistema sabe o que foi aplicado, mas não sabe se o usuário **reverteu depois** (fora da janela de eval) ou se reclamou. Hook simples: `git commit` em `~/.claude/agents/` com author=human + comentário com palavra-chave "revert/regression/wrong" → log estruturado em `~/.claude/logs/agent-feedback.jsonl`. `agents-improvement-audit` lê isso e ajusta thresholds.
 
 ### 10. Telemetria de invocação real
-Quem chamou qual agent, quando, quanto durou, custo. Hoje `team-events` captura paralelos mas não captura invocações sequenciais. Hook em `~/.claude/settings.json` (PreToolUse no `Agent` tool) → linha em `~/.claude/logs/agent-invocations.jsonl`. Isso destrava analytics que hoje são impossíveis.
+Quem chamou qual agent, quando, quanto durou, custo. O gap "`team-events` só captura paralelos" foi fechado em 2026-08-22 — o event log agora é universal (solo + paralelo), com `EVENT_SCOPE` no prompt de dispatch e o contrato dentro da definição de cada agent. O que ainda falta é o que só o harness sabe: duração e custo. Hook em `~/.claude/settings.json` (PreToolUse no `Agent` tool) → linha em `~/.claude/logs/agent-invocations.jsonl`, cruzável com o event log pelo par (`agent`, `ts`).
 
 ### 11. Formalizar Módulo 0 gate
 O orchestrator menciona Módulo 0 (CI/CD setup via cloud-architect) mas o gate não é crisp: o que exatamente trava? Definir checklist binário (CI verde em PR de exemplo? deploy script idempotente? runbook de rollback?) e mover pro orchestrator como gate explícito antes de Módulo 1.

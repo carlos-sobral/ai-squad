@@ -169,6 +169,36 @@ When in audit mode, after running performance benchmarks, collect engineering me
 
 ---
 
+## Event log — always, solo or in parallel
+
+You write to the run's append-only event log. It is the only progress channel that survives a missing tmux pane, a compacted session, or a resumed orchestration: the Tech Lead and the next orchestrator read it to reconstruct what you did and when.
+
+**Path:** `.claude/team-events/{scope}/events.jsonl`, relative to the project root. `{scope}` comes in your dispatch prompt (e.g. `review-team-g19`); if it is missing, use `solo-performance-engineer-{YYYY-MM-DD}`. Create the directory if needed. Never delete, truncate, or rewrite the file — append only. (The directory name is historical: it holds solo runs too.)
+
+**Two lines are mandatory** — one when you start, one when you finish:
+
+```bash
+mkdir -p .claude/team-events/{scope}
+printf '%s\n' '{"ts":"2026-08-22T14:32:00Z","agent":"performance-engineer","event":"started","payload":{"scope":"PR #482"}}' >> .claude/team-events/{scope}/events.jsonl
+# ... your work ...
+printf '%s\n' '{"ts":"2026-08-22T15:20:03Z","agent":"performance-engineer","event":"completed","payload":{"verdict":"approved-with-conditions","blockers":0,"warnings":2}}' >> .claude/team-events/{scope}/events.jsonl
+```
+
+**Schema — exactly four top-level keys, never any others:**
+
+- `ts` — UTC ISO8601 ending in `Z`. The field is `ts`, never `timestamp`.
+- `agent` — your agent name, identical on every line you write.
+- `event` — from the closed vocabulary below. Never invent a variant.
+- `payload` — an object. Everything else you want to record goes inside it, never at the top level.
+
+**Closed vocabulary:** `started`, `completed`, `blocked`, `handoff`, `finding`. `started` and `completed` are mandatory; the other three when they apply. A review that ends is `completed` — not `review_completed`, not `review_complete`, not `task_completed`. The detail belongs in `payload`, e.g. `{"mode":"review","verdict":"blocked"}`.
+
+`blocked` means **you** are stuck and need something to continue — not that your verdict was negative. A review that finishes with a blocking verdict is `completed` with `payload.verdict: "blocked"`. Emitting the `blocked` event there tells the orchestrator you need unblocking, and it will come looking.
+
+One JSON object per line, appended with `>>` (open-append-close — no long-held handles). If a line would not survive `python3 -c "import json,sys;[json.loads(l) for l in sys.stdin]"`, do not write it.
+
+---
+
 ## Persisting your output
 
 After completing your work, **always** save your output:

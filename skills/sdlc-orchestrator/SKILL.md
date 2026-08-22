@@ -237,15 +237,15 @@ Whenever two or more agents can run in parallel, spawn each one as a **named age
 
 ```
 1. Check the pane precondition — once per session, BEFORE the first dispatch (see below)
-2. Agent({ subagent_type: "...", name: "<role>", model: "<tier>", prompt: "..." })  ← teammate 1
-3. Agent({ subagent_type: "...", name: "<role>", model: "<tier>", prompt: "..." })  ← teammate 2
+2. Agent({ subagent_type: "...", name: "<role>", model: "<tier>", prompt: "EVENT_SCOPE: <stage>\n..." })  ← teammate 1
+3. Agent({ subagent_type: "...", name: "<role>", model: "<tier>", prompt: "EVENT_SCOPE: <stage>\n..." })  ← teammate 2
    (add more as needed — same message, so they run concurrently)
 4. Wait for all to complete (notifications arrive automatically)
 5. Coordinate mid-flight with SendMessage({ to: "<role>", ... }); ListAgents() shows who is live and busy
 6. Do NOT originate shutdown_request unless the Tech Lead asks — named agents end on their own
 ```
 
-Always pass `model` explicitly on every Agent call — never rely on the default.
+Always pass `model` explicitly on every Agent call — never rely on the default. Always open the prompt with `EVENT_SCOPE: <stage>` — that one line is what makes the stage's event log a single file instead of N fragments.
 
 ### The pane precondition — check it BEFORE spawning
 
@@ -267,11 +267,19 @@ If it is empty, tell the Tech Lead in one line and let them choose: relaunch ins
 
 `/tasks` and the terminal footer list every unit of background work, of three different kinds, and only one is an agent: a **background shell** (`Bash` with `run_in_background`) is a process with no model and no token cost, visible in `/tasks` only; a **named agent** has its own context and model, visible in `/tasks` **and** `ListAgents`; a **Monitor** is a shell emitting events, `/tasks` only. If it is in `ListAgents` it is an agent. Never report a background shell to the Tech Lead as though an agent were working on it.
 
-### Persistent event log per team
+### Persistent event log — every agent, solo or in parallel
 
-Every parallel team writes to a shared, append-only event log so the orchestrator (and any human inspecting later) can reconstruct what each teammate did, when, and where it handed off. This is the harness-agnostic equivalent of the "shared filesystem + persistent event tracking" pattern used by industrial multi-agent systems — independent of any specific harness or vendor; it's just a JSONL file.
+**Every agent you dispatch writes to an append-only event log — not just parallel stages.** A single `product-manager` writing a PRD logs the same two lines a four-agent review-team does. This is the harness-agnostic equivalent of the "shared filesystem + persistent event tracking" pattern used by industrial multi-agent systems — just a JSONL file, independent of any vendor.
 
-**Path:** `.claude/team-events/{stage-name}/events.jsonl` (relative to the project root) — e.g. `review-team`, `impl-team`, matching the stage names in the roster below. Create when the stage opens, never delete — appended across the stage's lifetime.
+It is also the **only progress channel that does not depend on a pane existing**. When the pane precondition above fails, this file is the difference between "the agent is working, here is where it is" and "processing" forever. That is why it is universal now: solo agents were exactly the case with no other channel.
+
+**Path:** `.claude/team-events/{scope}/events.jsonl` (relative to the project root). Create when the stage opens, never delete — appended across the stage's lifetime.
+
+- **Parallel stage** → `{scope}` is the stage name, e.g. `review-team-g19`, `impl-team-m3`.
+- **Solo agent** → `{scope}` is `solo-{agent-name}-{YYYY-MM-DD}`, e.g. `solo-product-manager-2026-08-22`.
+- The directory name `team-events` is **historical** — it holds solo runs too. It is kept because real projects already carry hundreds of lines under that path, and `auto-research` globs it.
+
+**You must pass the scope in the dispatch prompt.** Every `Agent` call includes a line like `EVENT_SCOPE: review-team-g19` — the agent definitions tell each agent to write there, but they cannot guess the scope. An agent that receives no scope falls back to `solo-{agent-name}-{date}`, which is correct but fragments a parallel stage across N files.
 
 **Event shape (one JSON object per line):**
 
@@ -282,12 +290,20 @@ Every parallel team writes to a shared, append-only event log so the orchestrato
 {"ts":"2026-05-09T14:55:00Z","team":"review-team","agent":"security-engineer","event":"completed","payload":{"verdict":"approved-with-conditions","blockers":0,"warnings":2}}
 ```
 
-**Required event types per teammate:**
+**Schema — exactly four top-level keys, nothing else:** `ts` (UTC ISO8601 ending in `Z` — the field is `ts`, never `timestamp`), `agent` (the agent's name, identical on every line it writes), `event` (from the closed vocabulary below), and `payload` (an object; every other detail goes inside it, never at the top level).
+
+The `team` key in older logs is legacy — the scope already comes from the path. Read it, do not write it. This is not pedantry: a sweep of 1647 real log lines across seven projects found `timestamp` on 442 of them, `payload` missing on two thirds, and four different spellings of "the review finished". A log whose schema drifts cannot answer the questions it exists for. Run `scripts/metrics/validate-events.sh <project>` to see where a project stands; `--strict` makes it exit non-zero, for a hook or CI.
+
+**Required event types, from every agent:**
 - `started` — at the top of the agent's work; payload includes scope/task summary
 - `completed` — at the end; payload includes verdict + counts (blockers/warnings/findings)
 
+An agent with `started` and no `completed` is a signal, not a formality: it means the agent died, hung, or gave up silently. The validator reports those.
+
+**The vocabulary is closed** — `started`, `completed`, `blocked`, `handoff`, `finding`. Never invent a variant: a review that ends is `completed`, not `review_completed` or `task_completed`. Mode and verdict belong in `payload`.
+
 **Recommended event types (write when applicable):**
-- `blocked` — when waiting on input from another teammate or the Tech Lead; payload names the blocker
+- `blocked` — the agent itself is stuck and needs something to continue; payload names the blocker. **Not** for a negative verdict: a review that finishes with a blocking verdict is `completed` with `payload.verdict: "blocked"`. Conflating the two makes you chase an agent that needs nothing.
 - `handoff` — when artifact is passed to another teammate; payload names recipient and artifact path
 - `finding` — for review/qa agents emitting individual findings; payload includes `id`, `status`, severity + summary. The `id` follows the `<AGT>-F<n>` scheme in *Finding identity across attempts* and is **stable across re-reviews** — a re-emitted finding repeats its original `id` with an updated `status` (`OPEN` | `PARTIAL` | `FIXED` | `SUPERSEDED-BY-<id>`), so the log answers "how many attempts did this defect survive" without prose matching. This is what makes escaped-defect counting possible in the retrospective. Use the reviewer's own severity vocabulary (`critical` / `high` / `medium` / `low`), not log-level words — a severity move is recorded as `severity` plus `severity_prev` and `severity_change_reason`, and a log level cannot express one.
 - `round_close` — written by the orchestrator at the end of each review round; payload carries `open_ids`, `fixed_ids` and the aggregate verdict. This is the ledger snapshot: it is what lets a compacted session, the module-level reviewer, or a resuming orchestrator reconstruct which IDs are live without replaying every `finding` line.
@@ -302,7 +318,7 @@ Every parallel team writes to a shared, append-only event log so the orchestrato
 - After the stage closes, the file persists as an audit artifact — do NOT remove
 - Old logs (>90 days) may be archived but not deleted; they feed `auto-research` usage signals (see auto-research's "Real-world signals" input source)
 
-**Why this matters:** tmux split panes give the human visibility while teammates run; the event log gives the *next* orchestrator session (after compaction or resume) the same visibility, and gives `auto-research` real-world data to learn from rather than only synthetic eval cases.
+**Why this matters:** a pane gives the human visibility only while the agent runs, only inside tmux, and only for that human. The event log gives the *next* orchestrator session (after compaction or resume) the same visibility, gives the Tech Lead a way to inspect a paneless agent (`tail -f .claude/team-events/*/events.jsonl`), and gives `auto-research` real-world data to learn from rather than only synthetic eval cases. When the two disagree — a pane that shows nothing, a log that shows progress — the log is the evidence.
 
 ### Model routing
 
@@ -327,7 +343,7 @@ The `sdlc-orchestrator` itself always runs at **opus** — orchestration decisio
 | Ship (standard) | `ship-team` | `qa-engineer`, `tech-writer` | After implementation; qa-engineer owns the gate, tech-writer documents in parallel |
 | Ship (first delivery) | `ship-team` | `qa-engineer`, `tech-writer`, `performance-engineer` | First time a module ships — performance-engineer runs gate mode |
 
-For single-agent stages (`software-architect` in spec review / refactor mode, `product-manager`), a single `Agent` call is enough — pass `name` anyway, it costs nothing and buys `SendMessage` plus a labelled pane. Note: `software-architect` in **code review mode** runs as part of the review-team alongside `security-engineer`.
+For single-agent stages (`software-architect` in spec review / refactor mode, `product-manager`), a single `Agent` call is enough — pass `name` anyway, it costs nothing and buys `SendMessage` plus a labelled pane. Pass `EVENT_SCOPE` here too: a solo agent is the case with the *least* other visibility, so its event log matters most. Use `solo-{agent-name}-{YYYY-MM-DD}`. Note: `software-architect` in **code review mode** runs as part of the review-team alongside `security-engineer`.
 
 ### Review depth by Risk Surface
 
