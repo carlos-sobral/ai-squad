@@ -18,7 +18,7 @@ A tech spec defines **what** to build. A plan defines **how** to build it — de
 
 ## Scope check before writing
 
-If the tech spec covers multiple independent subsystems (e.g., backend API + frontend dashboard + background worker), split into one plan per subsystem. Each plan must produce working, testable software on its own — that is what allows `backend-engineer` and `frontend-engineer` to run in parallel as a `TeamCreate` team without stepping on each other.
+If the tech spec covers multiple independent subsystems (e.g., backend API + frontend dashboard + background worker), split into one plan per subsystem. Each plan must produce working, testable software on its own — that is what allows `backend-engineer` and `frontend-engineer` to run in parallel as named teammates without stepping on each other.
 
 If the spec is one subsystem with internal layering, keep it as one plan.
 
@@ -145,7 +145,7 @@ Fix issues inline. No need to re-review — just fix and move on.
 
 After saving the plan, the orchestrator dispatches the `Owner agent` declared in the header to consume it. The plan is the contract — the impl agent works through the tasks in order, checking each `- [ ]` as it commits. If the impl agent finds a defect in the plan (missing type, wrong file path, mistaken test command), they STOP and flag back to `software-architect` rather than guessing — the plan is meant to be authoritative.
 
-For parallel-eligible work (backend + frontend of the same feature), the orchestrator creates separate plans per `Owner agent`, then spawns them as a `TeamCreate` team per the rules in `~/.claude/CLAUDE.md` "Agent invocation".
+For parallel-eligible work (backend + frontend of the same feature), the orchestrator creates separate plans per `Owner agent`, then spawns them as named agents in one message per the rules in `~/.claude/CLAUDE.md` "Agent invocation".
 
 ## Anti-patterns
 
