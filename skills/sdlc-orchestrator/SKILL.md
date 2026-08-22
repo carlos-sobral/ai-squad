@@ -251,7 +251,7 @@ Always pass `model` explicitly on every Agent call — never rely on the default
 
 Visibility is decided once, at spawn time, and cannot be repaired afterwards. Claude Code selects a pane backend in this order: explicit `teammateMode` → inside tmux → iTerm2 with the `it2` CLI → tmux available ("external session mode") → in-process fallback.
 
-**Observed on 2.1.239:** outside tmux, the backend is still selected as `tmux` and each agent is assigned a `tmuxPaneId` that does not exist — no server, no session, no pane. The agents run and `ListAgents` labels them `pane`, but their output has nowhere to go. To the Tech Lead this looks like an agent stuck on "processing" forever.
+**Observed on 2.1.239:** outside tmux, the backend is still selected as `tmux` and each agent is assigned a `tmuxPaneId` that does not exist — no server, no session, no pane. The agents run and `ListAgents` labels them `pane`, but there is no live progress channel: no pane to open, and completion arrives as a bare idle signal rather than the agent's result. The work is not lost — output can still surface later as a teammate message (observed once ~8 minutes after idle, and only after a `SendMessage` asking for it). To the Tech Lead it nevertheless looks like an agent stuck on "processing". Never re-spawn an agent on that basis: ask it for its result first, and write the stage's event log so progress does not depend on a pane existing.
 
 Therefore, once per session, before the first parallel dispatch:
 

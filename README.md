@@ -312,7 +312,7 @@ tmux new-session -s meu-projeto
 claude --dangerously-skip-permissions
 ```
 
-O "dentro do tmux" não é detalhe: a escolha do backend de painel acontece uma vez, no spawn do agente. Fora do tmux, o Claude Code 2.1.239 ainda seleciona o backend `tmux` e atribui aos agentes um pane que **não existe** — eles rodam, mas o output não tem pra onde ir, e da sua cadeira parece um agente travado em "processando". Checagem antes do primeiro dispatch paralelo: `[ -n "$TMUX" ]`.
+O "dentro do tmux" não é detalhe: a escolha do backend de painel acontece uma vez, no spawn do agente. Fora do tmux, o Claude Code 2.1.239 ainda seleciona o backend `tmux` e atribui aos agentes um pane que **não existe** — eles rodam, mas sem canal de progresso ao vivo, e da sua cadeira parece um agente travado em "processando". O trabalho não se perde — o output ainda pode chegar depois como mensagem de teammate, então peça o resultado ao agente em vez de re-spawnar. Checagem antes do primeiro dispatch paralelo: `[ -n "$TMUX" ]`.
 
 A flag `--dangerously-skip-permissions` é necessária para o fluxo rodar de forma autônoma — sem ela, cada operação de cada agente pede confirmação manual.
 

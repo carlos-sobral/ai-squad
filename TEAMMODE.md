@@ -114,9 +114,11 @@ E o modo de falhar é traiçoeiro. Testado no Claude Code 2.1.239, fora do tmux:
 - o backend é selecionado como `tmux` mesmo assim;
 - cada agente recebe um `tmuxPaneId` (`%2`, `%3`) que **não existe** — sem servidor, sem sessão, sem painel;
 - o `ListAgents` rotula os agentes como `pane`;
-- os agentes **rodam**, mas o output não tem pra onde ir.
+- os agentes **rodam**, mas não há canal de progresso ao vivo: não existe painel pra abrir, e o fim chega como um sinal seco de idle em vez do resultado do agente.
 
 Da cadeira do Tech Lead isso é indistinguível de um agente travado: você entra no item do rodapé e não há nada além de "processando". Não é bug seu, e não é sequencialização — é um painel prometido que nunca materializou.
+
+**O trabalho não se perde.** O output ainda pode chegar depois, como mensagem de teammate — num caso observado, ~8 minutos após o agente ficar idle e só depois de um `SendMessage` pedindo. Então **não re-spawne** um agente por causa do silêncio: peça o resultado a ele primeiro.
 
 **Checagem, uma vez por sessão, antes do primeiro dispatch paralelo:**
 
