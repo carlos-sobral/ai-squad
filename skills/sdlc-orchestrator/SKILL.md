@@ -1,6 +1,6 @@
 ---
 name: sdlc-orchestrator
-description: "Software Development Lifecycle Orchestrator. Guides the Tech Lead through the full development flow — from idea to merge — ensuring the right agents are used at the right moments. Orchestrates parallel work using agent teams with tmux split panes, enforces tier-based triage (T1/T2/T3), and includes a retrospective gate where the squad updates its own prompts. Use whenever the user starts a new feature, module, hotfix, says 'let's build X', types '/sdlc-orchestrator', or asks to coordinate the full SDLC flow — the canonical entry point for all feature work in ai-squad."
+description: "Software Development Lifecycle Orchestrator. Guides the Tech Lead through the full development flow — from idea to merge — ensuring the right agents are used at the right moments. Orchestrates parallel work using named teammate agents, enforces tier-based triage (T1/T2/T3), and includes a retrospective gate where the squad updates its own prompts. Use whenever the user starts a new feature, module, hotfix, says 'let's build X', types '/sdlc-orchestrator', or asks to coordinate the full SDLC flow — the canonical entry point for all feature work in ai-squad."
 version: 1.12
 ---
 
@@ -195,7 +195,7 @@ The framework parallelizes at three distinct granularities. Pick by **what you n
 
 | Axis | Mechanism | Isolates | Use when |
 |---|---|---|---|
-| **1. Teammates** | `TeamCreate` + `Agent(team_name)` → tmux split panes | agents sharing ONE working tree | same objective, same cadence, both panes in view, joint merge (e.g. backend + frontend of one module) |
+| **1. Teammates** | `Agent({ name })` × N in one message → split panes when inside tmux | agents sharing ONE working tree | same objective, same cadence, both panes in view, joint merge (e.g. backend + frontend of one module) |
 | **2. Workflow** | Workflow tool + `isolation: 'worktree'` | agents editing independent modules, fire-and-forget | N independent modules, deterministic shape, no human gate mid-flight (PRD sharding, refactor-by-module) |
 | **3. Parallel sessions** | `claude -w <name>` → separate worktree + separate conversation | entire human conversation contexts | different objectives, different cadences, you alternate attention over hours (e.g. long feature in session A, urgent bugfix loop in session B) |
 
@@ -225,31 +225,53 @@ A worktree isolates the **project** repo. It does NOT isolate `~/.claude/skills`
 - **Parallel worktree sessions are for PROJECT-CODE implementation.** Keep squad self-evolution (retro, `auto-research`, `sdlc-practices-evolve`) serialized: run it in one session while the others stay on project code, or defer a session's retro until the sibling session has finished and committed its own global edits.
 - Do not tell the Tech Lead the two flows are "fully independent": their **code** is isolated, their **squad-evolution** is not.
 
-## Agent Orchestration — Teams and Teammates
+## Agent Orchestration — named teammates
 
-Whenever two or more agents can run in parallel, **always** use the TeamCreate + Agent (with `team_name`) pattern. This spawns each agent as a teammate in a tmux split pane, enabling real parallelism and visibility.
+Whenever two or more agents can run in parallel, spawn each one as a **named agent**: `Agent({ name, subagent_type, model, prompt })`, all in ONE message so they actually run concurrently. The `name` is what makes an agent a teammate — it is its address for `SendMessage`, it labels its pane, and it is how it appears in `ListAgents`. Every session has ONE implicit team (on disk at `~/.claude/teams/session-<id>/`); there is nothing to create and nothing to delete.
 
-**One exception:** the narrow set of well-posed sub-phases delegated to the Workflow tool (see "Execution engine for well-posed sub-phases" below). There, the workflow runtime owns parallelism and agent lifecycle instead of TeamCreate, and visibility moves from tmux panes to the `/workflows` view. Everywhere else — and by default — TeamCreate is mandatory. The two are alternatives for a given sub-phase, never run concurrently over the same files.
+**Deprecated — do not use:** `TeamCreate` and `TeamDelete` no longer exist. They were removed in Claude Code ~2.1.2xx; the binary retains the names only to render old transcripts, where it classifies them as `expected-absent`. `team_name` on an `Agent` call is accepted and silently ignored. If you catch yourself reaching for them, or find them in a project's docs, that is drift — fix the doc and move on.
+
+**One exception to model-driven parallelism:** the narrow set of well-posed sub-phases delegated to the Workflow tool (see "Execution engine for well-posed sub-phases" below). There, the workflow runtime owns parallelism and agent lifecycle, and visibility moves from panes to the `/workflows` view. Everywhere else — and by default — parallel work is named agents. The two are alternatives for a given sub-phase, never run concurrently over the same files.
 
 ### Pattern for parallel stages
 
 ```
-1. TeamCreate({ team_name: "<stage>-team", description: "..." })
-2. Agent({ subagent_type: "...", team_name: "<stage>-team", name: "<role>", model: "<tier>", prompt: "..." })  ← teammate 1
-3. Agent({ subagent_type: "...", team_name: "<stage>-team", name: "<role>", model: "<tier>", prompt: "..." })  ← teammate 2
-   (add more teammates as needed)
+1. Check the pane precondition — once per session, BEFORE the first dispatch (see below)
+2. Agent({ subagent_type: "...", name: "<role>", model: "<tier>", prompt: "..." })  ← teammate 1
+3. Agent({ subagent_type: "...", name: "<role>", model: "<tier>", prompt: "..." })  ← teammate 2
+   (add more as needed — same message, so they run concurrently)
 4. Wait for all to complete (notifications arrive automatically)
-5. SendMessage({ to: "<role>", message: { type: "shutdown_request" } }) for each teammate
-6. TeamDelete()
+5. Coordinate mid-flight with SendMessage({ to: "<role>", ... }); ListAgents() shows who is live and busy
+6. Do NOT originate shutdown_request unless the Tech Lead asks — named agents end on their own
 ```
 
 Always pass `model` explicitly on every Agent call — never rely on the default.
+
+### The pane precondition — check it BEFORE spawning
+
+Visibility is decided once, at spawn time, and cannot be repaired afterwards. Claude Code selects a pane backend in this order: explicit `teammateMode` → inside tmux → iTerm2 with the `it2` CLI → tmux available ("external session mode") → in-process fallback.
+
+**Observed on 2.1.239:** outside tmux, the backend is still selected as `tmux` and each agent is assigned a `tmuxPaneId` that does not exist — no server, no session, no pane. The agents run and `ListAgents` labels them `pane`, but their output has nowhere to go. To the Tech Lead this looks like an agent stuck on "processing" forever.
+
+Therefore, once per session, before the first parallel dispatch:
+
+```bash
+[ -n "$TMUX" ] || echo "NOT in tmux — parallel agents will run without visible panes"
+```
+
+If it is empty, tell the Tech Lead in one line and let them choose: relaunch inside tmux (`tmux new-session -s <project>`, then `claude`), or proceed knowing that progress will be visible only through the stage's event log. Never promise split panes without having run this check.
+
+**The event log is the fallback that always works** (next section). It is a plain JSONL file — it does not care which backend was selected, whether a pane materialized, or whether the session was compacted.
+
+### Tasks are not agents
+
+`/tasks` and the terminal footer list every unit of background work, of three different kinds, and only one is an agent: a **background shell** (`Bash` with `run_in_background`) is a process with no model and no token cost, visible in `/tasks` only; a **named agent** has its own context and model, visible in `/tasks` **and** `ListAgents`; a **Monitor** is a shell emitting events, `/tasks` only. If it is in `ListAgents` it is an agent. Never report a background shell to the Tech Lead as though an agent were working on it.
 
 ### Persistent event log per team
 
 Every parallel team writes to a shared, append-only event log so the orchestrator (and any human inspecting later) can reconstruct what each teammate did, when, and where it handed off. This is the harness-agnostic equivalent of the "shared filesystem + persistent event tracking" pattern used by industrial multi-agent systems — independent of any specific harness or vendor; it's just a JSONL file.
 
-**Path:** `.claude/team-events/{team_name}/events.jsonl` (relative to the project root). Create on `TeamCreate`, never delete — appended across the team's lifetime.
+**Path:** `.claude/team-events/{stage-name}/events.jsonl` (relative to the project root) — e.g. `review-team`, `impl-team`, matching the stage names in the roster below. Create when the stage opens, never delete — appended across the stage's lifetime.
 
 **Event shape (one JSON object per line):**
 
@@ -277,7 +299,7 @@ Every parallel team writes to a shared, append-only event log so the orchestrato
 
 **Read protocol:**
 - Orchestrator reads the file via `tail` or `cat` to inspect progress without disturbing teammates
-- After `TeamDelete`, the file persists as an audit artifact — do NOT remove
+- After the stage closes, the file persists as an audit artifact — do NOT remove
 - Old logs (>90 days) may be archived but not deleted; they feed `auto-research` usage signals (see auto-research's "Real-world signals" input source)
 
 **Why this matters:** tmux split panes give the human visibility while teammates run; the event log gives the *next* orchestrator session (after compaction or resume) the same visibility, and gives `auto-research` real-world data to learn from rather than only synthetic eval cases.
@@ -305,7 +327,7 @@ The `sdlc-orchestrator` itself always runs at **opus** — orchestration decisio
 | Ship (standard) | `ship-team` | `qa-engineer`, `tech-writer` | After implementation; qa-engineer owns the gate, tech-writer documents in parallel |
 | Ship (first delivery) | `ship-team` | `qa-engineer`, `tech-writer`, `performance-engineer` | First time a module ships — performance-engineer runs gate mode |
 
-For single-agent stages (`software-architect` in spec review / refactor mode, `product-manager`), use a regular foreground Agent call — no team needed. Note: `software-architect` in **code review mode** runs as part of the review-team alongside `security-engineer`.
+For single-agent stages (`software-architect` in spec review / refactor mode, `product-manager`), a single `Agent` call is enough — pass `name` anyway, it costs nothing and buys `SendMessage` plus a labelled pane. Note: `software-architect` in **code review mode** runs as part of the review-team alongside `security-engineer`.
 
 ### Review depth by Risk Surface
 
@@ -359,7 +381,7 @@ The `deliberate-confrontation` skill runs a **structured attack/rebuttal exchang
 
 ## Execution engine for well-posed sub-phases (Workflow tool)
 
-The TeamCreate + teammates pattern above is the **default** for parallel work — it is model-driven, gives tmux visibility, and degrades gracefully to sequential. For a narrow class of sub-phases where the *shape* of the work is fixed and known before execution, the orchestrator MAY instead call the **Workflow tool** (deterministic multi-agent orchestration) as an execution engine. This is an optimization for coordination, **not** a replacement for the orchestrator's judgment. The Workflow tool is a motor; this skill remains the baton.
+The named-teammates pattern above is the **default** for parallel work — it is model-driven, gives pane visibility when inside tmux, and degrades gracefully to sequential. For a narrow class of sub-phases where the *shape* of the work is fixed and known before execution, the orchestrator MAY instead call the **Workflow tool** (deterministic multi-agent orchestration) as an execution engine. This is an optimization for coordination, **not** a replacement for the orchestrator's judgment. The Workflow tool is a motor; this skill remains the baton.
 
 **Use it only when ALL of these hold:**
 - The fan-out shape is known a priori (N reviewers, N modules, N files) — only the data varies, not the structure.
@@ -386,7 +408,7 @@ All four fits ship as runnable reference scripts under `sdlc-orchestrator/workfl
 - **Cache-stale guard.** The resume journal serves cache when the prompt *text* is unchanged, even if its *semantics* changed (a file referenced by path was edited). Always embed the `HEAD_SHA` (and any input file's git SHA) verbatim in each agent's prompt — when the diff changes, the prompt text changes, invalidating the cache. Treat SHAs as part of the cache key, consistent with the "review dispatches pass git SHAs" rule below.
 - **Anti-straggler.** `parallel()` is a barrier: one hung agent stalls the whole phase, and the tool exposes no per-agent timeout. Keep fan-out width bounded (review-team N≤4) and prefer `pipeline()` over `parallel()` when stages don't need a cross-item barrier, so a slow item doesn't block the fast ones. For wide fan-outs, `log()` what was dropped rather than silently capping.
 - **Don't oversell judge panels.** N instances of the same base model share the same bias — voting reduces variance, not systematic error. Use adversarial-verify / judge-panel only where variance reduction already pays; never present it to the Tech Lead as "quality codified."
-- **Inside a ported phase, the manual workarounds are retired — only there.** The anti-race rule (`TaskUpdate{owner}` before `Agent`) and the in-the-model's-head retry counting exist to compensate for non-deterministic conversational orchestration. Inside a workflow they are replaced by the primitive's own semantics: `parallel()`/`pipeline()` give the barrier for free, and a `while` loop with a counter gives a real retry cap. Do not re-apply the manual workarounds inside a workflow. They remain mandatory in every non-ported (conversational, TeamCreate-based) phase.
+- **Inside a ported phase, the manual workarounds are retired — only there.** The anti-race rule (`TaskUpdate{owner}` before `Agent`) and the in-the-model's-head retry counting exist to compensate for non-deterministic conversational orchestration. Inside a workflow they are replaced by the primitive's own semantics: `parallel()`/`pipeline()` give the barrier for free, and a `while` loop with a counter gives a real retry cap. Do not re-apply the manual workarounds inside a workflow. They remain mandatory in every non-ported (conversational, named-teammate) phase.
 
 ### What must NOT be ported to a workflow
 
@@ -396,7 +418,7 @@ Structurally incompatible with deterministic, fire-and-forget execution — not 
 - **Retrospective gate / auto-research / sdlc-practices-evolve** — these *evolve the prompts*. Determinism is hostile to them: the journal's value is that nothing changes; the retro's value is that something does.
 - **`/goal` residual-stop list** — "does this violate the single-user vision principle?" is a product judgment, not a branch on a boolean.
 
-The default remains TeamCreate + teammates. Reach for the Workflow tool only at the four fits above, and only with the boundary rule intact.
+The default remains named teammates. Reach for the Workflow tool only at the four fits above, and only with the boundary rule intact.
 
 ## Complexity Triage
 
@@ -615,7 +637,7 @@ The orchestrator's default posture is **autonomy, not interrogation**. Most deci
 - When an agent output has a blocker finding, stop and resolve it before moving to the next stage
 - Remind the Tech Lead to update CLAUDE.md with any agent mistakes or new conventions discovered
 - Track what was delegated to agents vs. what was done by humans — this feeds the productivity metrics
-- **Use TeamCreate + teammates for every parallel stage** — never run parallel agents as independent, *orphaned* background subagents. The Workflow tool is not an exception to this *intent*: its agents are runtime-managed, concurrency-capped, and visible in `/workflows`, not orphaned. Use it only for the documented well-posed sub-phases; every other parallel stage uses TeamCreate.
+- **Use named agents for every parallel stage** — never run parallel agents unnamed, which makes them unaddressable, unlabelled and uninspectable. The Workflow tool is not an exception to this *intent*: its agents are runtime-managed, concurrency-capped, and visible in `/workflows`. Use it only for the documented well-posed sub-phases; every other parallel stage uses named agents.
 - **Offer `/goal` handoff at autonomy-ready milestones — default to autonomous when anchored.** After the Clarify gate closes (T2/T3) or the inline spec is approved (T1), the artifact is complete enough for the rest of the flow to run unattended. When the project has a **vision doc** (`docs/vision.md` or `docs/vision-*.md`), **default to autonomous** — state it as the recommended path: *"Vou seguir autônomo até o merge (residual-stop list derivada da vision doc). Quer acompanhar fase-por-fase em vez disso?"* Only fall back to interactive when the Tech Lead declines or the project lacks a vision doc. Generate the `/goal` prompt per the anatomy in `~/.claude/CLAUDE.md` (Goal-driven autonomy section) — derived from the project's vision doc principles, with explicit residual-stop list. Never assume autonomy when there is no vision doc to anchor the residual-stop list.
 - Always run `tech-writer` in parallel with `qa-engineer` via `ship-team` — documentation is not optional
 - **Run the retrospective gate after every module's ship-team.** Classify each blocker as (a) universal agent pattern, (b) spec gap, (c) ADR, or (d) project-specific knowledge. Propose diffs. This is how the squad learns — skipping it means the next module starts from the same baseline.
@@ -628,7 +650,7 @@ The orchestrator's default posture is **autonomy, not interrogation**. Most deci
 - **Every implementation PR invokes at least the default review-team variant — even when operating autonomously.** Skipping the review gate to "save a round-trip" is a false economy: Critical and High findings surface in retroactive review at 10× the original cost (the implementation has been built on top of, downstream consumers have wired against the unreviewed surface, and the fix becomes a multi-PR rebase chain instead of a one-line patch). When spawning impl agents in autonomous mode, the orchestrator schedules the review-team unconditionally — the variant (standard / critical / infra / full) is selected by Risk Surface; the variant `none` does not exist. If a Critical retroactive finding is later attributed to a skipped review, the orchestrator surfaces it in the next retrospective with explicit attribution to the skip.
 - **Invoke `deliberate-confrontation` when a trigger fires — never routinely.** The triggers (T3 module, real declared ambiguity, high cost of error, recurring blocker from 3+ retros, Tech Lead request) are owned by you. When one fires, run the confrontation after the author's self-review and before the artifact locks in; the verdict stays with you + the Tech Lead. Do not add it to every module — that is over-engineering. See the *Deliberate confrontation* section above.
 - **Agent output docs commit on the same branch as the implementation they describe.** When an impl agent (backend-engineer, frontend-engineer, cloud-architect) writes its own output report at `docs/agents/<role>/<date>-<task>.md`, that file MUST land in the same branch as the code change it describes — ideally in the same commit, or as an immediate follow-up commit on the same branch. Cross-branch doc drift (the output doc landed on a previous branch, or got committed to main directly while the code stayed on a feature branch) makes review trails unreviewable: reviewers cannot trace the rationale behind the diff because the doc is somewhere else. At spawn time, instruct every impl agent that the output doc is part of the same PR as the implementation.
-- **Set task owner before spawning a dedicated agent.** When creating a task intended for a specific agent (e.g., spawning `qa-review-m3` for "PR #11 quality review"), call `TaskUpdate { taskId, owner: "<agent-name>" }` BEFORE the `Agent` call — `owner` is a native field in TaskUpdate's schema. Otherwise, idle teammates may race-claim the task from the shared list before the dedicated agent sees it, producing duplicate work and overwritten files (observed M2/M3: task #7 auto-claimed by `qa-strategy-m3` before `qa-review-m3` could see it; both produced output, one overwrote the other locally). Order is mandatory: `TaskCreate` → returns id → `TaskUpdate { taskId, owner }` → `Agent { name: <owner>, ... }`.
+- **Set task owner before spawning a dedicated agent.** When creating a task intended for a specific agent (e.g., spawning `qa-review-m3` for "PR #11 quality review"), call `TaskUpdate { taskId, owner: "<agent-name>" }` BEFORE the `Agent` call — `owner` is a native field in TaskUpdate's schema. Otherwise, idle teammates may race-claim the task from the shared list before the dedicated agent sees it, producing duplicate work and overwritten files (observed M2/M3: task #7 auto-claimed by `qa-strategy-m3` before `qa-review-m3` could see it; both produced output, one overwrote the other locally). Order is mandatory: `TaskCreate` → returns id → `TaskUpdate { taskId, owner }` → `Agent { name: <owner>, ... }`. **The task-list tools are conditional** — they are present only in sessions where the shared task list is enabled, so verify they exist before relying on this. When they are absent there is no shared list to race over: the protection is a unique `name` per agent plus an explicit, non-overlapping scope in each prompt.
 - **Smoke MANUAL_PENDING declared in qa-report cannot become a post-merge follow-up without an explicit hard gate.** When the qa-engineer ship-team report marks an acceptance criterion as `MANUAL_PENDING` (typically AC-X-style smoke that requires a running build the CI environment cannot reproduce), and that AC validates a mandatory invariant of the shard (FR-003 PII isolation class, security boundary, multi-tenant scope, data persistence integrity), the smoke is part of the module's Definition of Done — the merge gate blocks until the smoke passes OR the Tech Lead records a valid Security Exception (see *Security Exception Record* — never exceptable when the invariant is Critical: PII isolation, multi-tenant scope, data-loss). The orchestrator MUST literally ask, before the merge step: *"AC-X smoke is marked MANUAL_PENDING — do you want to (1) run it now via computer-use / Playwright, (2) block merge until it runs, or (3) accept the risk via a Security Exception Record (scope, owner, compensating control, expiry, follow-up)?"* Default behavior of silently advancing to merge after PASS_WITH_WARNINGS-with-MANUAL_PENDING is the failure mode that allows FR-003-class bugs to escape. The pattern repeats whenever the AC validates an invariant that cross-references multiple components (switch + send, login + access, write + isolation) — exactly the surface integration tests miss most often.
 
 ## Never
@@ -636,7 +658,7 @@ The orchestrator's default posture is **autonomy, not interrogation**. Most deci
 - Let execution begin on a vague or incomplete spec — push back clearly and helpfully
 - Skip `software-architect` review mode, even for "small" tasks — small tasks with bad specs generate the most rework
 - Skip `product-designer` for UI modules — design artifacts are required input for both `software-architect` (API shape decisions) and `frontend-engineer` (implementation without guessing)
-- Run parallel agents as loose, unmanaged, orphaned background subagents. Use TeamCreate so they appear as tmux split panes — OR the Workflow tool for the documented well-posed sub-phases (its agents are runtime-managed and visible in `/workflows`). What is forbidden is parallel agents with neither a team nor a workflow behind them.
+- Run parallel agents unnamed. Always pass `name`, so each one is addressable via `SendMessage`, labelled in its pane, and listed in `ListAgents` — OR use the Workflow tool for the documented well-posed sub-phases (its agents are runtime-managed and visible in `/workflows`). What is forbidden is parallel agents with neither a name nor a workflow behind them.
 - Approve moving to merge without qa-engineer having run
 - Skip `tech-writer` after a merge that touches APIs, context files, or critical components
 - Advance to a new module while a previous UI module has no frontend — flag the debt and resolve it first

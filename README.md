@@ -294,34 +294,35 @@ Ferramentas per-projeto de alto blast-radius (Postgres/DB, cloud/Terraform/K8s) 
 
 Quando o `sdlc-orchestrator` roda dois agentes ao mesmo tempo (ex: backend + frontend), eles aparecem como **painéis divididos no terminal** — você vê o progresso de cada um em tempo real.
 
-Para ativar, você precisa do **tmux** instalado e dois ajustes no `~/.claude/settings.json`:
+Para ativar, você precisa do **tmux** instalado e um ajuste no `~/.claude/settings.json`:
 
 ```json
 {
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
-  "Preferences": {
-    "tmuxSplitPanes": true
-  },
   "teammateMode": "tmux"
 }
 ```
 
-Depois, sempre que for usar o Claude Code, abra dentro de uma sessão tmux:
+Depois, sempre que for usar o Claude Code, abra **dentro** de uma sessão tmux:
 
 ```bash
 tmux new-session -s meu-projeto
 claude --dangerously-skip-permissions
 ```
 
-Sem o tmux, os agentes ainda funcionam — rodam em sequência, sem os painéis. O TeamMode é opcional mas muda bastante a experiência. A flag `--dangerously-skip-permissions` é necessária para o fluxo rodar de forma autônoma — sem ela, cada operação de cada agente pede confirmação manual.
+O "dentro do tmux" não é detalhe: a escolha do backend de painel acontece uma vez, no spawn do agente. Fora do tmux, o Claude Code 2.1.239 ainda seleciona o backend `tmux` e atribui aos agentes um pane que **não existe** — eles rodam, mas o output não tem pra onde ir, e da sua cadeira parece um agente travado em "processando". Checagem antes do primeiro dispatch paralelo: `[ -n "$TMUX" ]`.
+
+A flag `--dangerously-skip-permissions` é necessária para o fluxo rodar de forma autônoma — sem ela, cada operação de cada agente pede confirmação manual.
+
+Um agente vira teammate por receber `name` na chamada do `Agent` — `TeamCreate`/`TeamDelete` não existem mais (removidas no Claude Code ~2.1.2xx) e `team_name` é aceito e ignorado.
 
 → **Guia completo de instalação e configuração:** [TEAMMODE.md](./TEAMMODE.md)
 
 ### Workflow tool — execução determinística para sub-fases bem-postas
 
-O TeamMode (TeamCreate + teammates) continua sendo o **default** para trabalho paralelo. Mas para uma classe restrita de sub-fases onde a *forma* do trabalho é fixa e conhecida antes da execução — fan-out de N reviewers, N módulos, N ACs — o orchestrator pode delegar ao **Workflow tool**: orquestração multi-agente determinística, com paralelismo garantido, output estruturado/validado por schema e re-execução barata via cache de resume.
+O TeamMode (agentes nomeados em painéis) continua sendo o **default** para trabalho paralelo. Mas para uma classe restrita de sub-fases onde a *forma* do trabalho é fixa e conhecida antes da execução — fan-out de N reviewers, N módulos, N ACs — o orchestrator pode delegar ao **Workflow tool**: orquestração multi-agente determinística, com paralelismo garantido, output estruturado/validado por schema e re-execução barata via cache de resume.
 
 Os quatro fits documentados (com scripts de referência em [`skills/sdlc-orchestrator/workflows/`](./skills/sdlc-orchestrator/workflows/)):
 

@@ -25,25 +25,17 @@ If any prerequisite fails, stop and tell the Tech Lead exactly what's missing.
 
 2. **Copy templates from ai-squad install.** Copy `templates/CLAUDE.md` (from the ai-squad install location, typically `~/.claude/` or wherever `install.sh` was sourced) to `./CLAUDE.md`. Copy `templates/docs/maturity-assessment.md` to `./docs/maturity-assessment.md`. Create the `./docs/onboarding/` and `./docs/adr/` directories if missing.
 
-3. **Create the discovery team.**
-   ```
-   TeamCreate({ team_name: "discovery-team", layout: "tiled" })
-   ```
+3. **Check the pane precondition** — `[ -n "$TMUX" ]`. If empty, tell the Tech Lead in one line that the two discovery agents will run without visible panes (relaunch inside tmux to get them), then continue either way. Do not call `TeamCreate` — it no longer exists.
 
-4. **Spawn both agents in parallel** (single message, two `Agent` calls):
-   - `Agent({ subagent_type: "software-architect", team_name: "discovery-team", name: "discovery", model: "opus", prompt: "Run Mode 4: Discovery on the current repo (cwd). Output to the files specified in your agent definition: CLAUDE.md (fill Stack + Tooling slots you can infer + project_context block), docs/architecture.md, docs/adr/0001-baseline.md, docs/engineering-patterns.md, docs/maturity-assessment.md (fill Brownfield baseline row), docs/onboarding/discovery-report.md. Mark every uncertain inference as [TO DEFINE]. Critical TO DEFINEs (auth, multi-tenancy, secrets, data retention) go at the top of discovery-report.md. Do NOT write code, do NOT open a PR, do NOT refactor." })`
-   - `Agent({ subagent_type: "cloud-architect", team_name: "discovery-team", name: "inventory", model: "sonnet", prompt: "Run Mode 3: Inventory on the current repo (cwd). Populate ## Tooling > ci_cd in CLAUDE.md with the provider and workflow files detected. Populate ## Tooling > observability if obs deps detected; mark [TO DEFINE] if ambiguous. Append an Infrastructure baseline block to docs/adr/0001-baseline.md (the file is created by software-architect; append, do not overwrite). Do NOT create new infrastructure. Do NOT run setup mode. If CI is missing, just note it in the Infrastructure baseline." })`
+4. **Spawn both agents in parallel** (single message, two `Agent` calls — the `name` is what makes each one an addressable teammate):
+   - `Agent({ subagent_type: "software-architect", name: "discovery", model: "opus", prompt: "Run Mode 4: Discovery on the current repo (cwd). Output to the files specified in your agent definition: CLAUDE.md (fill Stack + Tooling slots you can infer + project_context block), docs/architecture.md, docs/adr/0001-baseline.md, docs/engineering-patterns.md, docs/maturity-assessment.md (fill Brownfield baseline row), docs/onboarding/discovery-report.md. Mark every uncertain inference as [TO DEFINE]. Critical TO DEFINEs (auth, multi-tenancy, secrets, data retention) go at the top of discovery-report.md. Do NOT write code, do NOT open a PR, do NOT refactor." })`
+   - `Agent({ subagent_type: "cloud-architect", name: "inventory", model: "sonnet", prompt: "Run Mode 3: Inventory on the current repo (cwd). Populate ## Tooling > ci_cd in CLAUDE.md with the provider and workflow files detected. Populate ## Tooling > observability if obs deps detected; mark [TO DEFINE] if ambiguous. Append an Infrastructure baseline block to docs/adr/0001-baseline.md (the file is created by software-architect; append, do not overwrite). Do NOT create new infrastructure. Do NOT run setup mode. If CI is missing, just note it in the Infrastructure baseline." })`
 
 5. **Wait for both to complete.**
 
 6. **Detect UI presence.** Check for `*.tsx`, `*.vue`, `*.svelte`, or `*.html` files under `src/`, `app/`, or `components/`. If found, note it for the next-steps section.
 
-7. **Shut down teammates.**
-   ```
-   SendMessage({ to: "discovery", type: "shutdown_request" })
-   SendMessage({ to: "inventory", type: "shutdown_request" })
-   TeamDelete({ team_name: "discovery-team" })
-   ```
+7. **No shutdown step.** Named agents end on their own once their work is reported — do not originate `shutdown_request` unless the Tech Lead asks. There is no team to delete.
 
 8. **Read** the produced `docs/onboarding/discovery-report.md` to extract the critical TO DEFINEs.
 
@@ -78,8 +70,8 @@ Next steps:
 
 - Do NOT invoke `/sdlc-orchestrator` automatically
 - Do NOT run `cloud-architect` setup mode, even if CI is missing — only signal it in the report
-- Do NOT spawn `discovery` and `inventory` as loose background subagents — they MUST be teammates inside `discovery-team`
-- Do NOT skip the shutdown + TeamDelete cleanup
+- Do NOT spawn `discovery` and `inventory` unnamed — the `name` is what makes each addressable, labelled and inspectable
+- Do NOT promise the Tech Lead visible panes without having checked `$TMUX` first
 
 ## Expected wall-clock time
 
