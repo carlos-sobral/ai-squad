@@ -2122,7 +2122,25 @@ caem nos mesmos blockers. Maturity assessment subiu de
       </div>
     </div>
 
+    <div class="spec-card">
+      <div class="sc-head">
+        <div class="sc-icon" style="background: #cffafe;">🌐</div>
+        <h4>Site de documentação</h4>
+      </div>
+      <div class="sc-purpose">
+        A saída que humanos de fato leem. As specs em Markdown são insumo; o site é a síntese navegável — visão geral, features, arquitetura profunda, referência da superfície pública, getting started, roadmap e decisões. Bootstrap solo na primeira entrega; update incremental a cada módulo.
+      </div>
+      <div class="sc-meta">
+        <span class="sc-key">Quem escreve:</span> tech-writer (modos site-bootstrap e site-update)<br>
+        <span class="sc-key">Formato:</span> HTML self-contained, single file<br>
+        <span class="sc-key">Localização:</span> <code>docs/site/index.html</code>
+      </div>
+    </div>
+
   </div>
+  <p style="font-size: 13px; color: var(--text-faint); margin-top: 14px; max-width: 760px;">
+    <strong>Artifact Ledger:</strong> esta lista não é decorativa — ela é um gate. Cada artefato tem dono, um marco em que vence, e uma condição de aplicabilidade; a Definition of Done verifica a existência por comando (<code>test -f</code>), não pelo relatório de quem deveria ter escrito. A razão é medida: artefato obrigatório que nenhum gate nomeia por caminho simplesmente não aparece nos projetos. Marcar uma linha como <code>n/a</code> é permitido — apagá-la, não, porque ausência silenciosa é indistinguível de esquecimento.
+  </p>
   <p style="font-size: 13px; color: var(--text-faint); margin-top: 14px; max-width: 760px;">
     <strong>Princípio:</strong> spec é contrato vivo. Quando a implementação revela que a spec estava errada, atualiza a spec primeiro, depois o código — nunca o contrário. Drift entre spec e código é dívida que aparece no consistency-check gate.
   </p>

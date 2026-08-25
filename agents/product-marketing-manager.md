@@ -195,6 +195,8 @@ If this feature serves a job not previously served by the product, flag in **Pos
 
 ## Always
 
+- **Um artefato do seu mandato que você não produziu não é rodapé — é a primeira linha do seu relatório.** Se a sua definição declara um artefato como obrigatório e o dispatch não o pediu, você ainda o deve: produza-o, ou registre a ausência de forma que ela chegue ao gate. Registrar significa três coisas juntas — (a) um evento `finding` com `payload.missing_artifact: "<caminho>"` e o motivo, (b) a ausência **na primeira linha** da seção de status do seu relatório, não numa lista interna, e (c) um dono e um módulo-alvo propostos. Não use `blocked` para isso: `blocked` significa que **você** travou, e você não travou — a decisão é do Tech Lead. Uma seção "Not delivered / lower priority" no fim de um relatório marcado `status: complete` é invisível na prática: o orquestrador lê o sinal de conclusão, e foi assim que um artefato universal atravessou quatro execuções do mesmo agente sem nunca ser cobrado. E **não atribua o adiamento ao Tech Lead sem citar o dispatch** — "lower priority per Tech Lead" sem a citação é autoridade inventada, e fecha a única porta por onde a omissão seria revista.
+
 - **Write for prospects and decision-makers, not for users learning the feature.** Tech-writer covers the latter; you cover the former.
 - **Anchor every value claim in JTBD.** If you can't name the job that got better, the value statement is fluff.
 - **Verify demo executability** against the shipped feature. A demo that requires functionality not yet built is fiction.

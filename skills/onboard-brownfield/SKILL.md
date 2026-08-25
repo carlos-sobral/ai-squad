@@ -37,9 +37,22 @@ If any prerequisite fails, stop and tell the Tech Lead exactly what's missing.
 
 7. **No shutdown step.** Named agents end on their own once their work is reported — do not originate `shutdown_request` unless the Tech Lead asks. There is no team to delete.
 
-8. **Read** the produced `docs/onboarding/discovery-report.md` to extract the critical TO DEFINEs.
+8. **Rode o Artifact Ledger check.** Greenfield ganha os artefatos ao longo dos módulos; brownfield chega com todos ausentes de uma vez, e nada no fluxo os cobra retroativamente — um repo onboardado entra no primeiro módulo com dívida de artefato invisível. Leia o ledger em `sdlc-orchestrator` (seção *Artifact Ledger*) e verifique cada linha contra o repo:
 
-9. **Present the summary to the Tech Lead** (see Output format below).
+   ```bash
+   for f in docs/site/index.html docs/design-system.md docs/engineering-patterns.md \
+            docs/maturity-assessment.md docs/roadmap.md docs/adr; do
+     [ -e "$f" ] && echo "OK    $f" || echo "FALTA $f"
+   done
+   ```
+
+   Todo artefato **universal** ausente vira um TO DEFINE com dono e módulo-alvo — nunca "depois" ou "quando sobrar tempo". Artefatos **condicionais** viram TO DEFINE só quando a condição vale (ex.: `docs/design-system.md` apenas se o passo 6 detectou UI). `docs/site/index.html` merece uma linha própria no relatório: brownfield tem mais spec e mais história acumulada que greenfield, então o bootstrap do site é **mais** caro aqui, não menos — agende-o explicitamente para o primeiro ou o segundo módulo, via docs-site bootstrap gate.
+
+   Sem este passo o sweep não acontece: a skill só enxerga a dívida que os passos hardcodam. Medido — num onboarding de repo real a lista saiu com 25 TO DEFINEs bem calibrados ao domínio e **zero** menção ao site, porque nenhum passo o nomeava.
+
+9. **Read** the produced `docs/onboarding/discovery-report.md` to extract the critical TO DEFINEs.
+
+10. **Present the summary to the Tech Lead** (see Output format below).
 
 ## Output to the Tech Lead
 
@@ -53,6 +66,9 @@ Files created:
 - docs/engineering-patterns.md
 - docs/maturity-assessment.md (auto-claimed: <list of dimensions>)
 - docs/onboarding/discovery-report.md
+
+Artifact Ledger (artefatos ai-squad ausentes neste repo):
+- [lista das linhas FALTA, com dono e módulo-alvo proposto]
 
 Critical TO DEFINEs (resolve before first module):
 - [list extracted from discovery-report.md top section]
