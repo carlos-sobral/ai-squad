@@ -122,6 +122,7 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 │  DESIGN (para módulos com interface visual)                 │
 │                                                             │
 │  product-designer   → especifica telas, fluxos e copy       │
+│                     → desenha os artboards (Claude Design)  │
 │  software-architect → define a solução técnica              │
 └─────────────────────────────────────────────────────────────┘
                          ↓
@@ -233,7 +234,15 @@ Alguns agentes têm **modos diferentes** dependendo do momento do projeto. É im
 |---|---|---|
 | **Design System Mode** (greenfield) | Uma vez por projeto novo, antes do primeiro módulo com UI | `docs/design-system.md` com cores, tipografia, espaçamentos, componentes — a fundação visual de todas as telas |
 | **Documentation Mode** (brownfield) | Uma vez em codebases existentes, durante onboarding | Extrai tokens e componentes da UI existente, marca pontos de divergência como [TO DEFINE], nunca modifica código |
-| **UX Spec Mode** | Uma vez por módulo com UI, depois do PRD | Especificação de telas: fluxos, estados, copy, acessibilidade, inventário de componentes |
+| **UX Spec Mode** | Uma vez por módulo com UI, depois do PRD | Especificação de telas (fluxos, estados, copy, acessibilidade, inventário de componentes) **e os artboards** em `docs/design/canvas/{tela}.dc.html` |
+
+#### Artboards — o design vira valor extraível, não referência visual
+
+UX Spec Mode entrega dois artefatos, não um: o Markdown **e** os artboards. O agente invoca a skill `design` (Claude Design) e versiona os `.dc.html` no repo, com o CSS literal de cada tela — tamanho de fonte, tracking, leading, padding, radius por hierarquia, timing das transições. O `frontend-engineer` **extrai** esses valores em vez de olhar um screenshot e re-derivar.
+
+A diferença é mensurável. Num fixture cujo design system tabulava paleta e famílias de fonte mas deixava a composição para a tela, um engenheiro trabalhando com o spec em prosa + uma URL de canvas preservou **6 de 22** valores do desenho — sobreviveram exatamente os que estavam numa tabela. Com o artboard no repo e a regra de extração: **22 de 22**. Todas as divergências do primeiro caso vinham com justificativa escrita plausível; o modo de falha não é desleixo, é re-derivação — e um valor re-derivado cai no default do modelo.
+
+Fecham o ciclo dois mecanismos: o **pull-back** (quando o Tech Lead refina o canvas publicado, o repo é reescrito da versão aprovada e o delta sistêmico reconcilia o `docs/design-system.md`) e o **fidelity check** (o `frontend-engineer` lê `getComputedStyle` da UI rodando via Playwright e compara número a número com o artboard antes de declarar pronto — a tabela dessa comparação é o que o gate do orchestrator lê).
 
 O Design System Mode (greenfield) ou Documentation Mode (brownfield) só precisa rodar uma vez. Depois disso, todos os módulos seguintes usam o sistema definido.
 

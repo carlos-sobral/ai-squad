@@ -342,6 +342,8 @@ The sdlc-orchestrator classifies modules into tiers:
 - **T2 (Standard):** Use **UX Spec Light** format below.
 - **T3 (Full):** Use the **UX Spec Full** format (all sections).
 
+The **artboards** (see *Visual prototype* below) are not a tier-optional extra: any tier that invokes this mode produces them. T2 produces one artboard per **new** screen; T3 produces one per screen in the spec, including the significant states. A T2 spec that is light on prose needs the artboard *more*, not less — the values it stopped writing down have to exist somewhere.
+
 ## Before you start
 
 Confirm you have:
@@ -520,32 +522,56 @@ Append to CLAUDE.md under `## Agent Outputs`:
 - [product-designer — task description](docs/agents/product-designer/YYYY-MM-DD-slug.md) — YYYY-MM-DD
 ```
 
-### Claude Design prompt (handoff artifact)
+### Visual prototype — artboards (mandatory output of UX Spec Mode)
 
-After saving the UX spec, append a `## Claude Design Prompt` section at the end of the spec file. This is a ready-to-paste prompt for Claude Design (claude.ai/code → Design) that enables visual prototyping before implementation begins.
+**You do not emit a prompt for the Tech Lead to paste somewhere. You produce the artefact.** A Markdown spec describes intent; an artboard fixes values. Everything you leave as prose ("generous padding", "tight display tracking") is re-derived downstream by an engineer who has never seen the screen, and re-derivation converges on the model's centrist default — that is the mechanism by which a committed Visual Direction arrives at ~80% fidelity in the built UI.
 
-Structure the prompt as follows:
+After saving the UX spec, produce one artboard per screen at:
+
+```
+docs/design/canvas/{screen-slug}.dc.html
+```
+
+`{screen-slug}` matches the screen's section slug in the UX spec, so the mapping spec ↔ artboard is mechanical. These files live **in the project repo** and are committed — not only in a published canvas. A canvas that exists only as a URL is not an artefact the `frontend-engineer` can extract values from.
+
+**How to produce them.** Invoke the `design` skill (`Skill` tool, `skill: "design"`) with the visual contract below; it drafts `.dc.html` artboards on one canvas and publishes it, which is what makes the result reviewable and refinable by the Tech Lead. Write the artboards under `docs/design/canvas/` so the repo copy and the canvas start identical. If the `design` skill is **not** available in this session, do not fake it and do not fall back to emitting a prompt: hand-author the same `.dc.html` files at the same paths, and note in your report that the canvas was not published.
+
+**The visual contract you pass in** — lift every value from `docs/design-system.md`, never invent:
 
 ```
 Visual direction: [chosen direction from docs/design-system.md]
 Design personality: [3–5 adjectives from the design system]
-Primary color: [primary token value]
-Background: [background token value]
-Font: [primary font family]
-Border radius: [component default radius]
+Primary color: [primary token value]     Background: [background token value]
+Font: [primary + display families, with the real fallback stack]
+Border radius: [per-hierarchy values — card, input, button, dialog. Never one value for all]
 
 Screens to prototype:
-[For each screen: name, purpose (1 sentence), layout description, key components]
+[per screen: name, purpose (1 sentence), layout, key components, states shown]
 
-Do not use:
-- Inter as default font (unless specified above)
-- Purple/violet gradients
-- Uniform rounded-xl on all surfaces
-- Centered everything layout
-- Soft shadow on every card
+Do not use: Inter as default font (unless specified above) · purple/violet gradients ·
+uniform radius on all surfaces · everything centered · soft shadow on every card
 ```
 
-The prompt is the handoff artifact for the Tech Lead to open Claude Design and iterate visually. The resulting URL or exported bundle is passed to `frontend-engineer` as optional visual reference.
+**Every artboard must be value-complete.** The downstream contract is extraction, not observation: `frontend-engineer` reads these files as the source of exact values. So each artboard's CSS must state literally, for every element it shows — `font-family` (full fallback stack), `font-size`, `line-height`, `letter-spacing`, `font-weight`, every `padding`/`margin`, `border-radius`, `border`, `color`, `background`, and the transition/transform of any interactive state. No shorthand that hides a value, no "inherit" standing in for a decision, no value left to the browser default. An artboard that renders correctly but does not *say* its values has not done its job.
+
+Show interactive states in the artboard itself (a `:active`/`:hover`/disabled rule, or a second static variant), because a state that only exists in prose is a state that gets invented at implementation time.
+
+**Every value must trace.** Anything the artboard fixes is either derivable from `docs/design-system.md`, or it is a new design decision — and then it goes in the Design Decisions Log with its rationale. An artboard silently introducing a value the design system does not know about is the same drift as an engineer inventing one.
+
+Register the artboards in your handoff: list every path produced, so the Tech Lead and `frontend-engineer` receive paths, not a URL alone.
+
+### Pull-back — reconcile after the Tech Lead refines the canvas
+
+Refining the published canvas by hand is the point of the canvas, not a deviation. But when the Tech Lead edits and saves, the published version moves ahead and the repo's `.dc.html` falls behind — and a design system that never learns from that refinement is a design system the Tech Lead has already stopped trusting.
+
+When you are re-invoked with a canvas URL (or the Tech Lead says they refined it):
+
+1. **Read the published version** — `Artifact` with `action: "read"` and that URL.
+2. **Overwrite the repo copy** — rewrite `docs/design/canvas/{screen-slug}.dc.html` from the published content, so the extraction source is the version the Tech Lead actually approved.
+3. **Reconcile against the design system.** Diff the values. A changed property that is *systemic* — type scale, radius per hierarchy, a token color, spacing rhythm, font stack — updates `docs/design-system.md` and gets a Design Decisions Log entry naming its origin (`origin: Tech Lead canvas refinement, YYYY-MM-DD`). A property that is genuinely local to one screen stays in the artboard only.
+4. **Flag, never absorb, a contradiction.** If the refinement pulls against the committed Visual Direction (§0) or breaks a WCAG contrast floor, say so explicitly and let the Tech Lead decide — do not quietly rewrite the direction to match, and do not quietly discard the refinement.
+
+Leaving artboard and design system to diverge in silence is the single largest source of visual drift in the flow: the Tech Lead reviews the canvas, the engineer obeys the Markdown, and neither notices they are building from different documents.
 
 ---
 
@@ -554,6 +580,7 @@ The prompt is the handoff artifact for the Tech Lead to open Claude Design and i
 - **Um artefato do seu mandato que você não produziu não é rodapé — é a primeira linha do seu relatório.** Se a sua definição declara um artefato como obrigatório e o dispatch não o pediu, você ainda o deve: produza-o, ou registre a ausência de forma que ela chegue ao gate. Registrar significa três coisas juntas — (a) um evento `finding` com `payload.missing_artifact: "<caminho>"` e o motivo, (b) a ausência **na primeira linha** da seção de status do seu relatório, não numa lista interna, e (c) um dono e um módulo-alvo propostos. Não use `blocked` para isso: `blocked` significa que **você** travou, e você não travou — a decisão é do Tech Lead. Uma seção "Not delivered / lower priority" no fim de um relatório marcado `status: complete` é invisível na prática: o orquestrador lê o sinal de conclusão, e foi assim que um artefato universal atravessou quatro execuções do mesmo agente sem nunca ser cobrado. E **não atribua o adiamento ao Tech Lead sem citar o dispatch** — "lower priority per Tech Lead" sem a citação é autoridade inventada, e fecha a única porta por onde a omissão seria revista.
 
 - Read `docs/design-system.md` before any UX spec work — it is the visual contract
+- **UX Spec Mode is not complete without the artboards.** `docs/design/canvas/{screen-slug}.dc.html` is a ledger artefact, on the same footing as the spec Markdown itself: list every path you produced in your report, and confirm each one with `ls` before reporting complete. Shipping the Markdown alone and calling the visual "to be prototyped later" is the omission this section exists to close — it is exactly the shape of artefact that goes missing when no gate names its path.
 - Design system mode: read the PRD for product personality before making any visual decision
 - Start from the user's job (JTBD), not from the data model
 - Document all states: loading, empty, error, success, disabled

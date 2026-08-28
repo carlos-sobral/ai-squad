@@ -1596,7 +1596,7 @@ têm acesso à task.
           <span class="mono">UX spec</span>
         </div>
         <div class="step-title">Especifica as telas</div>
-        <div class="step-context">Layout, estados (vazio / loading / erro / sucesso), copy, comportamento, acessibilidade. Reusa tokens do design system existente.</div>
+        <div class="step-context">Layout, estados (vazio / loading / erro / sucesso), copy, comportamento, acessibilidade. Reusa tokens do design system existente. Entrega também os <strong>artboards</strong> (<code>docs/design/canvas/*.dc.html</code>, via Claude Design) — o desenho com os valores literais que o frontend extrai em vez de re-derivar.</div>
         <div class="human-touch"><span class="ht-icon">👤</span> Tech Lead aprova UX spec</div>
         <div class="artifact">
           <div class="artifact-head">
@@ -2023,12 +2023,12 @@ caem nos mesmos blockers. Maturity assessment subiu de
         <h4>UX Spec</h4>
       </div>
       <div class="sc-purpose">
-        Como a feature aparece pro usuário. Layout, estados (vazio/loading/erro/sucesso), copy, acessibilidade, inventário de componentes do DS reusados vs novos.
+        Como a feature aparece pro usuário. Layout, estados (vazio/loading/erro/sucesso), copy, acessibilidade, inventário de componentes do DS reusados vs novos. Vem em par com os <strong>artboards</strong>: o Markdown carrega intenção, estados e copy; o artboard carrega os valores — tracking, leading, padding, radius por hierarquia, timing.
       </div>
       <div class="sc-meta">
         <span class="sc-key">Quem escreve:</span> product-designer<br>
-        <span class="sc-key">Formato:</span> Markdown + referências ao design system<br>
-        <span class="sc-key">Localização:</span> <code>docs/specs/&lt;módulo&gt;/ux-spec.md</code>
+        <span class="sc-key">Formato:</span> Markdown + artboards <code>.dc.html</code> (Claude Design)<br>
+        <span class="sc-key">Localização:</span> <code>docs/specs/&lt;módulo&gt;/ux-spec.md</code> + <code>docs/design/canvas/&lt;tela&gt;.dc.html</code>
       </div>
     </div>
 
@@ -2469,9 +2469,9 @@ function aiSquadDocs() {
         name: 'product-designer',
         model: 'opus',
         stages: ['discovery', 'design'],
-        oneLiner: 'Design system (1x) + UX specs (por módulo): telas, fluxos, copy, acessibilidade.',
+        oneLiner: 'Design system (1x) + UX specs e artboards (por módulo): telas, fluxos, copy, acessibilidade.',
         persona: 'Designer sênior dual-mode: sistêmico no design system, empático no UX. Pensa em estados (vazio, loading, erro) antes do happy path. Reusa antes de inventar componente novo.',
-        fullDesc: 'Dois modos. Design System Mode roda uma vez por projeto, define tokens, tipografia, componentes — a base visual. UX Spec Mode roda por módulo: layout, estados (vazio/loading/erro), copy, comportamento, acessibilidade. Em brownfield, Documentation Mode extrai DS da UI existente.',
+        fullDesc: 'Dois modos. Design System Mode roda uma vez por projeto, define tokens, tipografia, componentes — a base visual. UX Spec Mode roda por módulo: layout, estados (vazio/loading/erro), copy, comportamento, acessibilidade — e desenha os artboards via Claude Design, versionados no repo, com o CSS literal que o frontend extrai. Quando o Tech Lead refina o canvas publicado, faz o pull-back: reescreve o artboard do repo e reconcilia o que mudou de sistêmico no design system. Em brownfield, Documentation Mode extrai DS da UI existente.',
         triggers: [
           'Projeto novo precisa de design system',
           'Módulo com UI precisa de UX spec',
@@ -2480,6 +2480,7 @@ function aiSquadDocs() {
         outputs: [
           'docs/design-system.md (greenfield) ou DS documentado (brownfield)',
           'UX spec por módulo: telas, fluxos, copy, a11y',
+          'Artboards docs/design/canvas/*.dc.html (um por tela)',
           'Inventário de componentes reusados vs novos'
         ],
         modes: [
@@ -2554,9 +2555,9 @@ function aiSquadDocs() {
         name: 'frontend-engineer',
         model: 'sonnet',
         stages: ['impl'],
-        oneLiner: 'Implementa UI contra tech spec + UX spec + design system.',
+        oneLiner: 'Implementa UI contra tech spec + UX spec + design system + artboards.',
         persona: 'Engenheiro visual e funcional. Reusa o design system antes de criar componente novo. Sabe que type-check passar não significa "feature funciona" — testa em browser real antes de declarar pronto.',
-        fullDesc: 'Lê tech spec + UX spec + docs/design-system.md. Para se faltar qualquer um. Implementa componentes reusando o DS, segue o visual contract. Quando o shadcn registry MCP está conectado, consulta props/API reais dos componentes em vez de lembrar do treino (sem props alucinadas); ferramentas como 21st.dev Magic entram subordinadas ao design system. Sempre testa em browser real antes de declarar pronto — type-check passar não é "feature funciona".',
+        fullDesc: 'Lê tech spec + UX spec + docs/design-system.md + os artboards da tela. Para se faltar qualquer um. Do artboard ele extrai os valores em vez de olhar e re-derivar — medido num fixture: com spec em prosa e uma URL de canvas, 6 de 22 valores do desenho sobrevivem; com o artboard no repo, 22 de 22. Antes de declarar pronto roda o fidelity check: lê getComputedStyle da UI rodando e compara número a número com o artboard. Implementa componentes reusando o DS, segue o visual contract. Quando o shadcn registry MCP está conectado, consulta props/API reais dos componentes em vez de lembrar do treino (sem props alucinadas); ferramentas como 21st.dev Magic entram subordinadas ao design system. Sempre testa em browser real antes de declarar pronto — type-check passar não é "feature funciona".',
         triggers: [
           'Tech spec + UX spec aprovadas pra UI',
           'Componente novo do DS',
@@ -2566,7 +2567,8 @@ function aiSquadDocs() {
           'Componentes React/Vue/Svelte seguindo o DS',
           'Tests de componente (RTL/Vitest)',
           'Integração com API conforme contract',
-          'Validação visual em browser antes de marcar como done'
+          'Validação visual em browser antes de marcar como done',
+          'Tabela de fidelidade: computed style vs artboard, por tela'
         ],
         connects: [
           '← software-architect (tech spec)',

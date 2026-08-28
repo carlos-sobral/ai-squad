@@ -82,6 +82,8 @@ product-designer (design system mode) — runs ONCE before first UI module
   → [CLARIFY GATE]                          ← T2/T3 only: resolve top-5 ambiguities before tech-spec
   → product-designer (UX spec mode)         ← UI modules only: flows, screens, copy, accessibility
                                                requires docs/design-system.md to exist first
+                                               produces docs/design/canvas/*.dc.html — the artboards
+                                               frontend-engineer extracts exact values from
   → software-architect (review mode)        ← consumes PRD + clarifications + design artifacts → tech spec
   → (if approved) → [TEAM: backend-engineer + frontend-engineer]  ← ALWAYS both if module has UI
   → software-architect (refactor mode)      ← optional cleanup, no behavior change
@@ -113,6 +115,8 @@ product-designer (design system mode) — runs ONCE before first UI module
 **Design system gate:** Before the first UI module begins, `product-designer` must run in Design System Mode and produce `docs/design-system.md`. This is the visual contract for the entire product — every subsequent screen follows it, making per-screen human review unnecessary. Once the design system exists, visual quality is enforced by the system itself.
 
 **product-designer gate (per UI module):** For any module with user-facing UI, `product-designer` (UX Spec Mode) must run after the PRD is approved and before `software-architect`. The software-architect consumes both the PRD and the design artifacts — API shapes are often driven by what the UI needs to display.
+
+**Visual fidelity gate (per UI module):** UX Spec Mode delivers two artefacts, not one: the Markdown spec *and* the artboards at `docs/design/canvas/{screen-slug}.dc.html`. The artboards carry the literal values (type scale, tracking, per-hierarchy radius, exact padding, interactive-state transforms) that prose cannot carry, and `frontend-engineer` **extracts** from them rather than eyeballing a screenshot — measured behaviour: an engineer given only prose plus a picture re-derives the values, and re-derivation lands on the model's default, not the committed direction. Two consequences for you: (a) do not dispatch `frontend-engineer` for a UI module without naming the artboard paths in the dispatch — a "visual reference, optional" handoff reproduces the drift this gate exists to close; (b) the impl report must contain the fidelity comparison (computed styles from the running UI vs the artboard values) with any divergence either fixed or flagged as an explicit design decision. A UI module whose impl report has no fidelity comparison is not done. If the Tech Lead refined the published canvas after the spec was written, re-dispatch `product-designer` for the pull-back (repo artboards + design system reconciled) **before** implementation, not after.
 
 **Docs-site bootstrap gate:** The first time a module ships in a project, `tech-writer` runs in **site-bootstrap mode** as a **solo dispatch** — not inside the ship-team, not in parallel with `qa-engineer` — and produces `docs/site/index.html`. Bootstrap is a synthesis of every existing spec into a navigable site; it is different work from the incremental update that follows, and folding it into the parallel ship-team is why it does not happen. Measured across five projects: where the site exists it was always created by a dedicated `docs(site):` pass, never once as a ship-team by-product. Route the bootstrap by the dominant operation (see *Model routing*) — synthesizing an architecture narrative from specs is not templated output and does not belong on the cheap tier. Every module after the first updates the site inside the ship-team, at the normal tier.
 
@@ -166,6 +170,7 @@ no retro gate.
 | artefato | dono | vence quando | condição |
 |---|---|---|---|
 | `docs/design-system.md` | product-designer (Design System Mode) | antes do 1º módulo com UI | projeto tem UI |
+| `docs/design/canvas/{screen-slug}.dc.html` | product-designer (UX Spec Mode) | por módulo com UI, antes da impl | módulo tem tela nova |
 | `docs/site/index.html` | tech-writer (site-bootstrap, depois site-update) | ship do 1º módulo; atualizado a cada módulo seguinte | universal |
 | `docs/engineering-patterns.md` | retro gate | 1º retro | universal |
 | `docs/maturity-assessment.md` | retro gate | 1º retro | universal |
@@ -188,6 +193,12 @@ for f in docs/site/index.html docs/engineering-patterns.md docs/maturity-assessm
 done
 ```
 
+Para módulo com tela nova, acrescente o check dos artboards — um por tela declarada no UX spec:
+
+```bash
+ls docs/design/canvas/*.dc.html 2>/dev/null || echo "FALTA artboards do módulo"
+```
+
 Para cada `FALTA` cujo artefato esteja vencido: ou ele é produzido antes do merge, ou o adiamento
 vira registro escrito com dono e módulo-alvo. **Silêncio não é adiamento válido.** Um artefato
 vencido e ausente bloqueia a DoD com a mesma dureza do frontend não implementado num módulo de UI.
@@ -204,7 +215,8 @@ A module is **done** only when ALL of the following are true:
 
 ### For modules with user-facing UI (most feature modules):
 - [ ] `docs/design-system.md` exists (Design System Mode ran before this module)
-- [ ] Design artifacts produced by product-designer (UX Spec Mode)
+- [ ] Design artifacts produced by product-designer (UX Spec Mode) — Markdown spec **and** artboards at `docs/design/canvas/{screen-slug}.dc.html`, one per new screen, verified with `ls`
+- [ ] **Visual fidelity check passed** — `frontend-engineer`'s impl report contains the computed-style-vs-artboard comparison for every screen built, and every divergence is either fixed or recorded as an explicit design decision. A report that only says the UI "follows the design system" does not satisfy this
 - [ ] Backend implemented, reviewed (security + software-architect code review mode), and qa-engineer pass
 - [ ] Frontend implemented — components + pages for the feature
 - [ ] CI green (build + type-check + lint + tests pass)
