@@ -2469,24 +2469,27 @@ function aiSquadDocs() {
         name: 'product-designer',
         model: 'opus',
         stages: ['discovery', 'design'],
-        oneLiner: 'Design system (1x) + UX specs e artboards (por módulo): telas, fluxos, copy, acessibilidade.',
+        oneLiner: 'Design system (1x) + UX specs e artboards (por módulo) + sync da library real pro Claude Design.',
         persona: 'Designer sênior dual-mode: sistêmico no design system, empático no UX. Pensa em estados (vazio, loading, erro) antes do happy path. Reusa antes de inventar componente novo.',
-        fullDesc: 'Dois modos. Design System Mode roda uma vez por projeto, define tokens, tipografia, componentes — a base visual. UX Spec Mode roda por módulo: layout, estados (vazio/loading/erro), copy, comportamento, acessibilidade — e desenha os artboards via Claude Design, versionados no repo, com o CSS literal que o frontend extrai. Quando o Tech Lead refina o canvas publicado, faz o pull-back: reescreve o artboard do repo e reconcilia o que mudou de sistêmico no design system. Em brownfield, Documentation Mode extrai DS da UI existente.',
+        fullDesc: 'Dois modos. Design System Mode roda uma vez por projeto, define tokens, tipografia, componentes — a base visual. UX Spec Mode roda por módulo: layout, estados (vazio/loading/erro), copy, comportamento, acessibilidade — e desenha os artboards via Claude Design, versionados no repo, com o CSS literal que o frontend extrai. Quando o Tech Lead refina o canvas publicado, faz o pull-back: reescreve o artboard do repo e reconcilia o que mudou de sistêmico no design system. Em brownfield, Documentation Mode extrai DS da UI existente. Design System Sync Mode publica a component library REAL do código como projeto design-system do Claude Design — a partir daí a tela nova é montada com as classes e tokens que existem em src/, e a fidelidade vira estrutural em vez de reproduzida. O styles.css publicado é derivado do código, nunca transcrito do markdown; e o alvo é sempre o projeto deste repo (nome parecido não é posse — cada projeto cria o seu).',
         triggers: [
           'Projeto novo precisa de design system',
           'Módulo com UI precisa de UX spec',
-          'Codebase brownfield com UI sem DS documentado'
+          'Codebase brownfield com UI sem DS documentado',
+          'Component library mudou — republicar no Claude Design'
         ],
         outputs: [
           'docs/design-system.md (greenfield) ou DS documentado (brownfield)',
           'UX spec por módulo: telas, fluxos, copy, a11y',
           'Artboards docs/design/canvas/*.dc.html (um por tela)',
+          'docs/design/ds-project/ — bundle publicável da library real',
           'Inventário de componentes reusados vs novos'
         ],
         modes: [
           'Design System Mode (greenfield, 1x)',
           'Documentation Mode (brownfield, 1x)',
-          'UX Spec Mode (por módulo)'
+          'UX Spec Mode (por módulo)',
+          'Design System Sync Mode (a cada mudança da library)'
         ],
         connects: [
           '← product-manager (consome PRD)',

@@ -50,6 +50,11 @@ ci_cd:
   config:
     workflow_file: .github/workflows/ci.yml
 
+design_system_project_id: none   # UUID do design-system project deste repo no Claude Design, ou `none`
+# Preenchido pelo product-designer no primeiro Design System Sync Mode (que cria o projeto).
+# É a ÚNICA autoridade sobre o alvo de publicação: nome parecido não é posse, e a conta
+# costuma ter starter kits e sistemas de terceiros. Cada projeto cria o seu.
+
 chat:
   provider: none         # slack | discord | teams | none
   config:
