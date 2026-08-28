@@ -62,6 +62,28 @@ for agent_file in "$SCRIPT_DIR/agents"/*.md; do
 done
 
 echo ""
+echo "Installing ai-squad maintenance scripts..."
+echo ""
+
+SCRIPTS_DIR="$HOME/.claude/scripts"
+script_count=0
+if [ -d "$SCRIPT_DIR/scripts/maintenance" ]; then
+  mkdir -p "$SCRIPTS_DIR"
+  for maint_file in "$SCRIPT_DIR/scripts/maintenance"/*.sh; do
+    [ -f "$maint_file" ] || continue
+    maint_name=$(basename "$maint_file")
+    if [ -f "$SCRIPTS_DIR/$maint_name" ]; then
+      echo "  updating  $maint_name"
+    else
+      echo "  installing $maint_name"
+    fi
+    cp "$maint_file" "$SCRIPTS_DIR/"
+    chmod +x "$SCRIPTS_DIR/$maint_name"
+    script_count=$((script_count + 1))
+  done
+fi
+
+echo ""
 echo "Installing ai-squad enforcement hooks..."
 echo ""
 

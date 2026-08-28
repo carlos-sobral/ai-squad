@@ -22,6 +22,7 @@ ai-squad/
 │   └── {nome}.md
 ├── scripts/
 │   ├── hooks/               # Enforcement hooks (guard-bash, guard-stop)
+│   ├── maintenance/         # reap-orphan-teammates.sh — varre teammates vazados
 │   ├── metrics/             # collect.sh — DORA + engineering metrics
 │   │                        # validate-events.sh — conformidade do event log
 │   └── observability/       # render-dashboard.sh — HTML stakeholder dashboard (opcional)

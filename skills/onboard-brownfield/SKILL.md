@@ -35,7 +35,7 @@ If any prerequisite fails, stop and tell the Tech Lead exactly what's missing.
 
 6. **Detect UI presence.** Check for `*.tsx`, `*.vue`, `*.svelte`, or `*.html` files under `src/`, `app/`, or `components/`. If found, note it for the next-steps section.
 
-7. **No shutdown step.** Named agents end on their own once their work is reported — do not originate `shutdown_request` unless the Tech Lead asks. There is no team to delete.
+7. **Encerre os dois agentes.** `TaskStop({ task_id: "<nome>" })` em cada um assim que o trabalho foi reportado — named agents **não** terminam sozinhos, ficam residentes (~360 MB cada) até serem parados. Não há team para deletar, mas há processo para fechar. Não origine `shutdown_request` (protocolo legacy). `TaskStop` é irreversível quanto ao contexto: o nome deixa de resolver e o transcript não volta.
 
 8. **Rode o Artifact Ledger check.** Greenfield ganha os artefatos ao longo dos módulos; brownfield chega com todos ausentes de uma vez, e nada no fluxo os cobra retroativamente — um repo onboardado entra no primeiro módulo com dívida de artefato invisível. Leia o ledger em `sdlc-orchestrator` (seção *Artifact Ledger*) e verifique cada linha contra o repo:
 

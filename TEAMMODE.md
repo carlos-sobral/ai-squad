@@ -299,6 +299,38 @@ Cada agent precisa de prompt **focado, self-contained e específico no output**:
 
 ---
 
+## Ciclo de vida — teammate ocioso não é grátis
+
+Um teammate **não é uma thread**: é um processo Node completo, rodando dentro de um tmux server dedicado (socket `claude-swarm-<pid-do-parent>`), criado detached. Isso tem duas consequências que só aparecem no `ps`.
+
+**1. Ele não termina quando o trabalho acaba.** Fica no estado `Ss+`, aguardando no painel — é justamente isso que o mantém endereçável por `SendMessage`. Medido em 2026-08-28: um teammate `haiku` cuja tarefa inteira era responder uma palavra ficou residente em **~360 MB**, e assim permaneceria indefinidamente.
+
+Por isso a regra é **encerrar por default**:
+
+```
+TaskStop({ task_id: "<nome-do-teammate>" })
+```
+
+Mantenha um teammate vivo **apenas** quando existir uma próxima instrução clara e próxima para ele. "Vai que eu preciso depois" não é motivo — o depois quase nunca vem, e enquanto isso são centenas de MB parados.
+
+O trade-off é real e vale declarar: `TaskStop` é **irreversível quanto ao contexto**. Depois dele o nome deixa de resolver (`No agent named '<nome>' is reachable`) e o transcript não volta. Se precisar do agente de novo, abra outro passando o contexto necessário — costuma sair mais barato que segurar memória por uma opcionalidade que não se exerce.
+
+> Não use `shutdown_request` para isso. É protocolo legacy, e a própria tool instrui a não originá-lo. `TaskStop` é o mecanismo corrente.
+
+**2. Órfãos sobrevivem à sessão que os criou.** O tmux server tem `ppid 1` — ele é daemon, não filho do `claude`. Se a sessão parent morre mal ou é suspensa com `Ctrl+Z` (`STAT=T`), ninguém executa o teardown e os teammates ficam vivos para sempre. Um caso observado rodava havia **16h**, e no `/tmp/tmux-<uid>/` sobrava ainda um socket de três dias antes.
+
+Para varrer o que já vazou:
+
+```bash
+~/.claude/scripts/reap-orphan-teammates.sh                       # dry-run: lista ORFAO / SUSPENSO / RESIDUO / OK
+~/.claude/scripts/reap-orphan-teammates.sh --kill                # mata órfãos de parent morto
+~/.claude/scripts/reap-orphan-teammates.sh --kill --include-suspended   # inclui parents apenas suspensos
+```
+
+`SUSPENSO` é tratado à parte de propósito: um parent em `STAT=T` continua retomável com `fg`, e matá-lo devolveria a sessão sem os teammates dela.
+
+---
+
 ## Dica de workflow
 
 Uma forma confortável de trabalhar:
@@ -310,7 +342,8 @@ tmux new-session -s projeto
 # Dentro do tmux, abrir Claude Code com permissões automáticas
 claude --dangerously-skip-permissions
 
-# Quando terminar, desanexar (mantém tudo rodando)
+# Antes de sair: encerre os teammates que não têm próximo passo (TaskStop)
+# Desanexar mantém TUDO rodando — inclusive teammates ociosos
 # Ctrl+B + D
 
 # Para voltar depois

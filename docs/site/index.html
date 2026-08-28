@@ -1719,7 +1719,7 @@ frontend-engineer:
           <span>teammates em tmux</span>
         </div>
         <div class="step-title">Implementação em paralelo</div>
-        <div class="step-context">Quando dois agentes rodam ao mesmo tempo, viram <strong>teammates</strong>: cada um num painel tmux separado, comunicam por mensagens internas, contam progresso ao orchestrator. Você vê tudo em tempo real.</div>
+        <div class="step-context">Quando dois agentes rodam ao mesmo tempo, viram <strong>teammates</strong>: cada um num painel tmux separado, comunicam por mensagens internas, contam progresso ao orchestrator. Você vê tudo em tempo real. Um teammate é um processo de verdade (~360 MB residentes), e ele <em>não</em> termina sozinho quando o trabalho acaba — por isso o orchestrator encerra cada um com <code>TaskStop</code> ao fim da etapa, e <code>reap-orphan-teammates.sh</code> varre os que vazaram de sessões mortas ou suspensas.</div>
         <div class="human-touch"><span class="ht-icon">👁️</span> Tech Lead acompanha (não interrompe — agentes param e perguntam se a spec tem buraco)</div>
         <div class="artifact">
           <div class="artifact-head">
