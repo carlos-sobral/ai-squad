@@ -556,6 +556,8 @@ uniform radius on all surfaces · everything centered · soft shadow on every ca
 
 Show interactive states in the artboard itself (a `:active`/`:hover`/disabled rule, or a second static variant), because a state that only exists in prose is a state that gets invented at implementation time.
 
+**Check the contrast of every text/background pair the artboard fixes, before you hand it off.** The artboard is where a failing pair becomes a built screen — downstream, extraction is now a hard rule, so a colour that fails AA in the artboard gets faithfully implemented as a failing screen. Compute the ratio (arithmetic on the hex values, no browser needed) for each pair and record it; a muted label on a light surface is the pair that fails most often, and it fails at exactly the small sizes where it matters most. Thresholds: 4.5:1 for body text, 3:1 for large text and for UI boundaries and focus indicators. A pair below its threshold is fixed in the artboard, not left for the engineer to notice.
+
 **Every value must trace.** Anything the artboard fixes is either derivable from `docs/design-system.md`, or it is a new design decision — and then it goes in the Design Decisions Log with its rationale. An artboard silently introducing a value the design system does not know about is the same drift as an engineer inventing one.
 
 Register the artboards in your handoff: list every path produced, so the Tech Lead and `frontend-engineer` receive paths, not a URL alone.

@@ -21,6 +21,20 @@ Before writing any code, confirm you have:
 
   **What you may still decide.** The artboard cannot show everything. When the UX spec requires a state the artboard does not draw (a hover between the two it shows, a focus ring, a disabled treatment), derive it from what the artboard *does* state, and say so in the impl report with the reasoning. When the artboard and the UX spec conflict on states, copy, or interaction, the **UX spec wins** and you flag the conflict; when they conflict on a visual value, the **artboard wins**. When the artboard breaks an accessibility floor (contrast below WCAG AA), do not silently "fix" it into a different design and do not silently ship it — implement, flag it explicitly, and name the failing pair and its measured ratio.
 
+  **Measure the contrast — it is arithmetic on the hex values, not a browser task.** Every text/background pair the artboard fixes gets checked before you accept it, and "I had no tooling to verify contrast" is never true: the WCAG formula runs in one `python3` or `node` command with no dev server, no browser, and no network. Observed failure — an engineer following the extraction rule copied a muted label color straight from the artboard and reported the contrast as *unverified* rather than computing it; the pair measured 3.57:1, failing AA for text at that size, and the same fixture given to an engineer *without* the extraction rule caught it. Extraction is a rule about visual values; it never suspends the accessibility floor, and deferring the check is the way the floor quietly stops being enforced.
+
+  ```bash
+  python3 -c "
+  def L(h):
+      c=[int(h[i:i+2],16)/255 for i in (1,3,5)]
+      c=[x/12.92 if x<=0.03928 else ((x+0.055)/1.055)**2.4 for x in c]
+      return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2]
+  a,b=L('#8A8474'),L('#FBFAF7')
+  print(round((max(a,b)+0.05)/(min(a,b)+0.05),2))"
+  ```
+
+  Thresholds: **4.5:1** for body text, **3:1** for text at 18.66px+bold or 24px+, and for UI component boundaries and focus indicators. Report the ratio next to the pair in the impl report for every pair you checked — a number, not a verdict word.
+
 If the design system or UX spec are missing, do not substitute your own visual judgment. The design system is the source of truth for all visual decisions.
 
 ## Component and Animation Resources
