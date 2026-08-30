@@ -6,6 +6,43 @@
 
 ---
 
+## This project runs on ai-squad
+
+> Keep this section. It is not a placeholder — it is the process contract for anyone,
+> human or agent, who opens this repo.
+
+This repo follows the [ai-squad](https://github.com/carlos-sobral/ai-squad) spec-driven SDLC:
+specialized agents and skills installed in `~/.claude/agents/` and `~/.claude/skills/`.
+
+**Entrypoint.** Every unit of work — feature, module, hotfix, spike — starts with
+`/sdlc-orchestrator`. Do not start editing code from a loose chat request. The orchestrator
+triages the work (T1/T2/T3) and decides which stages actually apply; a one-line fix does not
+get a PRD, but the decision to skip is the orchestrator's, not an improvisation.
+
+**Other entrypoints.** `/onboard-brownfield` (once per pre-existing repo, before anything else),
+`/product-backlog` (what to build next and why this order), `/goal` (hand an in-flight goal to
+autonomous execution once the early phases are done).
+
+**Flow.** idea brief → PRD → UX spec → tech spec → implementation → review (architecture,
+security, quality) → e2e QA → merge → retrospective. Each stage has an owning agent and
+writes an artifact; the artifact is the handoff, not a chat summary.
+
+**Non-negotiable gates.** These do not get skipped for speed:
+- No implementation without an approved tech spec.
+- No merge without review passing and e2e verification.
+- Every completion claim quotes the command and its output. A subagent's "DONE" is a claim to
+  verify, not evidence to relay.
+- The retrospective runs at the end of a module — it is how the squad's own prompts improve.
+
+**If the agents are not installed** (fresh machine, teammate's laptop, CI): clone ai-squad and
+run `./install.sh`. Until then, follow the flow and the gates above manually — the process is
+the contract, the agents are the accelerator.
+
+**If this repo also has an `AGENTS.md`** for other tooling, point it at this file rather than
+forking the process into two descriptions that drift.
+
+---
+
 ## What is this project?
 
 [One paragraph describing the product: what it does, who uses it, and why it exists.]
