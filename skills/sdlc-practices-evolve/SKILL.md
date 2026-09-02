@@ -104,10 +104,32 @@ Iterate gaps in priority order. Stop when per-run cap is reached.
 2. Generate the diff respecting `frozen_sections` and `constraints`
 3. Apply via `Edit`
 4. Commit: `git -C ~/.claude/agents add {agent}.md && git commit -m "sdlc-practices-evolve: T1 — {gap-name} — {agent} — source: {url}"`
-5. If the agent has an `Eval Suite` with `cases`, run it (spawn `Agent` with `subagent_type: {agent}` for each case, grade per the `expect` rules)
-   - `new_score < baseline` → `git -C ~/.claude/agents revert HEAD` (revert just this commit), log the regression, continue with next gap
+5. **Validate — and make sure you are validating the version you just wrote.**
+
+   **Never spawn `subagent_type: {agent}` for this.** A subagent loads the agent definition as it stood
+   at the start of *this* session, not the file you just edited. It would grade the version you
+   replaced and hand you a confident green about the wrong target — the failure mode with no red
+   output and nothing prompting you to look twice.
+
+   If the agent has an `Eval Suite` with `cases`, run it like this instead:
+   - **Doer** — `Agent` with `subagent_type: general-purpose`, `model` taken from the target agent's
+     frontmatter, and the **full text of the edited `.md`** pasted into the prompt as its operating
+     instructions, followed by the case `input`. This is an approximation of the real agent (no tool
+     restrictions, no frontmatter `effort`) — say so when reporting, and never call it more than it is.
+   - **Baseline** — measured with the *same* instrument, from the previous revision's text
+     (`git -C ~/.claude/agents show HEAD~1:{agent}.md`). A baseline read through `subagent_type` and a
+     post-edit score read through pasted text are two different instruments; comparing them measures
+     the instrument, not the change.
+   - **Grader** — a fresh `general-purpose` subagent that sees only the doer's final output, graded
+     per the `expect` rules. It must not see the doer's thread.
+   - `new_score < baseline` → `git -C ~/.claude/agents revert HEAD` (revert just this commit), log the
+     regression, continue with next gap
    - `new_score >= baseline` → keep
-6. If no eval suite (e.g., agent has stub `cases: []`), apply but flag in the run summary that this change is **unvalidated** — surface so user can review
+
+6. **If the evals did not run — no `cases`, or you chose not to spawn agents — the change is
+   `unvalidated`.** Count it, name it as unvalidated in the run summary, and record it in
+   `last-run.json` (`validation_method`, `unvalidated_count`). Never describe an unvalidated change as
+   validated, and never let the run summary imply a gate ran when it did not.
 
 ### For T2 changes
 Same flow as T1, with two additions:
@@ -165,11 +187,36 @@ git -C ~/.claude/agents tag post-sdlc-practices-evolve-${TS}
 git -C ~/.claude/skills tag post-sdlc-practices-evolve-${TS}
 ```
 
-Sync changes to ai-squad working tree (do **not** push):
+Sync changes to the ai-squad working tree (do **not** push).
+
+**The repo's own `skills/` directory is the allowlist — iterate it, never glob the global.** The global
+holds private and work skills that must never reach a public repo, and a blanket copy also flattens
+every skill's contents into `skills/` root (a trailing-slash `cp -r` copies *contents*, not the
+directory), colliding every `SKILL.md` into one file while updating none of the real skills.
+
+```bash
+REPO=/Users/carlos.sobral/github-repos/ai-squad
+
+cp ~/.claude/agents/*.md "$REPO/agents/"
+
+# Skills: one directory at a time, driven by what the repo already carries.
+for dir in "$REPO"/skills/*/; do
+  name=$(basename "$dir")
+  [ -d "$HOME/.claude/skills/$name" ] && rsync -a --delete "$HOME/.claude/skills/$name/" "$dir"
+done
 ```
-cp ~/.claude/agents/*.md /Users/carlos.sobral/github-repos/ai-squad/agents/
-cp -r ~/.claude/skills/*/  /Users/carlos.sobral/github-repos/ai-squad/skills/
+
+**Then run the detector. It must print nothing.**
+
+```bash
+diff <(git -C "$REPO" ls-files skills/ | cut -d/ -f2 | sort -u) \
+     <(ls "$REPO/skills" | sort -u)
 ```
+
+Any line of output is a real problem, and the two directions mean different things: a `>` line is an
+entry on disk that the repo does not track — a leaked private skill or a stray file; delete it before
+committing. A `<` line is a tracked skill that vanished from disk. Never `git add -A` in the repo
+without having seen this command print nothing.
 
 Write `~/.claude/logs/sdlc-practices-evolve/last-run.json`:
 ```json
@@ -180,6 +227,9 @@ Write `~/.claude/logs/sdlc-practices-evolve/last-run.json`:
   "t2_count": M,
   "t3_escalated_count": K,
   "cap_used": 5,
+  "validation_method": "eval-suite | none",
+  "unvalidated_count": U,
+  "skills_synced": true,
   "checkpoint_pre": "pre-sdlc-practices-evolve-{ts}",
   "checkpoint_post": "post-sdlc-practices-evolve-{ts}"
 }
@@ -210,6 +260,7 @@ sdlc-practices-evolve complete:
 - T1 applied: {count} — [one-line list]
 - T2 applied: {count} — [one-line list]
 - T3 escalated: {count}
+- Validation: {N of M changes validated against an eval suite | none — say which and why}
 - Cooldown: {active|inactive}
 - Top escalation: [most important one in 1 line]
 - Full digest + escalations: ~/.claude/logs/sdlc-practices-evolve/{date}-escalations.md
@@ -228,6 +279,9 @@ sdlc-practices-evolve complete:
 - **Never** disable or remove existing capability — that's T3
 - **Always** cite the source URL in every commit message and every escalation entry
 - **Always** validate via the agent's eval suite when one exists; flag unvalidated changes explicitly when no suite exists
+- **Never** validate an edited agent by spawning `subagent_type: {agent}` — that grades the definition from the start of the session, not your edit. Feed the edited file's text to a `general-purpose` subagent instead
+- **Never** sync skills with a blanket copy of the global — iterate the repo's own `skills/` directory, then run the leak detector and confirm it prints nothing before any `git add`
+- **Always** record `validation_method` and `unvalidated_count` in `last-run.json`, and report the same numbers in the run summary
 - **Always** stop at the per-run cap; remaining gaps queue to the escalation document
 - **Cross-agent T2 changes are transactions** — atomic apply or atomic revert
 - **If `--t1-only` is forced** by cooldown: T2 is deferred to escalation document; only T1 is applied
@@ -240,3 +294,5 @@ sdlc-practices-evolve complete:
 - **Stage filter drops everything:** the project context is too conservative for the agent's domain (e.g., MVP project running security audit). Honest outcome — surface as "no actionable T1/T2 this run; T3 deferred until {trigger condition}".
 - **Eval revert chain:** if 3+ T1/T2 changes in one run get reverted by their evals, stop the run early and surface as "research findings did not validate against the existing eval suite — review eval suite for staleness or research source quality".
 - **No eval suite on a target agent:** unvalidated changes are dangerous. Cap unvalidated T1/T2 at 1 per run; escalate the rest of that agent's gaps to T3 with a "needs eval suite first" note.
+- **A green eval that graded the wrong prompt:** the single most likely way this skill lies to you. Spawning `subagent_type: {agent}` after editing `{agent}.md` returns a result about the pre-edit definition — no error, no red output, just a confident score answering a question you did not ask. If an eval passes without you having pasted the edited file's text into the doer, the number is about the old version. See Application step 5.
+- **A sync that copies everything and updates nothing:** `cp -r ~/.claude/skills/*/ <repo>/skills/` copies each skill's *contents* (trailing slash), so it flattens loose files into `skills/` root, collides every `SKILL.md` into one, leaves the real skill directories untouched, and drags private skills into a public repo. Measured 2026-09-01 on a sandbox copy: 9 tracked skills in, 7 stray files at root, `SKILL.md` overwritten by the alphabetically-last skill, internal CSVs leaked, zero public skills actually updated. Use the loop + detector in Versioning + rollback.

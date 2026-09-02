@@ -5,7 +5,7 @@ description: "Runs the self-improvement loop for an ai-squad agent (manual invoc
 
 You are running the **auto-research loop** for one agent in the ai-squad system. Your job is to refresh that agent's knowledge from authoritative public sources, validate the change against its Eval Suite, and either commit the improvement or revert.
 
-This is a high-stakes operation: a bad edit silently degrades every future invocation of the agent. The Eval Suite is the gate that makes auto-commit safe. **Never bypass the eval.**
+This is a high-stakes operation: a bad edit silently degrades every future invocation of the agent. The Eval Suite is the gate that makes auto-commit safe. **Never bypass the eval — and never let it grade a prompt other than the one on disk.** An eval pointed at the wrong version of the prompt is not a weaker gate; it is a gate that reports green while nothing is being checked.
 
 ---
 
@@ -69,7 +69,11 @@ Stop if either block is malformed. Do not attempt to fix YAML errors — report 
 Before any edit, run the Eval Suite on the **current** prompt to establish a baseline:
 
 For each case in `Eval Suite > cases`:
-1. Spawn the **agent under test** as a subagent (`Agent` tool with `subagent_type: {agent_name}`) and pass the case's `input` as the only diff/code to review. Frame the prompt so the agent treats it as a normal review request. This is the **doer**.
+1. Spawn the **doer**: `Agent` with `subagent_type: general-purpose`, `model` set from the target agent's frontmatter, and the **full text of `~/.claude/agents/{agent_name}.md`, read from disk in this step**, pasted into the prompt as the doer's operating instructions — followed by the case's `input`, framed so it reads as a normal request of that agent.
+
+   **Never use `subagent_type: {agent_name}`, here or in Step 6.** A subagent loads the agent definition as it stood at the *start of this session*, not what is on disk. In Step 6 that means grading the version you just replaced; in Step 2 it diverges the moment anything has already edited the file this session (an earlier `/auto-research`, a `/sdlc-practices-evolve` run). Either way the result arrives with no error and no red output — a confident score about a prompt that is not the one under test. And the two scores must be read by the **same instrument**, or the comparison measures the instrument rather than the change.
+
+   The pasted-text doer is an *approximation* of the real agent: no tool restrictions, no frontmatter `effort`. That is acceptable because baseline and post-edit are approximated identically. It is not acceptable to report the result as if the real agent had run — say which instrument produced the number.
 2. Capture the agent's output (the findings it produced).
 3. **Grade the output.** A case has either `expect` (rule-based grading) or `rubric` (LLM-as-judge grading) — never both. Apply whichever is present:
 
@@ -151,7 +155,9 @@ Use the `Edit` tool to apply each diff to `~/.claude/agents/{agent_name}.md`. Ap
 
 ### Step 6 — Re-run the eval on the modified prompt
 
-Repeat Step 2 with the now-modified agent file. Compute `new_score`.
+Repeat Step 2 against the **edited** file — re-read `~/.claude/agents/{agent_name}.md` from disk so the doer receives the text you just wrote in Step 5. Same instrument, same model, same grading procedure. Compute `new_score`.
+
+**Before comparing the two scores, prove the doer actually received the edit.** Pick a distinctive string from one of the diffs applied in Step 5 and confirm it appears in the text you pasted into the doer. If it does not, the comparison is void — fix the read and re-run. Do not record the number: a `new_score` computed over the pre-edit text is indistinguishable from a real one, and it is the exact shape of result nobody goes back to question.
 
 ### Step 7 — Decide and act
 
@@ -161,6 +167,7 @@ Apply this decision rule:
 |---|---|
 | `new_score >= baseline_score` AND `new_score >= pass_threshold` | **Commit.** Run `git add ~/.claude/agents/{agent_name}.md` then `git commit -m "auto-research({agent_name}): {one-line summary of topics that produced findings}"`. The commit message body should list the topics with non-empty findings. |
 | `new_score < baseline_score` OR `new_score < pass_threshold` | **Revert.** Run `git checkout -- ~/.claude/agents/{agent_name}.md` to restore the pre-edit state. Log the regression with details. |
+| The eval did not actually run as specified — no `cases`, the doer received text other than the edited file, the grader was skipped, or you chose not to spawn subagents | **Never commit.** Restore with `git checkout -- ~/.claude/agents/{agent_name}.md`, or leave the diff applied and uncommitted when `update_policy: propose`. Log `decision: aborted` and name what did not run. An auto-commit gated on an eval that did not really run is worse than having no gate: the log records "validated" and nobody looks again. |
 
 Do not commit if `update_policy: propose` — instead, leave the diff applied (uncommitted) and present it to the user for review.
 
@@ -175,6 +182,8 @@ date: {YYYY-MM-DD}
 duration_seconds: {elapsed}
 baseline_score: {0.00-1.00}
 new_score: {0.00-1.00}
+instrument: pasted-prompt-general-purpose   # how both scores were measured; must be identical for the two
+edit_confirmed_in_doer: true | false        # Step 6 check — false means new_score is void
 decision: committed | reverted | no-op | aborted
 commit_sha: {sha or "n/a"}
 ---
@@ -212,6 +221,8 @@ When invoked with `all`:
 ## Hard rules
 
 - **Never** bypass the eval. If the eval is broken, fix the eval — do not commit prompt changes blind.
+- **Never** run the eval through `subagent_type: {agent_name}`. A subagent carries the session-start definition, so it grades a prompt other than the one on disk — silently, and green. Paste the file's text into a `general-purpose` doer, for the baseline and for the post-edit run alike.
+- **Never** compare a baseline and a `new_score` produced by different instruments, and never record a `new_score` without confirming the doer received the edit (Step 6).
 - **Never** edit a frozen section. The frozen list is the contract that the rest of the SDLC depends on.
 - **Never** invent findings. If web search returns nothing of value, the run produces no edits — that is fine.
 - **Never** make destructive git operations beyond `git checkout -- {single file}` for revert. No reset, no force, no branch operations.
@@ -228,6 +239,7 @@ When invoked with `all`:
 
 - **Eval cases that drift out of date:** if the same case fails 3 runs in a row, surface a warning that the case may need updating (e.g., the agent legitimately changed how it formats severity and the eval grader is now matching the wrong string).
 - **Baseline already below threshold:** indicates the agent is broken or the eval is broken; do not run research.
+- **A green eval that graded the wrong prompt:** the highest-consequence failure in this loop, because it ends in a commit. Running the doer through `subagent_type: {agent_name}` returns a score about the definition loaded at session start — in Step 6, that is the version the edit replaced. There is no error, no red output, nothing that prompts a second look: just a `new_score >= baseline_score` that reads like a passing gate and auto-commits a change nobody validated. Two tells worth naming, because both read as reassurance: `new_score` **identical** to `baseline_score` across every case is evidence the doer never saw the edit before it is evidence of a neutral change; and a score that moves for cases the diff could not possibly affect means the instrument changed, not the prompt. The mechanical guard is Step 6 — confirm a distinctive string from the applied diff is present in the text handed to the doer, and treat `edit_confirmed_in_doer: false` as a void run, not a failed one.
 - **Web search returns the same content every day:** topic queries may be too narrow; surface as a hint to broaden them.
 - **Constraint cap (500 lines) hit:** likely over-eager edits; reject and log so a human can review what was attempted.
 - **Net no-op runs:** several days in a row with "no edits proposed" is healthy if the domain is stable, but if it persists for weeks, the topic queries may need refresh.
