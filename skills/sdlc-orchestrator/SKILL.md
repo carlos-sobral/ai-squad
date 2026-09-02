@@ -208,6 +208,29 @@ Para módulo com tela nova, acrescente o check dos artboards — um por tela dec
 ls docs/design/canvas/*.dc.html 2>/dev/null || echo "FALTA artboards do módulo"
 ```
 
+**E rode também o check dos GATES, que é o que a lista de caminhos fixos acima não pega.**
+Um artefato de gate não tem caminho previsível — ele é `docs/agents/<papel>/<data>-<slug>.md` —
+e por isso a ausência dele é invisível para um `test -f`. Medido em 2026-09-02, num módulo T3
+com Risk Surface `critical`: o orquestrador rodou **sete** reviews e esqueceu **três** gates da
+DoD (`tech-writer`, `performance-engineer`, `product-marketing-manager`); nenhum apareceu até o
+consistency check varrer o ledger, já com o PR quase aberto. A causa não é desconhecimento da
+regra — é que **profundidade de review se parece com largura de gate por dentro**: cada rodada
+de review *sente* como progresso no gate, e a lista do que não rodou não está em lugar nenhum.
+
+```bash
+# DATA = a data do módulo (não necessariamente hoje: um módulo pode atravessar dias)
+DATA=$(date +%Y-%m-%d)
+for a in qa-engineer performance-engineer tech-writer product-marketing-manager; do
+  ls docs/agents/$a/${DATA}-*.md >/dev/null 2>&1 \
+    && echo "OK    $a" || echo "FALTA $a — gate da DoD sem artefato deste módulo"
+done
+```
+
+`product-marketing-manager` só conta como `FALTA` quando o PRD declara `user-facing: yes` **e**
+o módulo é shippable; `performance-engineer` (modo gate) na primeira entrega do módulo. Para os
+outros dois não há exceção. **Um `FALTA` aqui bloqueia a DoD com a mesma dureza de um artefato
+de caminho fixo ausente** — e, ao contrário daquele, ninguém vai tropeçar nele por acaso.
+
 Para cada `FALTA` cujo artefato esteja vencido: ou ele é produzido antes do merge, ou o adiamento
 vira registro escrito com dono e módulo-alvo. **Silêncio não é adiamento válido.** Um artefato
 vencido e ausente bloqueia a DoD com a mesma dureza do frontend não implementado num módulo de UI.
@@ -318,6 +341,26 @@ Whenever two or more agents can run in parallel, spawn each one as a **named age
 ```
 
 Always pass `model` explicitly on every Agent call — never rely on the default. Always open the prompt with `EVENT_SCOPE: <stage>` — that one line is what makes the stage's event log a single file instead of N fragments.
+
+### Isolamento de árvore — é parâmetro do dispatch, não recomendação no prompt
+
+**Quando houver mais de um agente com permissão de escrita ativo na sessão, cada um que muta a
+árvore recebe `isolation: "worktree"` na própria chamada `Agent`.** Não é uma orientação a
+escrever no prompt: é um parâmetro, porque o prompt não é um controle.
+
+Medido em 2026-09-02: um `fork` despachado com a instrução literal *"esta é uma passada só de
+leitura, NÃO conserte nada, reporte achados"* **editou e commitou cinco correções ao vivo** na
+árvore compartilhada, enquanto o agente que o disparou trabalhava nos mesmos arquivos. As cinco
+eram boas — uma era um bug real —, o que torna o caso mais instrutivo, não menos: **o resultado
+foi benigno por sorte, não por desenho.** A formulação que a engenheira envolvida deu é a que
+fica: *instrução em prompt não é controle sobre um agente que tem ferramenta de escrita.*
+
+O corolário incômodo, e ele é do orquestrador: as fronteiras de `allowed_files` de um plano
+protegem contra **conflito de merge** entre agentes com tarefas diferentes. Não protegem contra
+**dois processos com a mesma tarefa** — que é exatamente o que um fork é.
+
+Custo real do isolamento: um `npm ci` por agente. Custo real de não isolar: descobrir, pelo
+relato de um agente confuso, que "alguém" está editando os arquivos que ele acabou de escrever.
 
 ### The pane precondition — check it BEFORE spawning
 
