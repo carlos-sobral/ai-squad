@@ -1272,7 +1272,7 @@
         <span class="stage-tag">revisão</span>
         <h3>Gates antes do merge</h3>
       </div>
-      <div class="stage-desc">Code review contra spec, security review (OWASP/CWE/ASVS), perf gate na primeira entrega. <strong>Consistency-check gate</strong> classifica deltas em 5 classes: aligned / minor drift / divergent / undefined / legacy preservation. Risco aceito num gate só é válido como <strong>Security Exception Record</strong> (escopo, dono, rationale, controle compensatório, autoridade, expiração, follow-up) — sem expiração é inválido, e achado Critical nunca é aceito. Quando o projeto declara staging, o merge vai pra staging e a promoção a produção é gate separado (QA e2e + smoke contra a URL de staging). No subconjunto de alto custo de erro, o <code>deliberate-confrontation</code> adiciona o ataque/réplica que o fan-out do review-team não tem.</div>
+      <div class="stage-desc">Code review contra spec, security review (OWASP/CWE/ASVS), perf gate na primeira entrega. <strong>Consistency-check gate</strong> classifica deltas em 5 classes: aligned / minor drift / divergent / undefined / legacy preservation. Risco aceito num gate só é válido como <strong>Security Exception Record</strong> (escopo, dono, rationale, controle compensatório, autoridade, expiração, follow-up) — sem expiração é inválido, e achado Critical nunca é aceito. Quando o projeto declara staging, o merge vai pra staging e a promoção a produção é gate separado (QA e2e + smoke contra a URL de staging). No subconjunto de alto custo de erro, o <code>deliberate-confrontation</code> adiciona o ataque/réplica que o fan-out do review-team não tem. E o merge não é o fim da linha: <strong>deployar não é releasar</strong>. A estratégia de release é decisão declarada no Módulo 0 — <code>all-at-once</code> é escolha legítima para blast radius pequeno, mas precisa ser escolha escrita; quando é <code>flagged</code> ou <code>progressive</code>, vêm junto as guardrail metrics com valor de aborto e o caminho de rollback. Rampa sem condição de aborto não é progressive delivery, é outage mais lento.</div>
       <div class="stage-agents">
         <span class="agent-chip">software-architect</span>
         <span class="agent-chip">security-engineer</span>
@@ -1391,7 +1391,7 @@
     <div class="discipline">
       <div class="icon" style="background: #fee2e2;">🔒</div>
       <h3>Security review com modo LLM</h3>
-      <p>OWASP Top 10:2021, API Top 10:2023, CWE Top 25:2024, ASVS 4.0, NIST SSDF. Quando o diff toca código de LLM/agent/RAG, modo extra contra OWASP LLM Top 10:2025 — prompt injection, training data poisoning, model DoS. Evidência exigida é proporcional ao risco (não basta "não achei nada"); risco aceito vira exceção com data de expiração que re-bloqueia o gate ao vencer. Sua org pode declarar policy externa que os agentes passam a aplicar como gate adicional.</p>
+      <p>OWASP Top 10:2021, API Top 10:2023, CWE Top 25:2024, ASVS 4.0, NIST SSDF. Quando o diff toca código de LLM/agent/RAG, modo extra contra OWASP LLM Top 10:2025 — prompt injection, training data poisoning, model DoS. Evidência exigida é proporcional ao risco (não basta "não achei nada"); risco aceito vira exceção com data de expiração que re-bloqueia o gate ao vencer. Sua org pode declarar policy externa que os agentes passam a aplicar como gate adicional. A cadeia de suprimentos tem gate próprio no Módulo 0: lockfile commitado, scan de vulnerabilidade que barra HIGH/CRITICAL, SBOM nas imagens promovidas e <strong>provenance assinada</strong> ao lado dela — o SBOM diz o que existe dentro do artefato, a provenance diz de onde ele veio, e um build adulterado passa limpo por um scan de SBOM.</p>
       <div class="who">security-engineer</div>
     </div>
 
@@ -1400,6 +1400,13 @@
       <h3>Observabilidade contratada</h3>
       <p>Tech spec T2+ exige SLI/SLO + event schema + 2 alertas (1 SLO burn + 1 symptom). Pós-deploy +15min, validação automática de saúde: query analytics + alertas + SLO ok. Observabilidade não é "depois" — é parte da spec.</p>
       <div class="who">software-architect • cloud-architect</div>
+    </div>
+
+    <div class="discipline">
+      <div class="icon" style="background: #cffafe;">📐</div>
+      <h3>Fitness function por atributo</h3>
+      <p>Nomear o trade-off é uma afirmação; a fitness function é o que a mantém verdadeira. Quando a tech spec declara qual quality attribute é <em>load-bearing</em> — o ponto de sensibilidade do trade-off aceito —, ela declara junto a <strong>checagem automática que falha quando esse atributo erode</strong>: teste de direção de dependência, teto de bundle, asserção de p95 no endpoint cujo budget a spec gastou, gate de compatibilidade de schema. É código no pipeline de sempre, não artefato novo. O <code>software-architect</code> decide <em>qual</em> atributo; o <code>quality-architect</code> define <em>como</em> vira gate. Dois limites impedem que vire ritual: só para o atributo que a spec diz ser load-bearing, e a asserção precisa poder falhar pelo motivo que anuncia — guard que assere só cardinalidade passa verde enquanto os valores mudam por baixo.</p>
+      <div class="who">software-architect • quality-architect</div>
     </div>
 
     <div class="discipline">
@@ -1433,7 +1440,7 @@
     <div class="discipline">
       <div class="icon" style="background: #fee2e2;">🛡️</div>
       <h3>Enforcement determinístico</h3>
-      <p>Guardrails que viviam só em prompt — fáceis de o agente racionalizar e ignorar — viram hooks que o harness executa: <code>guard-bash</code> força confirmação humana em force-push e em <code>git add -A</code> amplo na fonte da verdade; <code>guard-stop</code> bloqueia encerramento quando houve edição de código + claim de sucesso + nenhum comando de verificação rodado. Fail-open por design, <code>ask</code> em vez de <code>deny</code>. O <code>install.sh</code> instala e conecta tudo com merge idempotente no <code>settings.json</code>.</p>
+      <p>Guardrails que viviam só em prompt — fáceis de o agente racionalizar e ignorar — viram hooks que o harness executa: <code>guard-bash</code> força confirmação humana em force-push e em <code>git add -A</code> amplo na fonte da verdade; <code>guard-stop</code> bloqueia encerramento quando houve edição de código + claim de sucesso + nenhum comando de verificação rodado. Fail-open por design, <code>ask</code> em vez de <code>deny</code>. O <code>install.sh</code> instala e conecta tudo com merge idempotente no <code>settings.json</code>. A mesma virada vale no dispatch: agente que muta a árvore recebe árvore própria via <code>isolation: worktree</code>, parâmetro da chamada — não recomendação no prompt. Instrução em prompt não é controle sobre um agente que tem ferramenta de escrita, e um revisor que lê a mutação de um implementador na árvore compartilhada reporta como defeito do código o que é rascunho do colega.</p>
       <div class="who">install.sh → ~/.claude/hooks/</div>
     </div>
 
