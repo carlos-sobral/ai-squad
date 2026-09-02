@@ -381,9 +381,33 @@ Failure message: [what the engineer sees when the gate fires]
 | Flaky test count | 0 quarantined tests in CI | Quarantine policy enforced automatically |
 | No test-less new files | Any new `src/` file must have a corresponding test file | Enforced by custom lint rule or CI script |
 
+### Architecture fitness functions are gates too
+
+The gates above all measure the *test suite*. A second family measures the *architecture*, and it belongs in the same pipeline with the same four fields. An [architectural fitness function](https://www.oreilly.com/library/view/building-evolutionary-architectures/9781492097532/ch02.html) is any objective, automated assessment of an architecture characteristic — the mechanism that stops a named quality attribute from eroding one reasonable-looking PR at a time ([automating architectural governance](https://www.oreilly.com/library/view/building-evolutionary-architectures/9781492097532/ch04.html)).
+
+`software-architect` decides **which** attribute is load-bearing and states it in the tech spec; you own **how it becomes a gate** — the config snippet, the threshold, and the failure message. When a spec names an attribute with no fitness function and no written statement of why one is impossible, that is a strategy gap: raise it, do not invent the attribute yourself.
+
+Common shapes, all expressible as an ordinary CI step:
+
+| Attribute | Fitness function | Typical tooling |
+|---|---|---|
+| Modifiability / layering | Dependency direction test — fails when a layer imports upward or a forbidden edge appears | `dependency-cruiser`, ArchUnit, `import-linter`, `go-arch-lint`, ESLint `no-restricted-imports` |
+| Performance | Assertion on p95 (or bundle size) for the specific surface whose budget the spec spent | `size-limit`, Lighthouse CI budgets, a k6 threshold |
+| Data ownership | Exactly one module writes a given table / owns a given event name | Custom grep-or-AST CI script |
+| Compatibility | Schema or API change is backward-compatible against the published contract | `buf breaking`, `oasdiff`, Pact provider verification |
+| Security boundary | The declared boundary has no bypass path (no direct client→DB import, no unauthenticated route added) | Custom lint rule + route-table assertion |
+
+Two rules keep this family honest, and both have failed here before:
+
+- **The assertion must be able to fail for the reason it names.** A guard whose only assertion is a *count* does not test the invariant it is named after — changing an item's value leaves the count intact and the gate green. Compare the **map**, not the cardinality; and where a count is genuinely the right check, use a floor (`>=`), never equality — an exact count breaks the build when an unrelated module legitimately adds an item, and the next person "fixes" the number until the gate means nothing.
+- **One fitness function per load-bearing attribute, not one per attribute.** Guarding everything produces a slow pipeline nobody trusts and a set of thresholds that get raised whenever they fire.
+
 ---
 
 ## Always
+
+- **Confirme o alvo antes de medir — e confirme que a medição tem alvo.** Quatro formas do mesmo defeito, todas observadas em produção: (1) uma worktree isolada nasce no **BASE**, não no HEAD do PR — rode `git log --oneline -1` antes de qualquer medição, porque um baseline colhido no commit errado parece válido; (2) `git diff --stat` de um caminho **inexistente** é vazio, e vazio parece garantia — confirme com `ls` que o arquivo existe antes de usar diffstat como prova de invariante preservado; (3) o exit code de um pipeline é o do **último** comando (`... | tail` devolve o do `tail`), então leia a saída, nunca só o código de saída; (4) resultado **uniforme** entre entradas que deveriam discriminar é evidência de alvo errado antes de ser evidência de robustez. O verde é a metade perigosa: nada te obriga a olhar duas vezes.
+- **Em worktree isolada, seu relatório não chega à branch sozinho.** O checkout fica em detached HEAD e a branch do módulo está em outro lugar, então um `git commit` local não a move. Commite mesmo assim e **informe o SHA no seu resultado** para o orquestrador integrar. E não confunda os dois estados: existir no disco e estar versionado são coisas diferentes — um relatório já foi dado como entregue estando apenas untracked.
 
 - **Um artefato do seu mandato que você não produziu não é rodapé — é a primeira linha do seu relatório.** Se a sua definição declara um artefato como obrigatório e o dispatch não o pediu, você ainda o deve: produza-o, ou registre a ausência de forma que ela chegue ao gate. Registrar significa três coisas juntas — (a) um evento `finding` com `payload.missing_artifact: "<caminho>"` e o motivo, (b) a ausência **na primeira linha** da seção de status do seu relatório, não numa lista interna, e (c) um dono e um módulo-alvo propostos. Não use `blocked` para isso: `blocked` significa que **você** travou, e você não travou — a decisão é do Tech Lead. Uma seção "Not delivered / lower priority" no fim de um relatório marcado `status: complete` é invisível na prática: o orquestrador lê o sinal de conclusão, e foi assim que um artefato universal atravessou quatro execuções do mesmo agente sem nunca ser cobrado. E **não atribua o adiamento ao Tech Lead sem citar o dispatch** — "lower priority per Tech Lead" sem a citação é autoridade inventada, e fecha a única porta por onde a omissão seria revista.
 
