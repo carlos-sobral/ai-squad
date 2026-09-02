@@ -285,7 +285,7 @@ Ferramentas per-projeto de alto blast-radius (Postgres/DB, cloud/Terraform/K8s) 
 
 | Modo | Quando usar | O que produz |
 |---|---|---|
-| **Setup mode** | Uma vez por projeto novo, antes do primeiro deploy | Pipeline de CI/CD, script de setup local, documentação de variáveis de ambiente |
+| **Setup mode** | Uma vez por projeto novo, antes do primeiro deploy | Pipeline de CI/CD, script de setup local, documentação de variáveis de ambiente, topologia de ambientes, estratégia de release e os gates de cadeia de suprimentos |
 | **Inventory mode** (novo) | Durante onboarding brownfield | Lê workflows de CI/CD existentes, popula `## Tooling` no CLAUDE.md, documenta infraestrutura atual |
 | **Review mode** | Ao revisar PRs que tocam em infra ou CI/CD | Revisão de segurança e conformidade de mudanças de infraestrutura |
 
@@ -296,6 +296,11 @@ Ferramentas per-projeto de alto blast-radius (Postgres/DB, cloud/Terraform/K8s) 
 # review mode
 /cloud-architect revisa as mudanças de infra deste PR
 ```
+
+Duas decisões que o Setup mode obriga a **declarar por escrito** no Módulo 0, porque a omissão delas só aparece em produção:
+
+- **Topologia ≠ estratégia de release.** A topologia responde *onde* o build cai (`staging.provider: none` ou staging compartilhado); a estratégia de release responde *quem vê*. **Deployar não é releasar.** `all-at-once` é escolha legítima para blast radius pequeno — produto local-first, ferramenta interna —, mas precisa ser escolha escrita, não omissão. Quando é `flagged` (exposição atrás de feature flag, com dono nomeado para remover a flag) ou `progressive` (canary → rampa por percentual), vêm junto as **guardrail metrics com valor numérico de aborto** e o **caminho de rollback automático**. Rampa sem condição de aborto não é progressive delivery, é outage mais lento.
+- **Cadeia de suprimentos com gate próprio.** Lockfile commitado (sem range flutuante resolvido no build), scan de vulnerabilidade contra o lockfile que barra HIGH/CRITICAL, e — para projetos que publicam imagem ou artefato — SBOM gerado e escaneado antes da promoção, com **provenance assinada** ao lado dele. O SBOM diz *o que existe dentro* do artefato; a provenance diz *de onde ele veio*, amarrando artefato a commit, builder e parâmetros de build. Um build adulterado passa limpo por um scan de SBOM — as duas respondem perguntas diferentes. Ações de CI de terceiros pinadas por SHA, nunca por tag móvel.
 
 ---
 
@@ -335,6 +340,8 @@ O "dentro do tmux" não é detalhe: a escolha do backend de painel acontece uma 
 A flag `--dangerously-skip-permissions` é necessária para o fluxo rodar de forma autônoma — sem ela, cada operação de cada agente pede confirmação manual.
 
 Um agente vira teammate por receber `name` na chamada do `Agent` — `TeamCreate`/`TeamDelete` não existem mais (removidas no Claude Code ~2.1.2xx) e `team_name` é aceito e ignorado.
+
+**Agente que muta a árvore recebe árvore própria** — `isolation: "worktree"` na chamada do `Agent`, parâmetro do dispatch, não recomendação no prompt. Instrução em prompt não é controle sobre um agente que tem ferramenta de escrita: um revisor e um implementador na mesma árvore produzem blocker inexistente, porque o revisor lê a mutação do outro e reporta como defeito do código. O prompt não deve pedir cuidado com a árvore — não deve haver árvore compartilhada para estragar.
 
 → **Guia completo de instalação e configuração:** [TEAMMODE.md](./TEAMMODE.md)
 
@@ -384,6 +391,9 @@ Antes do merge, o `software-architect` compara PRD ↔ tech spec ↔ diff do PR 
 - **(c) Divergent** — padrão novo conflita com especificação
 - **(d) Undefined** — feature não estava na spec (requer revisão)
 - **(e) Legacy preservation** (brownfield only) — mudanças intencionais ao código existente; exige citação de arquivo:linha
+
+### Fitness functions (por quality attribute load-bearing)
+Nomear um trade-off é uma afirmação; a fitness function é o que a mantém verdadeira. Quando a tech spec declara qual quality attribute é *load-bearing* — o ponto de sensibilidade do trade-off aceito —, ela declara junto a checagem automática que falha quando esse atributo erode: teste de direção de dependência, teto de bundle, asserção de p95 no endpoint cujo budget a spec gastou, gate de compatibilidade de schema. É código no pipeline de sempre, não artefato novo. O `software-architect` decide **qual** atributo; o `quality-architect` define **como** vira gate. Dois limites impedem que vire ritual: só para o atributo que a spec diz ser load-bearing (guardar tudo é não guardar nada), e a asserção precisa poder falhar pelo motivo que anuncia — guard que assere só cardinalidade passa verde enquanto os valores mudam por baixo. Quando o atributo genuinamente não é asserível, a spec registra isso e nomeia a checagem manual e seu dono.
 
 ### Gates de observabilidade (post-deploy)
 Contrato de observabilidade no tech spec (T2+): SLI/SLO + event schema + 2 alertas (1 SLO burn + 1 symptom). Pós-deploy, validação automática de saúde em +15min: query analytics + alertas + SLO ok. Configurável via `## Tooling > observability`.
