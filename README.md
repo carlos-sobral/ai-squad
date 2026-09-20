@@ -97,6 +97,16 @@ O script converte cada agent de `~/.claude/agents/` para `~/.config/opencode/age
 
 > **Nota:** o TeamMode com tmux e os enforcement hooks (`install.sh`) são específicos do Claude Code. No opencode, o paralelismo usa o mecanismo nativo de subagents/Task tool.
 
+## Usando com o Reasonix
+
+O Reasonix lê `~/.claude/skills/*/SKILL.md` nativamente, como o opencode — skills não precisam de conversão. Agents ele não lê; o análogo é uma skill com `runAs: subagent` no frontmatter, que o Reasonix executa em subagent isolado com o modelo de `subagent_model` do `config.toml`.
+
+```bash
+bash scripts/sync-reasonix-skills.sh
+```
+
+O script gera `~/.reasonix/skills/<agent>/SKILL.md` para os 13 agents: frontmatter reduzido a `name` + `description` mais `runAs: subagent` (`model`/`effort`/`version` saem), corpo byte-a-byte. Idempotente — regenera só os diretórios com nome de agent global ou com marcador `.from-claude-agent`; skills que você copiou de um `.claude/agents` de projeto ficam intactas.
+
 ## Usando com o DeepSeek Harness (dsh)
 
 O framework também funciona no [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Diferente do opencode, o dsh **não** lê `~/.claude/` — ele descobre skills em `~/.dsh/skills` (e `~/.agents/skills`), no formato `<nome>/SKILL.md` com frontmatter `name` + `description`. É o mesmo formato do Claude Code, então a porta é um espelho:
@@ -555,6 +565,7 @@ ai-squad/
 │   ├── metrics/             # collect.sh — DORA + engineering metrics
 │   │                        # validate-events.sh — conformidade do event log
 │   ├── sync-opencode-agents.sh  # Converte agents do Claude → opencode (~/.config/opencode/agents)
+│   ├── sync-reasonix-skills.sh  # Converte agents do Claude → Reasonix (~/.reasonix/skills, runAs: subagent)
 │   └── sync-dsh-skills.sh       # Espelha skills + agents do Claude → DeepSeek Harness (~/.dsh/skills)
 ├── templates/
 │   ├── CLAUDE.md            # Template de contexto para o seu projeto
