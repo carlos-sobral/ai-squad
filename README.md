@@ -97,6 +97,21 @@ O script converte cada agent de `~/.claude/agents/` para `~/.config/opencode/age
 
 > **Nota:** o TeamMode com tmux e os enforcement hooks (`install.sh`) são específicos do Claude Code. No opencode, o paralelismo usa o mecanismo nativo de subagents/Task tool.
 
+## Usando com o DeepSeek Harness (dsh)
+
+O framework também funciona no [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Diferente do opencode, o dsh **não** lê `~/.claude/` — ele descobre skills em `~/.dsh/skills` (e `~/.agents/skills`), no formato `<nome>/SKILL.md` com frontmatter `name` + `description`. É o mesmo formato do Claude Code, então a porta é um espelho:
+
+```bash
+bash scripts/sync-dsh-skills.sh
+```
+
+- **Skills** — um symlink por skill de `~/.claude/skills/` para `~/.dsh/skills/`. Sem conversão.
+- **Agents** — o dsh não tem definição de agent em arquivo (o análogo nativo é um *preset*, um diretório com `agent.cordis.yml` + persona — pesado demais para 13 papéis). Cada agent vira uma skill: frontmatter reduzido a `name` + `description` (`model`/`effort`/`version` saem — o modelo é o selecionado na UI), uma nota no topo mandando assumir o papel ou delegar via tool `subagent`, e o corpo preservado byte-a-byte. A tool `subagent` já vem ligada no preset `standard`.
+
+É idempotente — remove só o que ele mesmo criou (symlinks e diretórios com marcador `.from-claude-agent`), então skills escritas direto em `~/.dsh/skills` sobrevivem. O dsh observa a pasta: re-rode o script após mudar o global e o catálogo atualiza sem restart. Para conferir, abra **Commands** (`/`) no composer ou pergunte ao modelo para carregar uma skill pelo nome.
+
+> **Nota:** `~/.claude/commands`, os hooks do `~/.claude/settings.json` e o `CLAUDE.md` global ficam de fora de propósito — dependem de conectores ou de mecânica exclusiva do Claude Code. O `CLAUDE.md` do projeto o dsh lê sozinho, como `AGENTS.md`.
+
 ---
 
 ## Como funciona — o fluxo completo
@@ -539,7 +554,8 @@ ai-squad/
 │   ├── hooks/               # Enforcement hooks (guard-bash, guard-stop) — iron laws como hard-enforcement
 │   ├── metrics/             # collect.sh — DORA + engineering metrics
 │   │                        # validate-events.sh — conformidade do event log
-│   └── sync-opencode-agents.sh  # Converte agents do Claude → opencode (~/.config/opencode/agents)
+│   ├── sync-opencode-agents.sh  # Converte agents do Claude → opencode (~/.config/opencode/agents)
+│   └── sync-dsh-skills.sh       # Espelha skills + agents do Claude → DeepSeek Harness (~/.dsh/skills)
 ├── templates/
 │   ├── CLAUDE.md            # Template de contexto para o seu projeto
 │   └── docs/
