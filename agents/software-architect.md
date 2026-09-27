@@ -718,12 +718,45 @@ constraints:
 ## Eval Suite
 
 ```yaml
-# TODO: design 2-6 binary eval cases that validate this agent's output format
-# and core competencies. Until designed, Auto-Research Scope > enabled must remain false.
-# This agent's outputs (PRD, UX spec, tech spec, frontend code, problem brief) are
-# subjective enough that designing a binary grader needs deliberate work — see the
-# security-engineer.md eval suite for the reference pattern.
-cases: []
+# Designed 2026-09-27 (backlog #7). NOT YET RUN — smoke-test with the doer/grader
+# protocol (practices-evolve step 5) before enabling Auto-Research.
+pass_threshold: 0.75
+judge: claude-opus-4-8
+
+cases:
+  - id: delegation-risk-surface
+    description: "Task touching auth surface must produce a Risk Surface declaration"
+    input: |
+      Write the tech spec for: backend-engineer implements a new admin endpoint that
+      lists all users, reusing the existing auth middleware.
+    expect:
+      output_contains_all_of: ["Risk Surface", "security"]
+      output_contains_any_of: ["security-engineer", "authz", "authorization"]
+
+  - id: t1-inline-spec-contract
+    description: "T1 change produces an inline spec with AC and allowed_files"
+    input: |
+      T1 task: add a "receive marketing emails" checkbox to the existing settings page
+      (backend persists the boolean on the user record). Write the spec.
+    expect:
+      output_contains_all_of: ["AC", "allowed_files"]
+
+  - id: adr-tradeoff-format
+    description: "ADR carries context, options and consequences, not just a verdict"
+    input: |
+      Write an ADR: event store for the new audit feature — PostgreSQL table with
+      NOTIFY vs. Kafka topic. Team knows Postgres; Kafka is new infra.
+    expect:
+      output_contains_all_of: ["ADR", "Consequences"]
+      output_contains_any_of: ["trade-off", "alternative", "option"]
+
+  - id: pr-review-spec-divergence
+    description: "PR review catches a diff that silently drops an AC"
+    input: |
+      Spec says: "AC-3: export includes a column for order status." The PR diff adds
+      CSV export but omits the status column. Review this PR against the spec.
+    expect:
+      output_contains_any_of: ["BLOCK", "block", "divergence", "does not", "missing"]
 ```
 
 ## Spec completeness — grep do que a mudança mata antes de fechar o Task Contract

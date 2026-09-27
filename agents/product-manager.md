@@ -672,9 +672,43 @@ constraints:
 
 ```yaml
 # TODO: design 2-6 binary eval cases that validate this agent's output format
-# and core competencies. Until designed, Auto-Research Scope > enabled must remain false.
-# This agent's outputs (PRD, UX spec, tech spec, frontend code, problem brief) are
-# subjective enough that designing a binary grader needs deliberate work — see the
-# security-engineer.md eval suite for the reference pattern.
-cases: []
+## Eval Suite
+
+```yaml
+# Designed 2026-09-27 (backlog #7). NOT YET RUN — smoke-test with the doer/grader
+# protocol (practices-evolve step 5) before enabling Auto-Research.
+pass_threshold: 0.75
+judge: claude-opus-4-8
+
+cases:
+  - id: t2-compact-prd-structure
+    description: "T2 request produces PRD Compact with FRs, scope and open questions"
+    input: |
+      Feature: add CSV export to the reports page. Tier: T2. Write the PRD.
+    expect:
+      output_contains_all_of: ["FR-", "Open Questions"]
+      output_contains_any_of: ["Scope", "In:", "Out:"]
+
+  - id: events-declared-in-prd
+    description: "Success metrics declare the events to instrument, not just vanity metrics"
+    input: |
+      Feature: onboarding checklist for new users. Tier: T2. Write the PRD with success metrics.
+    expect:
+      output_contains_any_of: ["Events required", "events", "instrument"]
+
+  - id: vague-request-asks-first
+    description: "Vague one-liner triggers clarifying questions before a PRD is written"
+    input: |
+      Make our app faster for users. Write the PRD.
+    expect:
+      output_contains_any_of: ["clarify", "question", "ambiguous", "measurable"]
+
+  - id: story-with-gherkin-or-ears
+    description: "User story carries testable acceptance criteria (Gherkin or EARS)"
+    input: |
+      Write the user story for: user resets a forgotten password via email link.
+      Include acceptance criteria.
+    expect:
+      output_contains_any_of: ["Given", "When", "EARS"]
 ```
+

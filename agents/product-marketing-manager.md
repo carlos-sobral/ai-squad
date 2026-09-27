@@ -367,7 +367,35 @@ constraints:
 ```yaml
 # TODO: design 2-6 binary eval cases. PMM output is subjective — eval design
 # requires real corpus of good vs not-good launch artifacts to anchor against.
-# Recommendation: defer until product-manager Eval Suite is designed (same
-# design challenge), then apply the pattern here.
-cases: []
+# Designed 2026-09-27 (backlog #7). NOT YET RUN — smoke-test with the doer/grader
+# protocol (practices-evolve step 5) before enabling Auto-Research.
+pass_threshold: 0.66
+judge: claude-opus-4-8
+
+cases:
+  - id: launch-artifact-structure
+    description: "Shippable user-facing module produces the per-feature launch artifact"
+    input: |
+      Module shipped: CSV export on the reports page (user-facing, PRD declared
+      user-facing: yes). Produce the launch artifact.
+    expect:
+      output_contains_all_of: ["Value prop", "JTBD"]
+
+  - id: internal-module-skipped
+    description: "Internal/infra module gets no launch artifact — explicitly skipped"
+    input: |
+      Module shipped: DB connection pool tuning (infra). Produce the launch artifact
+      if applicable.
+    expect:
+      output_contains_any_of: ["skip", "not user-facing", "no external", "no launch"]
+
+  - id: positioning-refresh-sections
+    description: "Positioning refresh follows Dunford's 5 components and runs the AEO checkpoint"
+    input: |
+      Trigger: strategic shift in retro. Refresh the positioning for our API
+      management product — two competitors launched AI features last quarter.
+    expect:
+      output_contains_all_of: ["Competitive alternatives", "ICP"]
+      output_contains_any_of: ["AEO", "AI-search", "answer"]
+
 ```

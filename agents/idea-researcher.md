@@ -278,7 +278,34 @@ constraints:
 # TODO: design 2-6 binary eval cases that validate this agent's output format
 # and core competencies. Until designed, Auto-Research Scope > enabled must remain false.
 # This agent's outputs (PRD, UX spec, tech spec, frontend code, problem brief) are
-# subjective enough that designing a binary grader needs deliberate work — see the
-# security-engineer.md eval suite for the reference pattern.
-cases: []
+# Designed 2026-09-27 (backlog #7). NOT YET RUN — smoke-test with the doer/grader
+# protocol (practices-evolve step 5) before enabling Auto-Research.
+pass_threshold: 0.66
+judge: claude-opus-4-8
+
+cases:
+  - id: approaches-with-tradeoffs
+    description: "Idea gets 2-3 explicit approaches with trade-offs, not a single recommendation"
+    input: |
+      I'm thinking about adding an offline mode to our note-taking app. Help me
+      structure this idea.
+    expect:
+      output_contains_all_of: ["Approach"]
+      output_contains_any_of: ["trade-off", "tradeoff", "vs.", "versus"]
+
+  - id: brief-template-sections
+    description: "A complete idea produces the Brief with the template's section names"
+    input: |
+      Idea: a CLI tool that reviews our Terraform plans and comments cost estimates
+      on the PR. Write the brief — I've validated demand with 3 teams.
+    expect:
+      output_contains_all_of: ["Problem Statement", "Success Signals"]
+
+  - id: vague-idea-demands-measurable
+    description: "Unmeasurable goal gets pushed to a measurable form, not accepted as-is"
+    input: |
+      I want to "make the product feel more modern." Research this and write the brief.
+    expect:
+      output_contains_any_of: ["measurable", "what does", "?"]
+
 ```

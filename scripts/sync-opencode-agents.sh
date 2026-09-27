@@ -15,7 +15,10 @@
 #   - model:  replaced with the opencode model id (default sensedia/sensedia)
 #   - mode:   added as "subagent" so agents are invocable via the Task tool
 #   - version / effort: dropped (opencode ignores them)
-#   - body:   preserved byte-for-byte
+#   - body:   CLAUDE.md refs rewritten to AGENTS.md (opencode's native project
+#             context file — the AGENTS.md standard). This is the framework's
+#             harness-agnostic bridge: agents speak of "the project context
+#             file"; each adapter maps the name. (Backlog item #20, T1.)
 #
 # Usage: bash scripts/sync-opencode-agents.sh [--model sensedia/sensedia]
 #
@@ -63,7 +66,7 @@ for src in "$SRC_DIR"/*.md; do
       next
     }
     { print }
-  ' "$src" > "$dst"
+  ' "$src" | sed 's/CLAUDE\.md/AGENTS.md/g' > "$dst"
 
   converted=$((converted + 1))
   log "converted $name → $dst"

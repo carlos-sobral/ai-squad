@@ -32,8 +32,13 @@ Os arquivos existem e são muitos (1647 linhas, 93 agents distintos, 7 projetos)
 
 ## T2 — Adicionar capacidade (semanas)
 
-### 7. Eval suites pros 8 agents bloqueados
-Sem evals, auto-research não roda. Investimento direto pra cada um: 5–10 binary cases por agent, salvos no próprio frontmatter como `## Eval Suite`. O `auto-research` skill já lê esse formato. Esse é o gargalo número 1 do loop de melhoria contínua. **Progresso (2026-08-20):** `backend-engineer` + `cloud-architect` destravados (5 cases `expect` cada). Restam 4 de output subjetivo (`software-architect`, `product-manager`, `idea-researcher`, `product-marketing-manager`) que exigem `rubric` grading.
+### ~~7. Eval suites pros 8 agents bloqueados~~ — RESOLVIDO (2026-09-27)
+Todas as 13 suites agora existem com casos. Cronologia: backend+cloud destravados (2026-08-20);
+4 suites desenhadas para os agents de julgamento em 2026-09-27 (software-architect 4 casos,
+product-manager 4, idea-researcher 3, product-marketing-manager 3) com smoke de 1 caso cada —
+**designed, untested como gate**: rodar os casos completos via doer/grader antes de ligar
+`enabled: true` no Auto-Research. Todas as mudanças das runs de set/2026 validadas (backend 5/5,
+security 7/7, cloud 5/5, perf 3/3, quality 2/2, qa 3/3, fe 5/5).
 
 ### 8. Modo `release` no `cloud-architect` (ou agent dedicado)
 Hoje cloud-architect tem setup/inventory/review. Faltam: gerar release notes, bump de versão automatizado, changelog vs commits, validação de tag. Já tem retro lesson (commit `459a38f`) sobre "endpoint dry-run em release" — sinal de que o domínio é real.
