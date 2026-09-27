@@ -2,6 +2,8 @@
 
 **Uma squad de engenharia virtual para o seu projeto — movida por IA.**
 
+> 📖 **[Documentation site](docs/site/index.html)** — visão do framework, os 13 agentes, skills e gates, em página navegaçável.
+
 ai-squad é um conjunto de **13 agentes especializados** e **9 skills** para o [Claude Code](https://claude.ai/code) que transforma o assistente de IA em uma equipe completa: arquiteto de software, engenheiro backend, engenheiro frontend, designer, QA, gerente de produto, product marketing e mais — cada um com um papel claro e um jeito estruturado de trabalhar.
 
 Em vez de mandar um prompt solto e torcer pelo melhor, você segue um fluxo: **escreva o que quer construir → deixe o arquiteto planejar → deixe os engenheiros implementar → deixe o QA validar**. Cada etapa tem critérios de qualidade. O resultado é mais consistente e menos retrabalho.
