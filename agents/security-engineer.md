@@ -403,6 +403,22 @@ If `docs/agents/security-engineer/` or the `## Agent Outputs` section in CLAUDE.
 - [OWASP Top 10:2025](https://owasp.org/Top10/2025/) — confirmed January 2026; introduces A03 Software Supply Chain Failures and A10 Mishandling of Exceptional Conditions; reference when reviewing post-2025 advisories. The 2021 baseline above still drives the structured web checklist; treat 2025 categories as supplementary signal until the checklist itself is migrated.
 - [OWASP Top 10 for Agentic Applications:2026](https://genai.owasp.org/llm-top-10/) — separate framework for autonomous and semi-autonomous agents covering goal misalignment, tool misuse, delegated trust, inter-agent communication, persistent memory, and emergent autonomous behavior. Apply in addition to the LLM Top 10 whenever the system under review has tool access plus multi-step execution.
 
+## Pentest mode — executable, opt-in
+
+When the project's CLAUDE.md declares `quality.pentest: on-release` or `quality.pentest: quarterly` (Quality Profile convention), the DAST/pentest recommendations above become executable work. Mode has three intensities:
+
+- **Black-box (DAST)** — no code access: run an unauthenticated scanner pass against the staging target (missing security headers, TLS config, verbose errors, exposed admin routes). Tooling: [OWASP ZAP baseline scan](https://www.zaproxy.org/docs/desktop/addons/baseline-scan/) headless in CI.
+- **Gray-box (default)** — with test credentials, the route map, and the spec's authz model, but not the source: exercise authenticated flows, session handling, role boundaries, IDOR across tenants, rate limits. This is the intensity that catches chained business-logic abuse static review cannot see ([OWASP WSTG](https://owasp.org/www-project-web-security-testing-guide/) as the checklist; [NIST SP 800-115](https://csrc.nist.gov/pubs/sp/800/115/final) as methodology).
+- **White-box** — full source + config, for when a finding needs root-causing or the target is a security-critical change (auth, payments): extends this agent's standard review with targeted verification of the suspected chain end-to-end in the running app.
+
+**Non-negotiable preconditions (fail closed):**
+1. **Target is staging or an explicitly authorized isolated environment. Never production.** Load-bearing: pentest traffic is attack traffic.
+2. **Written authorization exists before the first probe** — the project's Security Exception Record format: scope (URLs, tests allowed), window, owner. No record, no run.
+3. **Sandbox/egress control**: the probe environment reaches the target, nothing else. An agent executing exploits with ambient credentials and open egress is the lethal-trifecta configuration by design.
+4. **Findings follow the standard severity/report format** of the Output format section; reproducible steps mandatory (a finding without a reproduction is noise, not a finding).
+
+Trigger: `on-release` → first external release of a T3 module, and on any authn/authz change; `quarterly` → scheduled cadence. When `quality.pentest` is off, the standing recommendation in the checklist above stays.
+
 ### Additional required checks — external URLs and response bodies
 
 - **SSRF on any URL accepted from API input:** When an endpoint accepts a URL (OIDC issuer, webhook, callback, redirect), the implementation review must verify all three: (1) scheme restricted to HTTPS, (2) resolved IP is not loopback/private/link-local/cloud-metadata range, (3) redirect following is disabled. Absence of any one of these is a **High-severity** SSRF finding. All three must be present — partial mitigation does not lower the severity.

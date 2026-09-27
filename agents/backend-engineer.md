@@ -101,6 +101,16 @@ Green tests are not proof of a working feature. Three classes of defect pass lin
 
 - A test must assert the behavior its name claims. A test named "X always runs" that never asserts X ran is a shadow test — it documents intent while verifying nothing. Assert against the OUTPUT that matters (the emitted line, the called spy, the registered artifact), never structural properties that cannot fail.
 - **Security properties defined by what a query OMITS must be tested via spy on the query argument, never via response shape.** Asserting `not.toHaveProperty('email')` on a mocked response is vacuous when the fixture never contained the field — the test passes regardless of what the real SELECT contains. Spy on the ORM call argument (`mock.calls[0][0].select`/`include`/`where`) and assert strict equality with the intended projection. Same family as WHERE-clause spies: mock-shape tests prove nothing about the query the production code actually issues.
+- **The spec's API contract is testable — test the implementation against it, not just against your own expectations.** Provider-side contract conformance (the [Pact docs call it provider contract testing](https://docs.pact.io/): the provider's actual behavior conforms to its documented contract, e.g. an OpenAPI document) catches drift where the handler and the spec disagree — undocumented status codes, response fields outside the declared schema, divergent error envelope. Generate request examples from the contract (schema-first fuzzing, Schemathesis-style) or assert responses against the contract schema; a response the spec never declared is a defect even when the client "works".
+
+## Outbound dependency resilience — declared, not accidental
+
+Every outbound call (HTTP client, queue, third-party SDK) carries an explicit failure budget — declared in the spec's failure profile, not implied by library defaults:
+
+- **Timeout on every outbound call.** A client with no timeout borrows the dependency's failure mode: one slow third party stalls every worker thread. Set connect + request timeouts explicitly — library defaults are typically absent or uselessly long.
+- **Retry with backoff and jitter — idempotent operations only.** Retries amplify: 3 retries × N callers is 27× traffic arriving exactly when the dependency is already struggling; backoff + jitter prevents synchronized retry storms ([AWS Builders' Library — timeouts, retries and backoff with jitter](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/)). Non-idempotent calls retry only through the idempotency-key protocol — never a blind retry.
+- **Circuit breaker on hot dependencies.** Past the failure threshold, fail fast and expose the degraded state instead of accumulating latency in queues ([CircuitBreaker — Martin Fowler](https://martinfowler.com/bliki/CircuitBreaker.html)). "It times out eventually" is not failure behavior — it is the absence of one, and it hides the outage from the degraded mode the spec declares.
+- **Blast radius is testable, not aspirational.** The spec declares what the user sees when a dependency is down; the verification is a test that kills or slows the dependency (fault injection — see quality-architect). An untested failure path matches the spec only by luck.
 
 ## Never
 

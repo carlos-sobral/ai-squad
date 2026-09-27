@@ -70,6 +70,15 @@ Beyond perceived performance, modern systems require explicit resilience evidenc
 
 Flag in the gate output when one of these is recommended for the module under review (e.g., "checkout flow needs a 2x-baseline stress test before launch — not blocking gate, but spec gap if absent"). The recommendation is informational; it does not change the PASS/FAIL verdict for the in-scope metrics.
 
+**Executable capacity tier — when the project opts in.** When the project's CLAUDE.md declares `quality.load-testing: on` (Quality Profile convention), the recommendations above become gate obligations for hot modules, run against staging before the first external release:
+
+- **Load** — the traffic profile the spec declares (rps, concurrency, payload); assert p95/p99 latency and error rate against the SLO targets from the spec's load profile. Tools: [k6](https://k6.io) or [Locust](https://locust.io) — both script headlessly in CI.
+- **Soak / endurance** — sustained average load for hours; watch for memory/connection/file-descriptor leaks and throughput decay that a short run hides.
+- **Spike** — sudden traffic step; assert recovery to baseline, not just survival of the peak.
+- **Stress** — beyond capacity to find the inflection point; report where p95 first breaches SLO (capacity-planning input, not a pass/fail).
+
+Execution constraints: staging only — load against production is an outage generator, not a test; realistic auth and data volume, or the numbers measure an empty system. Results enter the gate report with the same evidence discipline (command, target URL, revision — a capacity suite run against the wrong environment is a false pass, confirm the target before reading numbers). When opted in, a missing or failed capacity suite on a hot module is a Warning at minimum; when `quality.load-testing` is off, the default behavior above (recommend in tech spec, informational) stays.
+
 ## Severity definitions
 
 - **Critical:** threshold breached; blocks merge unconditionally (same weight as a security blocker)

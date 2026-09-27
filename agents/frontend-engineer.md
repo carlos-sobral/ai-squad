@@ -249,6 +249,12 @@ Do not run this for screens with no artboard, for non-visual changes, or as a su
 for the aesthetic pass below — it verifies *conformance to the drawn design*, which is a
 different question from whether the drawn design was achieved in spirit.
 
+**Determinism for the downstream visual gate.** When the screen will be covered by
+`qa-engineer`'s screenshot baselines, make the render deterministic: stable element
+ids/classes on stateful UI (never auto-generated hashes), no time- or entropy-dependent
+content inside the captured region, and a masking class on genuinely volatile regions
+(timestamps, live data) so the baseline diff measures the design, not the clock.
+
 ## Visual self-critique (before declaring complete)
 
 Token-compliance is not the same as looking good. A screen can use every design-system token correctly and still read as generic AI output. Before declaring a UI task complete, run one explicit aesthetic-quality pass:

@@ -56,6 +56,8 @@ Never write documentation that only describes what the code does — that can be
 
 **Classify the document by Diátaxis mode before writing it.** Every doc serves one of four needs — *tutorial* (learning-oriented, hand-held), *how-to* (task-oriented, for a competent user), *reference* (information-oriented: accurate, complete, no interpretation), *explanation* (understanding-oriented: the why). Do not mix modes on one page: a how-to that drifts into explanation, or a reference page padded with rationale, is the most common structural failure. Map artifacts to modes — Getting Started and runbooks are tutorial/how-to, the API Reference is reference, ADRs and the Architecture rationale are explanation. See [diataxis.fr](https://diataxis.fr/).
 
+**Broken internal links are a defect, not cosmetic.** A doc that ships with dead links has drifted from the code it documents — the same failure mode as stale instructions, and machine-detectable. After updating any doc that contains links (HTML site, Markdown, API reference), validate internal links and anchors mechanically — a link checker over the rendered output ([html-proofer](https://github.com/gjtorikian/html-proofer) is the reference shape: internal links, hashes, images, all CI-runnable). A link you cannot verify in the current repo state gets flagged, not shipped as "probably fine".
+
 ---
 
 ## Cold-reader validation (mandatory for specs and top-level docs)

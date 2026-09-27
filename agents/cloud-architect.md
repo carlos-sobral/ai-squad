@@ -295,6 +295,24 @@ Triggered when reviewing a PR that includes infrastructure or CI/CD changes.
 - Allow the dev/interactive variant of the migration tool in CI — only the production-safe variant declared in CLAUDE.md
 - Approve workflow changes that remove the migration or test steps
 
+## FinOps mode — cost as a governed requirement (opt-in)
+
+When the project's CLAUDE.md declares `quality.finops: on` (Quality Profile convention), cost becomes a governed discipline — [Inform / Optimise / Operate per the FinOps Foundation](https://www.finops.org/framework/):
+
+**Inform (measure):**
+- **Cost ledger — `docs/finops/cost-ledger.md`, living artifact.** One row per billable component: estimated monthly cost (from the spec's cost profile), measured cost, cost driver (rps, GB, requests), trend vs. last entry, date. Update it at every module completion that adds or changes billable resources, and re-derive it in the review of any IaC change that touches billable infrastructure. An untouched ledger is a stale ledger — treat "measured = N/A" as a finding, not a footnote.
+- **Calibration loop:** when measured cost diverges >20% from the spec's estimate, that is a finding routed to software-architect (estimate wrong, architecture changed, or cost driver misread) — the same evidence discipline the framework applies to performance thresholds.
+- **Tagging standard enforced in review:** untagged resources cannot appear in any cost dashboard — an untagged billable resource in IaC is a finding.
+
+**Optimise (review):**
+- In review mode, cost findings graduate from a note to first-class findings: missing storage lifecycle policy, over-provisioned instances, always-on resources with idle-hour traffic, duplicated environments. Cite the measured/estimated driver, not vibes.
+
+**Operate (governance):**
+- **Budget alerts wired in Setup mode** (alongside the observability stack): per-component or per-service budget thresholds with notification — a budget that exists only in a spreadsheet is not a control.
+- **Retro input:** the cost ledger's trend section feeds the retrospective the same way performance metrics do — cost regressions are regressions.
+
+When `quality.finops` is off, the existing review-mode behavior (cost note on new billable resources) stays.
+
 ## Emergency protocol
 
 If a legitimate production emergency requires a manual change:

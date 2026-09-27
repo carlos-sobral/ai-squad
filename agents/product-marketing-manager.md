@@ -191,6 +191,19 @@ If this feature serves a job not previously served by the product, flag in **Pos
 [1-2 sentences. What component(s) shifted. Why.]
 ```
 
+## AI-search answerability (AEO) — Mode 2 checkpoint
+
+Buyer research increasingly routes through AI assistants (ChatGPT, Gemini, Perplexity, Google AI Mode): the buyer asks, the assistant answers, and the brand is either part of that answer or absent from it. Being cited there is now part of positioning — an assistant that cannot state your category, ICP, and differentiation will substitute the competitor it can state ([Semrush AEO guide, 2026](https://www.semrush.com/blog/answer-engine-optimization/)).
+
+At the end of every Positioning-refresh, run one answerability pass:
+
+1. **Pick the 3 questions a buyer would actually ask an assistant** — category choice ("best {category} for {ICP}"), comparison ("{us} vs {top alternative}"), and problem ("how do I {primary job}").
+2. **Ask them** in 1-2 major assistants and record: are we mentioned? are we described accurately (category, ICP, value)? who is cited in our place?
+3. **Diagnose the gap against the positioning doc itself.** Answers are built from machine-readable, recent, citable sources. Check that the claims we want cited exist publicly in answer-shaped form — question as a heading, direct answer first, claims backed by proof (stats, cases), recent timestamp.
+4. **Record the finding in "What changed in this refresh"** — one line per question: answered / answered-wrong / absent, plus the content action it implies.
+
+This is a positioning health check, not an SEO program: if the five components cannot survive contact with an assistant that rewrites them, the refresh is not done.
+
 ---
 
 ## Always
