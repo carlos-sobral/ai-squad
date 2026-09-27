@@ -81,6 +81,22 @@ O ai-squad é distribuído sem CI. Validações faltando: frontmatter dos `.md` 
 ### 18. Onboard-greenfield
 `onboard-brownfield` existe; greenfield está como item 4 do backlog legacy. Vale completar: se a maioria dos projetos novos vai usar o framework do zero, o gap é maior do que parece.
 
+### 20. Núcleo agnóstico de harness + contrato de adapter (T2 com núcleo T3)
+**Origem:** crítica vs estado da arte (2026-09-27) — o framework é cada vez mais usado fora do Claude Code (ports: opencode, reasonix, dsh), mas o acoplamento medido é real: **136 referências a `CLAUDE.md` nos 13 agents** e **14 arquivos** citando mecânica específica (`Agent tool`, `TaskStop`, tmux panes, `SendMessage`).
+
+**Arquitetura proposta — 3 camadas:**
+1. **Core agnóstico** — processo, gates, artifacts, event log, métricas, conteúdo dos agents (já ~90% portável; as 6 modalidades `quality.*` de set/2026 são agnósticas por construção).
+2. **Contrato de harness** — exigências abstratas que qualquer harness precisa cumprir, com tabela de mapeamento por adapter: spawn de worker isolado (modelo escolhível) · enforcement determinístico pre-action/stop · arquivo de contexto do projeto · modo full-permission · sandbox/egress controlado · ciclo de vida do teammate (spawn→teardown). A postura de segurança (lethal trifecta — Willison) vira **requisito do framework**, implementado pelo adapter de cada harness.
+3. **Adapters** — os 3 sync scripts viram camada fina de cópia; a semântica vai para adapters com critério de aceite testável: **instalar no harness, rodar um módulo T1 smoke, event log correto**. Sem smoke, port é fé.
+
+**Sub-movimentos, em ordem:**
+- T1 — bridge AGENTS.md: agents citam "o arquivo de contexto do projeto" (nome por adapter); mata os 136 acoplamentos com um token
+- T2 — postura de segurança neutra: substituir menções a flags do Claude por "full-permission mode" + tabela de mapeamento; contrato dos hooks (lógica Python portável, wiring por adapter)
+- T3 — ciclo de vida de teammate abstrato (`spawn/work/teardown`): acoplamento mais fundo, desenhado como goal próprio
+- T3 — smoke test de port como gate de qualquer adapter novo
+
+**Nota:** o item T3-A (bloco `quality:` no orchestrator + template, escalado em 2026-09-27) deve ser **escrito agnóstico desde o início** — ainda não implementado, timing ideal.
+
 ---
 
 ## Conjunto recomendado se for atacar agora
