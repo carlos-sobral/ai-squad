@@ -1444,6 +1444,13 @@
       <div class="who">install.sh → ~/.claude/hooks/</div>
     </div>
 
+    <div class="discipline">
+      <div class="icon" style="background: #dcfce7;">⚙️</div>
+      <h3>Quality Profile — disciplinas pesadas opt-in</h3>
+      <p>Capacidade (load/soak/spike/stress), resiliência (fault injection), pentest (black/gray/white-box) e FinOps (cost ledger + budget alerts) existem nos agentes como modalidades <strong>dormentes</strong>. O projeto ativa o que quiser declarando um bloco <code>quality:</code> no <code>## Tooling</code> — não declarado é <em>off</em>, e o orchestrator <strong>bloqueia a ativação</strong> se o pré-requisito não existir (pentest exige sandbox + autorização escrita; chaos-prod exige staging fiel + runbook). App em MVP não paga pentest trimestral; app madura liga o que precisa — a decisão é do Tech Lead, o gate é mecânico.</p>
+      <div class="who">sdlc-orchestrator • performance-engineer • security-engineer • cloud-architect • quality-architect</div>
+    </div>
+
   </div>
 </section>
 

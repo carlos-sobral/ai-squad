@@ -91,7 +91,7 @@ O script converte cada agent de `~/.claude/agents/` para `~/.config/opencode/age
 - `model` → `sensedia/sensedia` (override com `--model <id>` ou `OPCODE_MODEL`)
 - `mode: subagent` → permite invocação via Task tool / `@menção`
 - `version` / `effort` → removidos (o opencode ignora)
-- corpo do prompt → preservado byte-a-byte
+- corpo do prompt → referências a `CLAUDE.md` reescritas para `AGENTS.md` (o arquivo de contexto de projeto nativo do opencode — ponte agnóstica de harness)
 
 É idempotente — seguro re-rodar sempre que o global mudar. Depois de sincronizar, os agents aparecem como subagents no opencode (`opencode agent list`).
 
@@ -422,6 +422,9 @@ Nomear um trade-off é uma afirmação; a fitness function é o que a mantém ve
 
 ### Gates de observabilidade (post-deploy)
 Contrato de observabilidade no tech spec (T2+): SLI/SLO + event schema + 2 alertas (1 SLO burn + 1 symptom). Pós-deploy, validação automática de saúde em +15min: query analytics + alertas + SLO ok. Configurável via `## Tooling > observability`.
+
+### Quality Profile — disciplinas pesadas opt-in por projeto
+Carga (load/soak/spike/stress via k6/Locust), resiliência (fault injection), pentest (black/gray/white-box) e FinOps (cost ledger + budget alerts) existem nos agentes como modalidades **dormentes**. O projeto ativa o que quiser declarando um bloco `quality:` no `## Tooling` do CLAUDE.md — **não declarado é off**, e o comportamento default permanece o de sempre (agentes recomendam, nunca executam). O orchestrator **bloqueia a ativação** se o pré-requisito da disciplina não existir: pentest exige sandbox + autorização escrita, `chaos-prod` exige staging fiel + runbook de rollback, `load-testing` exige staging declarado. O Tech Lead liga e desliga por projeto a qualquer momento — app em MVP não paga pentest trimestral; app madura liga o que precisa.
 
 ---
 
