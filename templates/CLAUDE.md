@@ -148,6 +148,21 @@ environments:
     gate: manual          # manual | auto-on-green | none
     smoke_command: ""     # command/URL that proves staging is healthy before promotion
 
+quality:
+  # Quality Profile — Tech Lead decides per project. Undeclared or off = dormant
+  # (agents recommend only, current baseline behavior). Each opt-in carries fail-closed
+  # prerequisites: the orchestrator BLOCKS activation at dispatch if they are missing.
+  load-testing: off      # on → capacity gate (load/soak/spike/stress, k6/Locust) on hot modules
+                         #   prereq: environments.staging.provider != none
+  resilience: off        # integration → fault-injection tests per PR | infra → chaos in staging
+                         #   prereq (infra): staging fidelity + rollback runbook
+  pentest: off           # on-release → 1st external release of T3 module + auth changes | quarterly
+                         #   prereq: sandbox/egress-controlled target + written authorization
+  finops: off            # on → cost ledger (docs/finops/cost-ledger.md) + calibration + budget alerts
+                         #   prereq: tagging standard declared in Tooling + billing read access
+  chaos-prod: off        # on → controlled production fault injection (highest-risk opt-in)
+                         #   prereq: resilience infra prereqs + blast radius declared in spec + Tech Lead sign-off
+
 project_context:
   codebase_age: greenfield   # greenfield | brownfield
   legacy_coverage_baseline_pct: 0   # only meaningful when brownfield — coverage at onboarding; new code must not regress it
