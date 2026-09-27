@@ -88,5 +88,3 @@ projeto real descobre padrão novo
 
 - [performance-engineer — gate — Module: Settings](docs/agents/performance-engineer/2026-05-31-gate-settings.md) — 2026-05-31
 - [performance-engineer — gate — invoices-export (blocked: no CI output)](docs/agents/performance-engineer/2026-09-27-gate-invoices-export.md) — 2026-09-27
-- [security-engineer — PATCH /api/articles editor-role authz expansion (approved-with-conditions)](docs/agents/security-engineer/2026-09-27-patch-articles-editor-authz-expansion.md) — 2026-09-27
-- [idea-researcher — Terraform cost-estimate PR-comment CLI (idea brief)](docs/agents/idea-researcher/2026-09-27-terraform-cost-estimate-pr-comment.md) — 2026-09-27
