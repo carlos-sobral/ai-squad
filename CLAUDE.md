@@ -87,3 +87,4 @@ projeto real descobre padrão novo
 ## Agent Outputs
 
 - [performance-engineer — gate — Module: Settings](docs/agents/performance-engineer/2026-05-31-gate-settings.md) — 2026-05-31
+- [performance-engineer — gate — invoices-export (blocked: no CI output)](docs/agents/performance-engineer/2026-09-27-gate-invoices-export.md) — 2026-09-27
