@@ -62,6 +62,69 @@ for agent_file in "$SCRIPT_DIR/agents"/*.md; do
 done
 
 echo ""
+echo "Installing ai-squad agents for OpenCode v2 (translated)..."
+echo ""
+
+# Gera ~/.config/opencode/agents/*.md a partir do MESMO agents/ canônico.
+# Tradução (plano second-brain-agnostico, D3/Fase 3):
+#   - model: <claude-model>  -> model: glm/glm (gateway Sensedia)
+#   - mode: subagent entra (se ausente)
+#   - effort:/version: saem (o OpenCode ignora campos extra; sem eles a cópia bate byte a byte)
+#   - CLAUDE.md -> AGENTS.md no arquivo inteiro (o OpenCode v2 não lê CLAUDE.md)
+OPENCODE_AGENTS_DIR="$HOME/.config/opencode/agents"
+
+oc_agent_count=0
+if mkdir -p "$OPENCODE_AGENTS_DIR" 2>/dev/null && command -v python3 >/dev/null 2>&1; then
+  for agent_file in "$SCRIPT_DIR/agents"/*.md; do
+    [ -f "$agent_file" ] || continue
+    agent_name=$(basename "$agent_file")
+    dest="$OPENCODE_AGENTS_DIR/$agent_name"
+
+    if [ -f "$dest" ]; then
+      echo "  updating  $agent_name"
+    else
+      echo "  installing $agent_name"
+    fi
+
+    AGENT_SRC="$agent_file" AGENT_DEST="$dest" python3 - <<'PYEOF'
+import os, re, pathlib
+
+src = pathlib.Path(os.environ["AGENT_SRC"]).read_text(encoding="utf-8")
+parts = src.split("---", 2)
+fm, body = parts[1], parts[2]
+
+fm = re.sub(r"^model: .*$", "model: glm/glm", fm, flags=re.M)
+fm = re.sub(r"^(effort|version): .*\n", "", fm, flags=re.M)
+if not re.search(r"^mode:", fm, flags=re.M):
+    fm = fm.rstrip("\n") + "\nmode: subagent\n"
+
+out = (fm + body).replace("CLAUDE.md", "AGENTS.md")  # troca no arquivo inteiro (description incluida)
+
+pathlib.Path(os.environ["AGENT_DEST"]).write_text(f"---{out}", encoding="utf-8")
+PYEOF
+    oc_agent_count=$((oc_agent_count + 1))
+  done
+else
+  echo "  ! pulado (sem ~/.config/opencode ou sem python3)"
+fi
+
+echo ""
+echo "Installing OpenCode global AGENTS.md (ai-squad core)..."
+echo ""
+
+# Deploy do núcleo agnóstico do ai-squad no OpenCode (decisão D3).
+# Fonte canônica: opencode/AGENTS.md neste repo — edite lá, NÃO no destino.
+OPENCODE_GLOBAL="$HOME/.config/opencode/AGENTS.md"
+if [ -f "$SCRIPT_DIR/opencode/AGENTS.md" ] && mkdir -p "$HOME/.config/opencode" 2>/dev/null; then
+  if [ -f "$OPENCODE_GLOBAL" ]; then
+    echo "  updating  AGENTS.md (global OpenCode)"
+  else
+    echo "  installing AGENTS.md (global OpenCode)"
+  fi
+  cp "$SCRIPT_DIR/opencode/AGENTS.md" "$OPENCODE_GLOBAL"
+fi
+
+echo ""
 echo "Installing ai-squad maintenance scripts..."
 echo ""
 
@@ -162,7 +225,7 @@ PYEOF
 fi
 
 echo ""
-echo "Done! $skill_count skills + $agent_count agents + $hook_count hooks installed"
+echo "Done! $skill_count skills + $agent_count agents + $oc_agent_count opencode-agents + $hook_count hooks installed"
 echo ""
 echo "Next steps:"
 echo "  1. Copy templates/CLAUDE.md into your project root"
