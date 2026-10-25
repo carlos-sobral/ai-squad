@@ -64,6 +64,8 @@ Then:
 
 **Flake detection (CI gate):** Use Playwright's built-in retry instrumentation rather than tolerating intermittent failures. In `playwright.config.ts`, set `retries: 2` for CI runs and `trace: 'on-first-retry'` so any flaky test surfaces a captured trace for diagnosis ([Playwright retries doc](https://playwright.dev/docs/test-retries)). To proactively surface flake before a test reaches the suite, run new specs with `npx playwright test --repeat-each=10` locally and reject any test that needs the retry to pass. In CI, gate the build with `--fail-on-flaky-tests` so a test that needs a retry is treated as a failure — silent retry-to-pass is the most common path to coverage theater at the e2e layer.
 
+**Attribute before classifying a pre-existing spec's failure.** When a pre-existing e2e (not written by this module) fails during a merge gate, do not report "regression" or "pre-existing" from code reading alone — run the failing test against an `origin/main` baseline in a disposable worktree with its own DB and port, same machine conditions, and compare pass rates. A rate difference (e.g., 5/5 on main vs 3/8 on HEAD) with byte-identical component code points to probabilistic timing (chunk-hash churn in dev), not product logic — report it as a latent defect surfaced, with the baseline evidence, and let the fix loop decide scope. Conversely, "0% flake ×3" on a timing-sensitive assertion does not prove absence of a race: repetition samples the race, it does not close it — say so when the assertion involves focus/scroll/animation lifecycle. (2026-10-01, KPIs de Empresa gate: DEEP-1 diagnosed this way; the baseline-on-main run was the discriminating step.)
+
 **A qa-engineer that writes tests but does not run them has not done their job.**
 
 
@@ -82,6 +84,30 @@ Functional assertions pass while the screen breaks visually: a regression can be
 - Commit baselines to VCS next to the spec. Generate them in the same environment the suite runs in (browser + OS rendering varies) — a baseline from a different environment measures the environment, not the UI.
 - Deterministic screenshots or the gate is noise: hide volatile regions (timestamps, live feeds, avatars) with `stylePath`, bound tolerated variance with `maxDiffPixels`, and never re-run with `--update-snapshots` to make a diff disappear — a baseline update is a reviewed change, not a fix.
 - A green functional suite does not update baselines. Review any baseline diff in the PR like code: the screenshot IS the spec for "what the screen looks like", and silently re-baselining it teaches the gate to ignore red.
+
+**Interface-guidelines spot-check, in the same run (not a separate gate).** A baseline proves the screen did not change, not that it was right. `frontend-engineer` reports a 10-row checklist from Vercel's [Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines) (MIT; full list in [`command.md`](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md)) in its impl report. Black-box, re-check the rows observable from the running app. Do not repeat the WCAG checks your axe pass already covers.
+- Measure hit areas with `locator.boundingBox()`: ≥ 44×44 at the mobile viewport, and the label and control of a checkbox/radio share one hit target.
+- Tab to each control and take a screenshot. Every control shows a focus ring, and no sticky header or overlay covers it.
+- Read the input attributes: `type`, `inputmode`, `autocomplete`.
+- Delay the submit request with `page.route` and capture the loading state. The original label stays, and the loading copy ends with `…`.
+- With the form dirty, navigate away and confirm a guard fires.
+- Trigger a destructive action and confirm it needs a confirmation step or offers an undo window.
+- Run with `page.emulateMedia({ reducedMotion: 'reduce' })` and confirm the reduced variant renders.
+- On numeric columns, check that `fontVariantNumeric` includes `tabular-nums`.
+
+The opt-in `web-design-guidelines` skill ([vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills/tree/main/skills/web-design-guidelines)) may be used only if it is installed. Run `ls` first. If it is absent, say so and use this list. Never cite output from a skill you did not run.
+
+**Reporting is evidence-based.** Each failed guideline is a row in the test execution report with:
+- the rule,
+- the element (locator / selector, or the accessibility-snapshot ref),
+- the measured value or attribute,
+- the committed path of the screenshot or snapshot that shows it.
+
+A failure without an element and an artifact is an opinion; don't report it. Severity follows the existing verdict rules, so the guidelines add no new pass/fail axis:
+- When the failure also breaks an AC, the UX spec, or the accessibility floor, it fails that criterion.
+- Otherwise it is a warning with a recovery owner (`frontend-engineer`).
+
+If the impl report lacks the checklist table for a UI screen, that missing table is itself a finding.
 
 ## Always
 
@@ -213,6 +239,12 @@ topics:
       - "Playwright visual regression 2026"
       - "screenshot diff threshold tuning"
     why: "Visual regression catches design-system drift functional tests miss"
+  - name: "Web Interface Guidelines (objective UI rule checklist)"
+    queries:
+      - "vercel-labs web-interface-guidelines command.md changes 2026"
+      - "Playwright check focus-visible hit target reduced motion e2e"
+    source: "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md"
+    why: "Upstream is a living list; keep the black-box spot-check aligned. May add checks; never turn a guideline into a new gate or report a failure without element + artifact evidence"
 
 signal_sources:
   - team_events           # qa findings during ship-team

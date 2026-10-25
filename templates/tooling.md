@@ -12,7 +12,9 @@ Vários agentes do ai-squad sabem usar ferramentas externas (MCP servers e skill
 | **Context7 MCP** | MCP lookup | backend-eng, frontend-eng, software-architect, tech-writer | docs version-specific de 9000+ libs | `.mcp.json` (automático) |
 | **Lighthouse MCP** | MCP análise | performance-engineer | executa auditorias lab (CWV/perf/a11y/SEO) — field data ainda governa o veredito | `.mcp.json` (automático) |
 | **Sentry MCP** | MCP lookup | performance-engineer, quality-architect (RCA) | erros/releases/regressões reais de produção | `.mcp.json` + OAuth (`/mcp` → sentry → login) |
-| **ui-ux-pro-max** | skill | product-designer | rascunho de paletas/font-pairings → filtrado pela §0 + anti-slop | opt-in (abaixo) |
+| **ui-ux-pro-max** | skill | product-designer | rascunho de paletas/font-pairings → filtrado pela §0 + anti-slop | **obrigatória** (abaixo) |
+| **design-taste-frontend** | skill | product-designer | sorteia 3 direções pesquisadas p/ §0 + inspector gate nos artboards | **obrigatória** (abaixo) |
+| **impeccable** | skill | product-designer | `critique` dos tokens + `critique`/`audit` dos artboards (nunca `init`/`DESIGN.md`) | **obrigatória** (abaixo) |
 | **Trail of Bits static-analysis** | plugin | security-engineer | dirige Semgrep/CodeQL/SARIF como engine do Pass 1 | opt-in (abaixo, precisa do binário) |
 | **21st.dev Magic** | MCP geração | frontend-engineer | scaffold de componentes premium → re-expressos nos tokens do DS | opt-in (API key) |
 
@@ -24,11 +26,28 @@ cp <ai-squad>/templates/.mcp.json ./.mcp.json
 ```
 Todos são keyless (npx) ou OAuth (sentry) — nenhum segredo no arquivo. Requer Node/npx no PATH. Sentry pede login interativo via `/mcp`.
 
-### ui-ux-pro-max (skill opt-in, dep: Python 3)
+### Skills obrigatórias do product-designer
+
+Sem as três, o `product-designer` para em `blocked` no pre-flight do Design System Mode e do UX Spec Mode (o Sync Mode não depende delas). São instrumentos, não autores: `docs/design-system.md` continua a única fonte de verdade visual. São skills de terceiros que rodam com permissões totais — revise o conteúdo antes de instalar e fixe a versão.
+
 ```bash
+# ui-ux-pro-max (dep: Python 3)
 npx -y skills add https://github.com/nextlevelbuilder/ui-ux-pro-max-skill --skill ui-ux-pro-max
+# design-taste-frontend — taste-skill, MIT (dep: Node 22+ e Chrome; scratch em .taste-skill/, gitignore)
+npx -y skills add https://github.com/Leonxlnx/taste-skill --skill design-taste-frontend
+# impeccable — Apache-2.0
+npx -y skills add pbakaus/impeccable
 ```
-Acelerador subordinado do Design System Mode. Skill de terceiro — roda com permissões totais; revise antes de usar.
+
+**Engine do impeccable.** O launcher baixa um binário dos GitHub Releases na 1ª execução, verificado só por um `.sha256` da mesma release (integridade, não autenticidade; não há build attestation). Para não executar binário baixado, compile do fonte no commit revisado e coloque como binário irmão — o launcher o usa antes de tentar baixar:
+```bash
+cargo audit                                   # no clone do repo
+cargo build --release --locked -p impeccable
+cp target/release/impeccable <skill>/scripts/bin/<darwin|linux>-<arm64|x64>/impeccable
+<skill>/scripts/impeccable telemetry off      # telemetria vem LIGADA por default
+export IMPECCABLE_NO_UPDATE_CHECK=1           # opcional: corta o GET diário em /api/version
+```
+Para o OpenCode, instale as mesmas três em `~/.config/opencode/skills/` (o impeccable publica uma variante `.opencode/` no repo).
 
 ### Trail of Bits static-analysis (plugin opt-in, dep: semgrep/codeql)
 ```bash

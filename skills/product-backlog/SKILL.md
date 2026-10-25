@@ -1,7 +1,7 @@
 ---
 name: product-backlog
 description: "Use when the user wants to organize what to build next, groom or reprioritize the product backlog, decide the next goal, capture a feature idea into the backlog, or asks 'what should we build next / why this order' — for a product using the ai-squad SDLC. Also when a goal ships and the next one must be chosen, or when product ideas are scattered across memory, vision doc, and conversations. NOT for the user's personal to-dos (that is task-manager), and NOT for writing a single feature's PRD (that is product-manager)."
-version: 1.0
+version: 1.1
 ---
 
 # Product Backlog & Roadmap — steward
@@ -55,6 +55,17 @@ Prioritization: RICE. Vision guardrails: docs/vision.md (ou docs/vision-*.md) §
 
 Record the *rationale* for Reach, Impact, Confidence, Effort next to the item — a bare number is not auditable. When the estimate needs product judgement, that rationale comes from the `product-manager` (see delegation).
 
+### Usage evidence — when the project has product analytics (conditional)
+
+Before scoring, check the project's `CLAUDE.md ## Tooling > observability.product_analytics.provider`. If it is `posthog` **and** the PostHog MCP is connected (its tools are listed / `/mcp` shows it), ground Reach and Impact in real usage instead of guessing — recipe: `docs/integrations/posthog.md` in the ai-squad repo.
+
+1. For each item, find the surface it touches (`read-data-schema` to confirm the event exists), then pull an **aggregate** over the last 30 days — prefer a saved insight (`insight-query`), else `query-trends` / `query-funnel` / `execute-sql`. Count in the declared `account_unit` (e.g. organizations for B2B), not persons, when declared.
+2. **Reach** = that aggregate. **Impact** stays a judgement on the 3/2/1/0.5/0.25 scale — a funnel drop-off or frequency signal informs it, it does not replace it.
+3. **Every data-grounded number carries its query** in the rationale: `Reach 1,240 orgs/30d — query-trends event=export_clicked unique(org) 2026-09-24..10-23`. Data-grounded axes may justify 80–100% Confidence; a guessed axis keeps ≤50%.
+4. A new surface with no event yet has no data — write "no event yet; estimated", don't borrow a neighbour's number.
+
+If PostHog is declared but **not connected**, or the project declares another provider / `none`: say so in one line, keep the current flow, and label every Reach/Impact as **estimate**. Never present an estimate as a measurement, and never invent a query result. Aggregates only — no person-level data (ids, emails, person properties) goes into `docs/roadmap.md`.
+
 ## Vision-fit traffic light (guardrail column)
 
 Read the project's vision principles (`docs/vision.md` or `docs/vision-*.md`) and tag every item:
@@ -76,7 +87,7 @@ Detect which the user wants; when ambiguous, ask.
 
 ### 2. Groom — reprioritize the whole backlog
 1. Move shipped goals → **Shipped** (read `docs/goals/` for merge status; never leave a shipped item ranked).
-2. Re-score items whose Reach/Impact/Confidence changed since last groom; note *why* it moved.
+2. Re-score items whose Reach/Impact/Confidence changed since last groom; note *why* it moved. If usage evidence is available (see above), refresh data-grounded axes, and read the shipped goals' success-metric verdicts (PRD `Success Metrics & Events` → actual vs target) — a missed target is a re-score or follow-up candidate, not noise.
 3. Re-check vision fit for every item (principles may have shifted). Promote from Parked only if the vision changed — and say so.
 4. Re-sort by RICE, refresh Now/Next/Later, update `Last groomed`.
 5. Report the rank deltas (what moved up/down and why) — the value of grooming is the *diff*, not the snapshot.

@@ -77,6 +77,14 @@ Before writing the brief, always run web searches to ground the idea in reality.
 - If you find something that contradicts or complicates the user's assumption, include it honestly — that's valuable signal for the PM.
 - Don't pad the brief with generic stats. Every data point should sharpen understanding of the problem or the solution space.
 
+**Research tools — optional MCPs, verified never assumed.** Before relying on an MCP, confirm its tools are actually present this session (`/mcp` list, or `perplexity_*` / `firecrawl_*` tool names). Each is a conditional ("if present, use it"), never a dependency.
+- **Perplexity MCP** — prefer `perplexity_search` for discovery (competitors, complaints, "why now") and `perplexity_research` when a question needs multi-source synthesis. Its synthesis is a lead, not a source: cite the underlying URLs it names.
+- **Firecrawl MCP** — prefer `firecrawl_scrape` to read a known page in full (a competitor's pricing, docs, or positioning) and `firecrawl_map` to see a competitor's surface; use it to verify what the search step surfaced.
+- **Neither connected** → use the runtime's native web search/fetch (`WebSearch`/`WebFetch` in Claude Code). Say which tools you used in Context & Research.
+- **No web tool at all** → do not research from memory and present it as found. Mark Context & Research `UNVERIFIED — no web research tool in this runtime`, label any competitor you name from prior knowledge as unverified, add "run competitor/problem research" to Open Questions, and put the gap on the **first line** of your handoff — Step 3 is mandatory, so skipping it is a missing artifact, not a footnote.
+
+Every claim in Context & Research carries its source URL, whichever tool found it.
+
 ## Step 4 — Know when you have enough
 
 You don't need perfect information. A strong brief can acknowledge open questions — in fact, surfacing unknowns is more valuable than forcing premature answers. Once you have a clear sense of the problem, the user, the competitive landscape, and at least one concrete solution direction, write the brief.

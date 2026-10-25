@@ -69,6 +69,7 @@ Consult CLAUDE.md and `docs/design-system.md` for the component/animation librar
 - Use design system tokens (semantic names defined in `docs/design-system.md`) for all colors, spacing, and typography — never hardcode raw values (no raw hex like `#FF0000`, no arbitrary pixel values, no ad-hoc font sizes)
 - Implement all states documented in the UX spec: loading, empty, error, success, disabled — missing a state is a bug
 - Implement keyboard interactions as specified in the UX spec
+- **Delegate lifecycle-owned interactions to the primitive's first-class props — never race them with hand-rolled timers.** When a UX requirement (initial focus on open, focus return on close, scroll restore) competes with the UI library's own internal lifecycle (e.g., base-ui's FloatingFocusManager running its focus logic in a microtask after open), a `setTimeout(0)` in an effect loses that race stochastically — the primitive can re-focus/steal after your tick, and the bug shows up as a ~30% e2e flake that repetition sampling will not reliably catch. Check the primitive's API first: first-class props (`initialFocus`/`finalFocus` refs on base-ui Dialog, `autoFocus`-style props elsewhere) run inside the owner's lifecycle and cannot lose to it. Hand-rolled timers are acceptable only when the primitive exposes no equivalent — and then the e2e asserting the property must run with real timing gaps before being trusted. (2026-10-01: KpiModal deep-link focus — `setTimeout(0)` fought base-ui's initial focus; fixed by `initialFocus={titleRef}`.)
 - Apply ARIA requirements as specified in the UX spec
 - Write tests for component behavior, not just rendering
 - **Test-first for net-new component behavior.** For any new component, hook, state machine, or interaction handler: write the failing test first (RED) — assert the visible behavior the UX spec describes, not the implementation detail — implement the minimal code to make it pass (GREEN), then refactor if needed. Test-first forces a concrete definition of "the button is enabled when X" or "the form shows error Y when Z" before you commit to a component shape. Narrow exceptions (hotfix path, pure styling/CSS-only changes, throwaway prototypes, exploratory spikes) MAY skip test-first — but the impl report MUST include a 1-line justification. Skipping silently is a process violation. The `systematic-debugging` skill enforces the same discipline for bug fixes.
@@ -266,6 +267,29 @@ Token-compliance is not the same as looking good. A screen can use every design-
 
 This pass is about *aesthetic conformance to the committed direction*, distinct from the functional Playwright debugging loop above, from the fidelity check's numeric conformance to the artboard, and from `qa-engineer`'s token-consistency check. The three are not interchangeable: a screen can match every artboard value and still miss the direction where the artboard was silent, and it can read well while measuring wrong. Do not skip it on UI tasks; for non-visual changes (logic, refactor) it does not apply.
 
+### Objective complement — Web Interface Guidelines (same pass, not a new gate)
+
+The critique above is judgement; this is a rule checklist with a yes/no answer per element. Source: Vercel's [Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines) (MIT; full rule list in [`command.md`](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md)). It complements the **Accessibility floor** — that section's items (keyboard reachability, visible focus contrast, 24×24 targets, focus trap, labels, axe pass) are not repeated here and still apply. Where a guideline conflicts with the UX spec or `docs/design-system.md` (e.g. its copy-style rules vs. the spec's exact copy), the spec wins and you flag the conflict — never rewrite spec copy to satisfy the guideline.
+
+**Skill (opt-in, governed by the verify-before-use rule in "Component and Animation Resources").** An installable version exists: `web-design-guidelines` in [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills/tree/main/skills/web-design-guidelines), which fetches `command.md` live and reports `file:line` findings. If it is installed (`ls ~/.claude/skills/web-design-guidelines .claude/skills/web-design-guidelines`), run it on your changed files and fold its output into the table below. If it is absent, write "web-design-guidelines skill not installed" in the report and apply the checklist below (plus `command.md` if you can fetch it). Never report its output without having run it.
+
+Run on every changed UI screen, after the critique; mark each row PASS / FAIL / N/A with evidence:
+
+1. **Hit area = visual area** — no dead zones; checkbox/radio and its label share one hit target; ≥ 44×44 px at mobile width (measure with `getBoundingClientRect`; the floor's 24 px is the desktop minimum).
+2. **Focus implementation** — `focus-visible:` not `focus:`; no `outline-none` / `outline: none` without a replacement ring; sticky headers / overlays never cover the focused element.
+3. **Input semantics** — correct `type` (`email`, `tel`, `url`, `number`) and `inputmode`; `autocomplete` + meaningful `name`; `spellCheck={false}` on emails/codes/usernames; never block paste; input font ≥ 16 px on mobile (iOS zoom).
+4. **Submit lifecycle** — submit stays enabled until the request starts, then shows a loading indicator while keeping its label; loading copy ends with `…`; errors render inline next to the field and focus moves to the first error on submit.
+5. **Unsaved changes** — leaving a dirty form warns (`beforeunload` / router guard).
+6. **Destructive actions** — confirmation or an undo window, never immediate.
+7. **Loading without flicker** — spinners/skeletons have a short show-delay (~150–300 ms) and a minimum visible time (~300–500 ms).
+8. **Motion** — honors `prefers-reduced-motion`; animates `transform`/`opacity` only; never `transition: all` / `transition-all`.
+9. **Numbers and locale** — `tabular-nums` on numeric columns/comparisons; dates and numbers via `Intl.DateTimeFormat` / `Intl.NumberFormat`, not hand formatting.
+10. **Content resilience** — long text truncates/clamps/wraps (`min-w-0` on flex children); empty strings/arrays render a designed empty state, not broken UI.
+
+**How to verify — evidence, not inference.** Static: `grep -rnE 'outline-none|transition-all|transition: all|onPaste|:focus[^-]' <changed files>`. Runtime (Playwright MCP): `getBoundingClientRect` for (1), Tab + screenshot for (2), read attributes for (3), delay the request (`browser_run_code_unsafe` with `page.route`, or the network throttling the project uses) for (4) and (7), `browser_emulate_media` with `reducedMotion: 'reduce'` for (8), `getComputedStyle(el).fontVariantNumeric` for (9). A row you did not check is "not verified", not PASS.
+
+**Report** the table (rule, element/selector, evidence, verdict) in the impl report next to the fidelity table. A FAIL is fixed or flagged like any other defect from this pass.
+
 ## Output format
 
 Provide: component code + tests + notes on any design decisions made and flags raised.
@@ -346,6 +370,12 @@ topics:
       - "WCAG 2.2 3.0 success criteria changes 2026"
       - "axe-core accessibility testing best practice 2026"
     why: "The a11y floor is a hard requirement; testing tools and criteria evolve"
+  - name: "Web Interface Guidelines (objective UI rule checklist)"
+    queries:
+      - "vercel-labs web-interface-guidelines command.md changes 2026"
+      - "vercel-labs agent-skills web-design-guidelines skill update"
+    source: "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md"
+    why: "Upstream is a living list; keep the 10-item inline checklist in 'Visual self-critique' aligned with it. May add or sharpen rules; never drop the Accessibility floor or let a guideline override the UX spec"
   - name: "Browser platform capabilities for UI"
     queries:
       - "View Transitions API scroll-driven CSS animations browser support 2026"

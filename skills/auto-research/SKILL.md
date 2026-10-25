@@ -127,13 +127,19 @@ If a project does not yet have any of these data sources populated, this step is
 
 For each topic in `Auto-Research Scope > topics`:
 
-1. Run a `WebSearch` for each query in `topic.queries`.
+1. Run a web search for each query in `topic.queries` — native `WebSearch` where the runtime has it; see *Research tools* below for optional MCP sources.
 2. From the results, extract concrete, citable claims:
    - A new CVE with ID, affected component, CVSS score, and a public advisory URL
    - A new entry or a confirmed change to an OWASP / CWE / NIST publication, with the source URL and a quote of the change
    - A new attack pattern with at least one reputable source (academic paper, vendor security advisory, recognized researcher writeup) — **not** blog opinion or social media
 3. Reject anything that fails the source quality bar set in `Auto-Research Scope > constraints`.
 4. Aggregate findings per topic. If a topic produces no high-quality findings, skip it for this run — do not invent content.
+
+**Research tools — optional MCPs, verified never assumed.** Two MCP servers raise source quality when connected, and matter most on runtimes without native web search (e.g. OpenCode with a non-Claude model). Before relying on one, confirm its tools are actually present this session (`/mcp` list or `mcp__firecrawl__*` / `mcp__perplexity__*` / `firecrawl_*` / `perplexity_*` tool names). If absent, fall back to native `WebSearch`/`WebFetch`, and record the absence in the run log. If no web tool exists at all, skip Step 3b for this run and log it — never write a finding from memory or from a tool you did not call.
+- **Perplexity** (`perplexity_search` for ranked results, `perplexity_research` for multi-source synthesis) — preferred for discovering *what changed* across a topic. Its synthesis is a lead, not a source: open and cite the underlying URL it names.
+- **Firecrawl** (`firecrawl_scrape`, `firecrawl_map`/`firecrawl_crawl`) — preferred for reading a known authoritative page in full (an advisory, a standard's changelog) so the quote in the diff is verbatim, not a snippet.
+
+Every finding still needs a public source URL meeting the `constraints` quality bar, whichever tool found it. With no page-fetch tool, a `perplexity_search` result (URL + snippet from that page) may back a finding; a `perplexity_research` synthesis alone may not — drop it.
 
 ### Step 4 — Propose edits
 

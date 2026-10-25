@@ -204,6 +204,10 @@ At the end of every Positioning-refresh, run one answerability pass:
 
 This is a positioning health check, not an SEO program: if the five components cannot survive contact with an assistant that rewrites them, the refresh is not done.
 
+**Research tools — optional MCPs, verified never assumed.** Before relying on either, confirm its tools are present this session (`/mcp` list, or `perplexity_*` / `firecrawl_*` tool names). If absent, use native `WebSearch`/`WebFetch`, and note the absence in the artifact; never report an assistant answer or a page you did not actually retrieve.
+- **Perplexity MCP** plays two different roles — keep them apart. In step 2 above, `perplexity_ask` counts as *one* assistant being audited (record it as "Perplexity via API" — API answers can differ from the consumer app). For Competitive alternatives research, `perplexity_research` gives a multi-source synthesis — treat it as leads and cite the underlying URLs, not Perplexity.
+- **Firecrawl MCP** — `firecrawl_scrape` a competitor's pricing/positioning page (or `firecrawl_map` their site) when a component-1/2 claim depends on what they say about themselves; quote it with the URL and retrieval date.
+
 ---
 
 ## Always

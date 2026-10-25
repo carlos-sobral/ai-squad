@@ -61,6 +61,8 @@ Run WebSearch with these queries (adapt domain noun to the agent):
 
 Extract: a list of practices/modalities known in the field for this domain. Prefer authoritative sources (OWASP, NIST, IEEE, Google/Meta engineering blogs, recognized researchers).
 
+**Optional research MCPs — verify, never assume.** If the `perplexity` MCP is connected (its `perplexity_*` tools are present this session), `perplexity_research` is the better instrument for this step's taxonomy question — multi-source synthesis with citations; if `firecrawl` is connected, use `firecrawl_scrape` to read a maturity model or catalog page in full rather than from snippets. Absent either, use native `WebSearch`/`WebFetch` and note the absence in the digest; with no web tool at all, stop at Step 1, apply zero changes, still write `last-run.json` recording the run as not researched, and report that the field could not be researched — never list "known practices" from memory as if researched. A Perplexity synthesis is a lead, not a source: every practice in the gap list cites the URL it came from.
+
 ### Step 3 — Compute gaps
 - `gaps = (field practices) − (current mandate modalities)`
 - Filter by project context:
