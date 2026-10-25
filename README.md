@@ -193,10 +193,10 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 
 | Agente | O que faz | Modelo | Effort |
 |---|---|---|---|
-| `idea-researcher` | Pesquisa e estrutura ideias vagas antes do PRD | opus | high |
-| `product-manager` | Escreve PRDs e user stories com acceptance criteria; suporta notação EARS para ACs event-driven | opus | high |
+| `idea-researcher` | Pesquisa e estrutura ideias vagas antes do PRD; roteiro de entrevista (Mom Test) quando há acesso a usuários, sem nunca inventar achado | opus | high |
+| `product-manager` | Escreve PRDs e user stories com acceptance criteria; suporta notação EARS para ACs event-driven; desenho de experimento (hipótese, MDE, sample size) quando o sucesso depende de um | opus | high |
 | `product-designer` | Design system + UX specs por módulo | opus | high |
-| `software-architect` | Tech specs, code review, ADRs, refactor, diagramas | opus | xhigh |
+| `software-architect` | Tech specs, code review, ADRs, refactor, diagramas, glossário de domínio (`docs/GLOSSARY.md`) | opus | xhigh |
 | `backend-engineer` | Implementa backend a partir de tech spec | sonnet | high |
 | `frontend-engineer` | Implementa UI a partir de tech spec + UX spec | sonnet | high |
 | `security-engineer` | Revisão de segurança (OWASP, CWE, ASVS); LLM security review (OWASP LLM Top 10:2025) | opus | high |
@@ -307,6 +307,11 @@ Vários agentes sabem usar ferramentas externas **quando disponíveis** — e de
 | **Firecrawl MCP** | idea-researcher, product-marketing-manager, auto-research, sdlc-practices-evolve | leitura/crawl de página conhecida (concorrente, pricing, doc). Fecha o gap de pesquisa web no OpenCode | opt-in (API key) |
 | **web-design-guidelines** (Vercel Web Interface Guidelines) | frontend-engineer, qa-engineer | checklist objetivo (hit area, `autocomplete`, submit lifecycle, `tabular-nums`, reduced motion) dentro da self-critique / visual regression — sem gate novo | opt-in |
 | **PostHog MCP** | product-backlog | Reach/Impact do RICE vindos de dado real, cada número com a query; sem MCP, tudo rotulado como estimativa. Recipe: [`docs/integrations/posthog.md`](docs/integrations/posthog.md) | opt-in (projeto que já usa PostHog) |
+| **supabase-postgres-best-practices** | backend-engineer, performance-engineer | query plan, índices, pooling, locking, RLS — sem ela o agente para em `blocked` | **obrigatória** quando o banco é PostgreSQL |
+| **vercel-react-best-practices** | frontend-engineer | fetch paralelo, fronteiras de RSC, auth dentro de Server Action | opt-in (React/Next) |
+| **evals-skills** | quality-architect | gates de qualidade de feature com LLM: error analysis, judge validado, evals de regressão | opt-in (Risk Surface LLM/agent/RAG) |
+| **copywriting** | product-marketing-manager | copy de lançamento, contexto vindo do positioning doc (sem segunda fonte) | opt-in |
+| **terraform-test / terraform-style-guide** | cloud-architect | `fmt`/`validate`/`test` com evidência + hardening de GitHub Actions | opt-in (Terraform) |
 | **Trail of Bits SAST** | security-engineer | dirige Semgrep/CodeQL como engine do Pass 1 | opt-in (precisa de semgrep) |
 | **21st.dev Magic** | frontend-engineer | scaffold de componentes → re-expressos nos tokens do DS | opt-in (API key) |
 
