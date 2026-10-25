@@ -28,7 +28,7 @@ If any prerequisite fails, stop and tell the Tech Lead exactly what's missing.
 3. **Check the pane precondition** — `[ -n "$TMUX" ]`. If empty, tell the Tech Lead in one line that the two discovery agents will run without visible panes (relaunch inside tmux to get them), then continue either way. Do not call `TeamCreate` — it no longer exists.
 
 4. **Spawn both agents in parallel** (single message, two `Agent` calls — the `name` is what makes each one an addressable teammate):
-   - `Agent({ subagent_type: "software-architect", name: "discovery", model: "opus", prompt: "Run Mode 4: Discovery on the current repo (cwd). Output to the files specified in your agent definition: CLAUDE.md (fill Stack + Tooling slots you can infer + project_context block), docs/architecture.md, docs/adr/0001-baseline.md, docs/engineering-patterns.md, docs/maturity-assessment.md (fill Brownfield baseline row), docs/onboarding/discovery-report.md. Mark every uncertain inference as [TO DEFINE]. Critical TO DEFINEs (auth, multi-tenancy, secrets, data retention) go at the top of discovery-report.md. Do NOT write code, do NOT open a PR, do NOT refactor." })`
+   - `Agent({ subagent_type: "software-architect", name: "discovery", model: "opus", prompt: "Run Mode 4: Discovery on the current repo (cwd). Output to the files specified in your agent definition: CLAUDE.md (fill Stack + Tooling slots you can infer + project_context block), docs/architecture.md, docs/adr/0001-baseline.md, docs/engineering-patterns.md, docs/maturity-assessment.md (fill Brownfield baseline row), docs/onboarding/discovery-report.md, docs/GLOSSARY.md (seed: the ≤15 core domain entities; read DB schema, API routes/DTOs AND user-facing strings (i18n/message files, labels in components); where code, API and UI name the same concept differently, list every name found with its file:line and mark the canonical term [TO DEFINE] — do not pick one). Mark every uncertain inference as [TO DEFINE]. Critical TO DEFINEs (auth, multi-tenancy, secrets, data retention) go at the top of discovery-report.md. Do NOT write code, do NOT open a PR, do NOT refactor." })`
    - `Agent({ subagent_type: "cloud-architect", name: "inventory", model: "sonnet", prompt: "Run Mode 3: Inventory on the current repo (cwd). Populate ## Tooling > ci_cd in CLAUDE.md with the provider and workflow files detected. Populate ## Tooling > observability if obs deps detected; mark [TO DEFINE] if ambiguous. Append an Infrastructure baseline block to docs/adr/0001-baseline.md (the file is created by software-architect; append, do not overwrite). Do NOT create new infrastructure. Do NOT run setup mode. If CI is missing, just note it in the Infrastructure baseline." })`
 
 5. **Wait for both to complete.**
@@ -40,13 +40,13 @@ If any prerequisite fails, stop and tell the Tech Lead exactly what's missing.
 8. **Rode o Artifact Ledger check.** Greenfield ganha os artefatos ao longo dos módulos; brownfield chega com todos ausentes de uma vez, e nada no fluxo os cobra retroativamente — um repo onboardado entra no primeiro módulo com dívida de artefato invisível. Leia o ledger em `sdlc-orchestrator` (seção *Artifact Ledger*) e verifique cada linha contra o repo:
 
    ```bash
-   for f in docs/site/index.html docs/design-system.md docs/engineering-patterns.md \
-            docs/maturity-assessment.md docs/roadmap.md docs/adr; do
+   for f in docs/site/index.html docs/design-system.md docs/ux-patterns.md docs/GLOSSARY.md \
+            docs/engineering-patterns.md docs/maturity-assessment.md docs/roadmap.md docs/adr; do
      [ -e "$f" ] && echo "OK    $f" || echo "FALTA $f"
    done
    ```
 
-   Todo artefato **universal** ausente vira um TO DEFINE com dono e módulo-alvo — nunca "depois" ou "quando sobrar tempo". Artefatos **condicionais** viram TO DEFINE só quando a condição vale (ex.: `docs/design-system.md` apenas se o passo 6 detectou UI). `docs/site/index.html` merece uma linha própria no relatório: brownfield tem mais spec e mais história acumulada que greenfield, então o bootstrap do site é **mais** caro aqui, não menos — agende-o explicitamente para o primeiro ou o segundo módulo, via docs-site bootstrap gate.
+   Todo artefato **universal** ausente vira um TO DEFINE com dono e módulo-alvo — nunca "depois" ou "quando sobrar tempo". Artefatos **condicionais** viram TO DEFINE só quando a condição vale (ex.: `docs/design-system.md` e `docs/ux-patterns.md` apenas se o passo 6 detectou UI; sem UI, a linha `FALTA` deles é descartada do relatório, não vira TO DEFINE — o segundo é o registro de comportamento, extraído pelo product-designer em Documentation Mode a partir da journey crawl do qa-engineer, com as divergências marcadas). `docs/GLOSSARY.md` é universal e já sai semeado pelo discovery: os conflitos de nome que ele lista (o mesmo conceito com nomes diferentes em código, API e UI) entram como TO DEFINE não-críticos, dono software-architect, resolvidos antes do primeiro módulo que toca aquela entidade. `docs/site/index.html` merece uma linha própria no relatório: brownfield tem mais spec e mais história acumulada que greenfield, então o bootstrap do site é **mais** caro aqui, não menos — agende-o explicitamente para o primeiro ou o segundo módulo, via docs-site bootstrap gate.
 
    Sem este passo o sweep não acontece: a skill só enxerga a dívida que os passos hardcodam. Medido — num onboarding de repo real a lista saiu com 25 TO DEFINEs bem calibrados ao domínio e **zero** menção ao site, porque nenhum passo o nomeava.
 
@@ -66,6 +66,7 @@ Files created:
 - docs/engineering-patterns.md
 - docs/maturity-assessment.md (auto-claimed: <list of dimensions>)
 - docs/onboarding/discovery-report.md
+- docs/GLOSSARY.md (seed: <N> entities, <K> naming conflicts as TO DEFINE)
 
 Artifact Ledger (artefatos ai-squad ausentes neste repo):
 - [lista das linhas FALTA, com dono e módulo-alvo proposto]
@@ -78,7 +79,7 @@ Non-critical TO DEFINEs (resolve in next 2 weeks):
 
 Next steps:
 1. Resolve the critical TO DEFINEs above (edit CLAUDE.md and engineering-patterns.md)
-2. (If UI present) Run product-designer in design-system-extract mode
+2. (If UI present) Run qa-engineer in journey-crawl mode, then product-designer in Documentation Mode — it extracts docs/design-system.md and docs/ux-patterns.md (divergences between screens flagged, never silently picked)
 3. Run /sdlc-orchestrator to start your first module
 ```
 
