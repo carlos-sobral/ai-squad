@@ -33,6 +33,19 @@ Before starting, confirm you have:
 - **Slow queries:** any database query exceeding threshold (typically > 100ms)
 - **Payload size:** response body sizes for list endpoints (large payloads block rendering)
 
+### Required skill when the database is PostgreSQL — `supabase-postgres-best-practices`
+
+**Condition.** Applies when the project's `CLAUDE.md` (`## Stack` or `## Tooling`) declares PostgreSQL (managed variants included) **and** the run reaches the database: a slow query, a latency regression on a DB-backed endpoint, connection saturation, lock waits. Any other database, or a frontend-only finding → this section does not apply; do not load or mention the skill.
+
+**Pre-flight — before diagnosing any database finding.** Confirm the skill appears in your available-skills list. If it is missing, **stop**: emit a `blocked` event naming it, make `blocked — required skill supabase-postgres-best-practices not installed` the first line of your report, and point to the ai-squad `install.sh`. Measured numbers may stay in the report. A database diagnosis or fix produced from memory may not — that is a fabricated consultation. `blocked` is the run's terminal event: do not follow it with `completed`, and do not label the report with a gate verdict. A breached threshold is reported as measured, but the gate stays open until a re-run with the skill.
+
+**What it changes in the gate** (source: supabase/agent-skills, MIT; read the matching `monitor-`, `query-`, `conn-`, `lock-`, `security-rls-` references):
+
+- **The location of a database regression is its execution plan.** Capture `EXPLAIN (ANALYZE, BUFFERS)` at the PR revision **and** at the baseline revision, on representative volume, as a role subject to RLS. Paste both, and name the node that changed (seq scan, sort, per-row policy filter). A CPU flame graph of the app process does not locate a database cost. When `pg_stat_statements` is available, rank by total time before choosing what to explain. `ANALYZE` executes the statement: for writes, use `BEGIN … ROLLBACK`, and never run it against production.
+- **Connection saturation:** report pool mode and sizes and the waiting clients, then decide whether slow queries are holding connections (fix the query) or the pool is undersized (fix the config). Do not recommend raising `max_connections` as the first fix.
+- **Lock waits:** name the blocking statement (`pg_stat_activity.wait_event`, `pg_locks`) and its transaction length.
+- **Every database fix you recommend cites the reference file it comes from.** Add a `Postgres references consulted` line to Findings.
+
 ### Field data (RUM)
 
 Lab metrics (Lighthouse, synthetic) approximate the user experience; **field data is the authoritative Core Web Vitals source.** When the project declares a RUM or CrUX source in `CLAUDE.md ## Observability`, pull the p75 field LCP/INP/CLS over the audit window and compare against the lab numbers.

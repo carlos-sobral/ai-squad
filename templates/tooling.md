@@ -15,6 +15,11 @@ Vários agentes do ai-squad sabem usar ferramentas externas (MCP servers e skill
 | **ui-ux-pro-max** | skill | product-designer | rascunho de paletas/font-pairings → filtrado pela §0 + anti-slop | **obrigatória** (abaixo) |
 | **design-taste-frontend** | skill | product-designer | sorteia 3 direções pesquisadas p/ §0 + inspector gate nos artboards | **obrigatória** (abaixo) |
 | **impeccable** | skill | product-designer | `critique` dos tokens + `critique`/`audit` dos artboards (nunca `init`/`DESIGN.md`) | **obrigatória** (abaixo) |
+| **supabase-postgres-best-practices** | skill | backend-engineer, performance-engineer | query plan (`EXPLAIN ANALYZE, BUFFERS`), índices, keyset pagination, pooling, locking, custo de RLS | **obrigatória quando o banco é PostgreSQL** (`install.sh`) |
+| **vercel-react-best-practices** | skill | frontend-engineer | fetch paralelo (sem waterfall), fronteiras de RSC, auth dentro de Server Action, custo de render | opt-in, só stack React/Next |
+| **evals-skills** (9 skills) | skill | quality-architect | error analysis, avaliadores binários, judge calibrado (TPR/TNR), evals de regressão em CI | opt-in, Risk Surface LLM/agent/RAG |
+| **copywriting** | skill | product-marketing-manager | copy de lançamento com claims sustentáveis; contexto = `docs/marketing/positioning.md` | opt-in |
+| **terraform-test + terraform-style-guide** | skill | cloud-architect | `fmt`/`validate`/`terraform test` com evidência, `.tftest.hcl` com asserções | opt-in, só quando há `.tf` |
 | **Trail of Bits static-analysis** | plugin | security-engineer | dirige Semgrep/CodeQL/SARIF como engine do Pass 1 | opt-in (abaixo, precisa do binário) |
 | **21st.dev Magic** | MCP geração | frontend-engineer | scaffold de componentes premium → re-expressos nos tokens do DS | opt-in (API key) |
 

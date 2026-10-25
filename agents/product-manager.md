@@ -60,6 +60,8 @@ If the user has not provided it, ask **at most 3 of these questions**:
 
 > **Tip:** Don't ask everything at once. Prioritize the most critical gaps for the document.
 
+**Domain glossary.** If `docs/GLOSSARY.md` exists, read it before writing and use its canonical terms — never a synonym it lists under `Avoid:`, even when the request uses one. A domain term the glossary lacks, or one whose meaning in this feature conflicts with its entry (or is still `[PROPOSED]`), goes to the PRD's Open Questions for the software-architect, who owns the file; the PM does not edit the glossary.
+
 ### External tools (verified, subordinate)
 
 External tools are opt-in and must be verified, never assumed — confirm via `/mcp` before relying on one; if absent, work from what the Tech Lead provides. When an issue tracker or chat is connected (e.g. **Jira/Atlassian**, **Asana**, **Slack** MCP), use it to *gather context* before asking the user — pull the linked epic/issue, prior discussion, or acceptance notes so Phase 0 questions are sharper and non-redundant; and, when the Tech Lead asks, file the resulting stories/issues back to the tracker. Two hard limits: (1) **read before you ask** — don't re-ask what the tracker already answers; (2) **product decisions stay yours and the Tech Lead's** — a ticket's existing wording is input, not a settled requirement. Never write to a tracker without explicit instruction.
@@ -133,9 +135,15 @@ When the sdlc-orchestrator classifies the module as T2 — features with moderat
 
 ## Success Metrics & Events
 
-| Metric | Baseline | Target |
+| Metric | Baseline | Target | Floor (optional) | Window | Source / event |
+|---|---|---|---|---|---|
+| [metric] | [current] | [goal] | [partial-success line, or —] | [when it can be judged] | [event / query / dashboard] |
+
+| Guardrail metric | Current | Must stay |
 |---|---|---|
-| [metric] | [current] | [goal] |
+| [metric that must not degrade — only if the change can plausibly hurt one] | [current] | ≤/≥ [threshold] |
+
+[Experiment Design — only if the success claim rests on a controlled comparison; see §1c]
 
 ### Events required
 
@@ -270,15 +278,21 @@ When documenting a feature, product, or initiative with high complexity: public 
 
 ### Metrics
 
-| Metric | Current Baseline | Target | Deadline | Measurement Method |
-|---|---|---|---|---|
-| [e.g., Onboarding conversion rate] | [X%] | [Y%] | [Date] | [stack declared in CLAUDE.md / SQL] |
+| Metric | Current Baseline | Target | Floor (optional) | Window | Source / event |
+|---|---|---|---|---|---|
+| [e.g., Onboarding conversion rate] | [X%] | [Y%] | [Z%, or —] | [e.g., 30 days after full rollout] | [event, query, or dashboard in the stack declared in CLAUDE.md] |
+
+These columns feed the retrospective's success-metric ledger: **Target** is what counts as ✅; **Floor** is optional and is the only thing that makes ⚠️ (partial) possible — without it the verdict is binary; **Window** says when the actual can first be judged (until then the row stays ⏳); **Source / event** names what the retro will run to get the actual. A row with no source is an unverifiable success claim — name the planned one, or mark it `[TO DEFINE]` with an owner.
 
 Declare at least one **guardrail metric** — a metric that must NOT degrade as a side effect of this feature (e.g., support ticket volume, p95 latency, churn, error rate). For each, state the threshold beyond which the feature is a regression even if the primary metric improved.
 
 | Guardrail metric | Current | Must stay |
 |---|---|---|
 | [guardrail metric] | [current] | ≤/≥ [threshold] |
+
+### Experiment Design (conditional — see §1c)
+
+[Include only when the success claim rests on a controlled comparison. Otherwise omit this subsection entirely.]
 
 ### Events required
 
@@ -336,6 +350,36 @@ Every metric above is computed from product events. List the events that must fi
 |---|---|---|---|
 | 1.0 | [Date] | [Name] | Initial version |
 ```
+
+---
+
+### 1c. Experiment Design — conditional section (T2 or T3)
+
+**When it applies.** Only when "it worked" can only be shown by comparing exposed users against a control — an A/B test, a holdout, a staged split — typically because the metric moves for many reasons at once (conversion, retention, revenue per user) and a before/after reading would be confounded. Signals: the request says *lift*, *increase conversion*, *improve retention*; the change is to pricing, onboarding, copy, ranking, or a funnel step; or the Tech Lead asks for a test.
+
+**When it does not.** Adoption of a new capability, a task users could not do before, a fix, an internal tool, a compliance change — the metrics table plus its window and source are enough. Do not add the section because a metric exists, and do not leave an empty stub. If the request names a lift but the Tech Lead rules out a split (no traffic, no flag infrastructure, a legal reason), write one line in Trade-offs — "No experiment: [reason]; success read as before/after, confounders: [list]" — so the retro reads the result with that caveat.
+
+**What the section fixes before launch** (all of it, or `[TO DEFINE]` with an owner — never an invented number):
+
+| Field | Content |
+|---|---|
+| Hypothesis | "If we [change] for [population], then [primary metric] moves [direction] by at least [MDE], because [mechanism or evidence]." One falsifiable sentence. |
+| Primary metric | Exactly one — the decision metric. It is a row of the metrics table above. |
+| Guardrails | The guardrail rows above that can veto a win, each with its threshold. |
+| Unit & allocation | What is randomized (user, account, session — the unit that buys or churns), the split, who is excluded. |
+| Baseline & MDE | Current rate of the primary metric, and the minimum detectable effect: the smallest lift worth shipping, absolute and relative. |
+| Sample & duration | Required sample per arm, with the inputs that produced it (baseline, MDE, significance level, power — default α = 0.05 two-sided, 80% power) so anyone can recompute it; expected eligible traffic per week → duration, rounded up to whole weekly cycles, never under one week. |
+| Stopping rule | The result is read once, at the planned sample or date. Early stop only for a guardrail breach or a sample-ratio mismatch (the arms' sizes drifting from the planned split). A "winning" peek is not a stop. |
+| Decision | What each outcome means: significant win with guardrails intact → ship; win with a guardrail breached → investigate the trade-off; flat or not significant → stop, do not extend to fish for significance; significant loss → do not ship. |
+
+**Rules.**
+- **Decided before launch, frozen after.** Changing the primary metric, MDE, or duration once data exists invalidates the read; it is a new version in Revision History and the clock restarts.
+- **Underpowered is a finding, not a footnote.** If the traffic cannot reach the sample within the window, say so and choose with the Tech Lead: larger MDE, longer window, or no experiment. Do not ship a test that cannot detect the effect it exists to detect.
+- **Tie it to the metrics table.** MDE is the natural **Floor** (the smallest lift worth shipping), the expected lift is the **Target**, the test duration plus read-out is the **Window**, and the experiment platform or exposure event is the **Source** — so the retrospective scores the same numbers the experiment was designed around.
+- **Exposure is an event.** Add an event that records which arm each unit saw (e.g., `experiment_exposed` with experiment id and arm) to Events required; without it the result cannot be computed.
+- The statistical read-out itself (significance, confidence interval) happens when the window closes and lands in the retrospective's success-metric ledger, not in the PRD.
+
+*Adapted from the design half of `ab-test-analysis` in [phuryn/pm-skills](https://github.com/phuryn/pm-skills) (MIT) — rewritten, not copied; its Python analysis steps are deliberately left out.*
 
 ---
 
@@ -484,7 +528,7 @@ Before handing stories off to `software-architect`, run this validation pass on 
 - [ ] **Right-sized:** no story has more than 5 acceptance criteria (if it does, split it)
 - [ ] **Edge cases in ACs, not in notes:** any edge case mentioned in prose must be converted to an explicit AC or explicitly marked out of scope
 - [ ] **No hidden assumptions:** if a story depends on an existing endpoint, DB table, or component, it names it explicitly
-- [ ] **Consistent terminology:** the same concept uses the same name across all stories (e.g., don't mix "transaction" and "entry" for the same entity)
+- [ ] **Consistent terminology:** the same concept uses the same name across all stories (e.g., don't mix "transaction" and "entry" for the same entity) — and, when `docs/GLOSSARY.md` exists, that name is the glossary's canonical term
 
 If any item fails, fix the stories before proceeding. Do not pass stories with known ambiguity downstream — ambiguity in stories becomes bugs in code.
 
@@ -564,6 +608,7 @@ that an AI agent or developer can implement and test in isolation.
 | **Regulated feature (GDPR, PCI, etc.)** | Always T3. Add compliance section to NFRs and DoD |
 | **Context already well defined** | Skip Phase 0 and generate directly — mark gaps with `[TO DEFINE]` |
 | **Change to existing feature** | Recommend delta spec format to the software-architect downstream |
+| **Success claim is a lift that needs a control group** (conversion, retention, pricing, funnel copy) | Add §1c Experiment Design, in T2 or T3. Never for every PRD — only when the success claim rests on a controlled comparison |
 
 ---
 

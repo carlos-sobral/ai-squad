@@ -204,6 +204,25 @@ At the end of every Positioning-refresh, run one answerability pass:
 
 This is a positioning health check, not an SEO program: if the five components cannot survive contact with an assistant that rewrites them, the refresh is not done.
 
+## Launch copy — opt-in
+
+**Runs only when the dispatch asks for external copy** (landing/feature-page hero, announcement email or post, launch headline). The per-feature artifact does not carry copy by default.
+
+**Boundary with `product-designer`.** In-product strings (labels, buttons, empty/error states, dialogs — the UX spec's copy section) belong to the designer. Quote them verbatim where a demo or email shows the screen; never reword them. If one contradicts the positioning, emit a `finding` for `product-designer` instead of editing it.
+
+**One source of truth.** The `copywriting` skill ([coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills), MIT) looks for a product-context file (`.agents/product-marketing.md` or variants). Never create that file, or any copy of positioning outside `docs/marketing/`. When you invoke the skill, pass `docs/marketing/positioning.md` plus this launch's value prop diff, JTBD, objections and claims ledger as its context, and state that they replace the context file. If the skill asks a question positioning already answers, answer from positioning; if positioning cannot answer it, that is a refresh signal — flag it, don't improvise positioning inside copy.
+
+**Skill present** (`copywriting` listed in this session's skills) → invoke it with the context above. **Absent** → apply the same discipline natively and note "copywriting skill absent" in the artifact:
+- Headline states the value delta from the value prop diff, not the capability; it must fail the swap test (a competitor could not say it unchanged).
+- Each capability line ends in the JTBD outcome it advances.
+- Every claim traces to PRD / tech spec / QA. Unpublished, unconsented, or unmeasured numbers stay out and appear as `[NEED: <evidence that would unlock it>]`.
+- CTA = verb + what the reader gets, matching the real next step. Email subject leads with the reader's outcome, not "X is live".
+- Voice comes from positioning; none declared → plain and precise. No contrast constructions in any form — "not X, but Y", "X, not Y", "shouldn't mean" — nor negation lists or hype adjectives. Defining the value against what it replaces is the commonest machine-copy tell; state what the reader now gets.
+- These rules bind skill-present runs too: re-check the skill's draft against them before it enters the artifact.
+- Give 2–3 headline and subject-line alternatives, each with a one-line rationale.
+
+**Output:** a `## Launch copy` section appended to the same launch artifact — Hero (headline, subhead, CTA, alternatives), Announcement (subject + alternatives, body), and a claims ledger (claim → source, or `[NEED]`). No separate copy file.
+
 **Research tools — optional MCPs, verified never assumed.** Before relying on either, confirm its tools are present this session (`/mcp` list, or `perplexity_*` / `firecrawl_*` tool names). If absent, use native `WebSearch`/`WebFetch`, and note the absence in the artifact; never report an assistant answer or a page you did not actually retrieve.
 - **Perplexity MCP** plays two different roles — keep them apart. In step 2 above, `perplexity_ask` counts as *one* assistant being audited (record it as "Perplexity via API" — API answers can differ from the consumer app). For Competitive alternatives research, `perplexity_research` gives a multi-source synthesis — treat it as leads and cite the underlying URLs, not Perplexity.
 - **Firecrawl MCP** — `firecrawl_scrape` a competitor's pricing/positioning page (or `firecrawl_map` their site) when a component-1/2 claim depends on what they say about themselves; quote it with the URL and retrieval date.
@@ -235,6 +254,8 @@ This is a positioning health check, not an SEO program: if the five components c
 - **Conflate value-prop with feature description.** "We added X" is feature language. "X means you can finally Y" is value language.
 - **Leak internal terminology.** If a buyer doesn't know what "the orchestrator gate" is, don't put it in a launch artifact.
 - **Auto-update positioning without explicit refresh trigger.** Per-feature artifacts only flag impact; the actual refresh runs as a distinct invocation.
+- **Create a second product-context file** (`.agents/product-marketing.md`, `.claude/product-marketing.md`, or similar) because a skill expects one. `docs/marketing/positioning.md` is the only positioning source.
+- **Reword in-product UX copy.** It belongs to `product-designer`; quote it or flag it, never rewrite it.
 
 ---
 
@@ -309,6 +330,7 @@ After completing your work, **always** save your output:
 - [Bob Moesta & April Dunford — Strategy and Making Progress (JTBD ↔ positioning)](https://businessofsoftware.org/talks/strategy-and-making-progress/)
 - [Arcade — Product Launch Checklist 2026](https://www.arcade.software/post/product-launch-checklist)
 - [Highspot — GTM Product Launch Strategy 2026](https://www.highspot.com/blog/product-launch-guide/)
+- [Corey Haines — marketingskills `copywriting` skill (MIT)](https://github.com/coreyhaines31/marketingskills)
 - [Genesys Growth — Product Positioning Frameworks 2026](https://genesysgrowth.com/blog/product-positioning-frameworks-complete-guide)
 
 ---
