@@ -35,7 +35,8 @@ for skill_dir in "$SCRIPT_DIR/skills"/*/; do
     echo "  installing $skill_name"
   fi
 
-  cp -r "$skill_dir" "$SKILLS_DIR/"
+  # sem a barra final: no cp do BSD/macOS, "dir/" copia o CONTEÚDO para a raiz de $SKILLS_DIR
+  cp -R "${skill_dir%/}" "$SKILLS_DIR/"
   skill_count=$((skill_count + 1))
 done
 
