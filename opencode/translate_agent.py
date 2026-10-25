@@ -11,6 +11,7 @@ Rules:
   - appends opencode/runtime-notes.md (all agents) + opencode/adaptations/<agent>.md (if present)
   - CLAUDE.md -> AGENTS.md in the whole file (OpenCode v2 does not read CLAUDE.md)
 """
+
 import argparse
 import pathlib
 import re
@@ -28,15 +29,37 @@ def translate(src: pathlib.Path, model: str) -> str:
         fm = fm.rstrip("\n") + "\nmode: subagent\n"
 
     body = re.sub(r"mcp__([A-Za-z0-9-]+)__(\*|[A-Za-z0-9_]*)", r"\1_\2", body)
-    body = body.replace("`WebSearch`", "`websearch`").replace("`WebFetch`", "`webfetch`")
+    body = body.replace("`WebSearch`", "`websearch`").replace(
+        "`WebFetch`", "`webfetch`"
+    )
     body = body.replace("`Skill` tool", "`skill` tool")
 
-    body = body.rstrip("\n") + "\n" + (OC_DIR / "runtime-notes.md").read_text(encoding="utf-8")
+    body = (
+        body.rstrip("\n")
+        + "\n"
+        + (OC_DIR / "runtime-notes.md").read_text(encoding="utf-8")
+    )
     adapt = OC_DIR / "adaptations" / f"{src.stem}.md"
     if adapt.exists():
         body = body.rstrip("\n") + "\n" + adapt.read_text(encoding="utf-8")
 
-    return ("---" + fm + body).replace("CLAUDE.md", "AGENTS.md")
+    out = ("---" + fm + "---" + body).replace("CLAUDE.md", "AGENTS.md")
+
+    # Detector — the frontmatter MUST be closed by a second '---' before the body
+    # starts. The split above consumes the source's closing fence, so it has to be
+    # re-emitted here. Without it the whole file parses as one unterminated
+    # frontmatter and OpenCode silently drops the agent ("Unknown agent"). Observed
+    # 2026-10-25: this bug shipped twice (old install.sh inline python and the first
+    # version of this translator) and all 13 agents went unregistered on the machine.
+    fence = next(
+        (i for i, l in enumerate(out.splitlines()) if l == "---" and i > 0), None
+    )
+    if fence is None or fence > 12:
+        raise SystemExit(
+            f"translate_agent: {src.name}: generated frontmatter is not terminated "
+            f"within the first 12 lines (closing fence at line {fence})"
+        )
+    return out
 
 
 def main() -> None:
@@ -45,7 +68,9 @@ def main() -> None:
     ap.add_argument("dest")
     ap.add_argument("--model", default="glm/glm")
     a = ap.parse_args()
-    pathlib.Path(a.dest).write_text(translate(pathlib.Path(a.src), a.model), encoding="utf-8")
+    pathlib.Path(a.dest).write_text(
+        translate(pathlib.Path(a.src), a.model), encoding="utf-8"
+    )
 
 
 if __name__ == "__main__":
