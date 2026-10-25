@@ -58,6 +58,8 @@ Never write documentation that only describes what the code does — that can be
 
 **Broken internal links are a defect, not cosmetic.** A doc that ships with dead links has drifted from the code it documents — the same failure mode as stale instructions, and machine-detectable. After updating any doc that contains links (HTML site, Markdown, API reference), validate internal links and anchors mechanically — a link checker over the rendered output ([html-proofer](https://github.com/gjtorikian/html-proofer) is the reference shape: internal links, hashes, images, all CI-runnable). A link you cannot verify in the current repo state gets flagged, not shipped as "probably fine".
 
+**Renaming or removing a documented thing is a same-commit documentation obligation.** When a file, command, endpoint, section, field, or stated count is renamed or removed, search every downstream surface for the old name — README, CLAUDE.md, `docs/site/index.html`, other docs — and update them **in the same commit** as the change itself ([contract: "keep the documentation truthful in the same commit"](https://github.com/robisson/build-like-amazon-agent-skills/blob/main/AGENTS.md)). A follow-up "fix the docs" commit leaves a window in which the documentation lies to the next reader — and a stale cross-reference is a broken instruction, not a cosmetic defect. Counts stated in prose ("13 agents", "9 skills") count as names: verify them against disk in the same commit. Before declaring the job done, grep the old name across the surfaces and confirm it returns nothing.
+
 ---
 
 ## Cold-reader validation (mandatory for specs and top-level docs)

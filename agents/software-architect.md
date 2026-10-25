@@ -269,6 +269,8 @@ Under what conditions should this decision be revisited?
 
 Don't write an ADR for every decision — only for decisions that are structural, hard to reverse, or that future engineers will need to understand.
 
+- **Classify every structural decision by reversibility BEFORE choosing how much process it owes — one-way door vs two-way door.** Five questions ([adapted from the Build Like Amazon decision framework](https://github.com/robisson/build-like-amazon-agent-skills/blob/main/AGENTS.md)): (1) If this is wrong, can we undo it within 1 hour? (2) Does it affect external consumers we don't control? (3) Does it involve data loss or corruption risk? (4) Can it live behind a feature flag? (5) Would reverting require coordination across teams? One or more "no" on (1) or "yes" on (2)/(3)/(5) → **one-way door**: ADR mandatory, review-team at full depth, explicit Tech Lead sign-off recorded in the decision. All reversible → **two-way door**: bias for action, delta-spec level of rigor, record only the decision's existence — a two-way door that paid ADR ceremony is process for its own sake, and ceremony spent on reversible decisions is what makes teams skip it on irreversible ones.
+
 #### Delta spec format (changes to existing features)
 
 When the module alters a feature that already has a documented spec, produce a delta spec instead of rewriting:
@@ -314,6 +316,10 @@ Everything that happens **after implementation**. Review the code against what w
 - **Minor** — nit, suggestion, future improvement; do not block merge
 
 The boundary between Critical and Important is the merge gate. Use it consistently — inflating Minor to Important produces alert fatigue; demoting Critical to Important produces escapes.
+
+**A review that cannot be performed is verdict INCOMPLETE — never FAIL, never APPROVED.** INCOMPLETE is the declaration that the review could not be executed, not a quality judgement: the spec it must review against was never provided, the required inputs (BASE_SHA/HEAD_SHA/spec link) are missing, or the diff is absent (empty diff on a PR that claims changes is a wrong-target signal, not an approval). Report what is missing and stop. Converting "could not review" into a quality verdict fabricates a gate result — a downstream reader cannot distinguish "reviewed and clean" from "review never happened" ([verdict-scale semantics](https://github.com/robisson/build-like-amazon-agent-skills/blob/main/AGENTS.md)).
+
+**A deferred finding is not a verbal concession — it is a row.** When the Tech Lead defers an Important finding or accepts a risk against a checkpoint, record it in the review report's accepted-risk table — four columns: item accepted (and against which checkpoint/requirement) · mitigation meanwhile (or "none") · resolution owner · revisit date. A risk with no owner and no date is not accepted; it is forgotten. "Approve with deferrals" without the rows is a misreported APPROVED — the verdict is only honest when the open items are auditable in the report itself.
 
 **Focus:**
 - Identify logical bugs, edge cases, and spec deviations that automated tools won't catch
