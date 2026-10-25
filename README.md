@@ -300,7 +300,13 @@ Vários agentes sabem usar ferramentas externas **quando disponíveis** — e de
 | **Context7 MCP** | backend-eng, frontend-eng, software-architect, tech-writer | docs version-specific de libs (anti-alucinação) | `.mcp.json` |
 | **Lighthouse MCP** | performance-engineer | auditorias lab CWV/perf (field data governa o veredito) | `.mcp.json` |
 | **Sentry MCP** | performance-engineer, quality-architect | erros/releases reais de produção | `.mcp.json` + OAuth |
-| **ui-ux-pro-max** | product-designer | rascunho de paletas/pairings → filtrado pela direção + anti-slop | opt-in |
+| **ui-ux-pro-max** | product-designer | rascunho de paletas/pairings → filtrado pela direção + anti-slop | **obrigatória** |
+| **design-taste-frontend** | product-designer | 3 direções sorteadas de uma biblioteca de sites reais → candidatas da §0; inspector gate nos artboards | **obrigatória** |
+| **impeccable** | product-designer | `critique` dos tokens, `critique`/`audit` dos artboards — proibido `init`/`PRODUCT.md`/`DESIGN.md` (segunda fonte de verdade) | **obrigatória** (engine compilado do fonte, telemetria off) |
+| **Perplexity MCP** | idea-researcher, product-marketing-manager, auto-research, sdlc-practices-evolve | pesquisa multi-fonte com citação; preferido para descoberta. Sem ferramenta web, o brief sai `UNVERIFIED` | opt-in (API key) |
+| **Firecrawl MCP** | idea-researcher, product-marketing-manager, auto-research, sdlc-practices-evolve | leitura/crawl de página conhecida (concorrente, pricing, doc). Fecha o gap de pesquisa web no OpenCode | opt-in (API key) |
+| **web-design-guidelines** (Vercel Web Interface Guidelines) | frontend-engineer, qa-engineer | checklist objetivo (hit area, `autocomplete`, submit lifecycle, `tabular-nums`, reduced motion) dentro da self-critique / visual regression — sem gate novo | opt-in |
+| **PostHog MCP** | product-backlog | Reach/Impact do RICE vindos de dado real, cada número com a query; sem MCP, tudo rotulado como estimativa. Recipe: [`docs/integrations/posthog.md`](docs/integrations/posthog.md) | opt-in (projeto que já usa PostHog) |
 | **Trail of Bits SAST** | security-engineer | dirige Semgrep/CodeQL como engine do Pass 1 | opt-in (precisa de semgrep) |
 | **21st.dev Magic** | frontend-engineer | scaffold de componentes → re-expressos nos tokens do DS | opt-in (API key) |
 
