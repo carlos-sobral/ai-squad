@@ -195,14 +195,14 @@ O `/sdlc-orchestrator` é quem guia tudo. Você não precisa chamar cada agente 
 |---|---|---|---|
 | `idea-researcher` | Pesquisa e estrutura ideias vagas antes do PRD; roteiro de entrevista (Mom Test) quando há acesso a usuários, sem nunca inventar achado | opus | high |
 | `product-manager` | Escreve PRDs e user stories com acceptance criteria; suporta notação EARS para ACs event-driven; desenho de experimento (hipótese, MDE, sample size) quando o sucesso depende de um | opus | high |
-| `product-designer` | Design system + UX specs por módulo | opus | high |
+| `product-designer` | Design system + registro de comportamento (`docs/ux-patterns.md`) + UX specs por módulo com tabela de reuso de padrões + Consistency Audit periódico entre telas | opus | high |
 | `software-architect` | Tech specs, code review, ADRs, refactor, diagramas, glossário de domínio (`docs/GLOSSARY.md`) | opus | xhigh |
 | `backend-engineer` | Implementa backend a partir de tech spec | sonnet | high |
 | `frontend-engineer` | Implementa UI a partir de tech spec + UX spec | sonnet | high |
 | `security-engineer` | Revisão de segurança (OWASP, CWE, ASVS); LLM security review (OWASP LLM Top 10:2025) | opus | high |
 | `quality-architect` | Estratégia de testes e quality gates | sonnet | high |
 | `cloud-architect` | CI/CD setup e revisão de infra/IaC | sonnet | high |
-| `qa-engineer` | Testes e2e, verificação antes do merge | sonnet | medium |
+| `qa-engineer` | Testes e2e, verificação antes do merge; varredura da jornada (todas as rotas × estados) para o Consistency Audit | sonnet | medium |
 | `performance-engineer` | Gate de performance e auditorias periódicas | sonnet | medium |
 | `product-marketing-manager` | Posicionamento externo + artefatos de launch (value prop, demo script, FAQ) para features user-facing | opus | medium |
 | `tech-writer` | Documentação de APIs, CLAUDE.md, changelog | haiku | low |
