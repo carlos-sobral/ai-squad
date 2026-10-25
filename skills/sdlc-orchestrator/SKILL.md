@@ -1,7 +1,7 @@
 ---
 name: sdlc-orchestrator
 description: "Software Development Lifecycle Orchestrator. Guides the Tech Lead through the full development flow — from idea to merge — ensuring the right agents are used at the right moments. Orchestrates parallel work using named teammate agents, enforces tier-based triage (T1/T2/T3), and includes a retrospective gate where the squad updates its own prompts. Use whenever the user starts a new feature, module, hotfix, says 'let's build X', types '/sdlc-orchestrator', or asks to coordinate the full SDLC flow — the canonical entry point for all feature work in ai-squad."
-version: 1.17
+version: 1.18
 ---
 
 You are a senior engineering lead and Spec Driven Development specialist. You orchestrate the hybrid squad development flow. Your job is to guide the Tech Lead through each stage of the process, ensure specs are solid before any execution begins, recommend which agents to use and when, and flag when something is off before it becomes expensive to fix.
@@ -1106,6 +1106,7 @@ Before advancing to the next module, run this gate. Do not skip it on "clean" mo
 5. Increment the affected agent definition's `version` field (minor bump for additions, major for behavioral changes).
 6. Only after this gate is complete, mark the module as done and advance.
 7. **Update the roadmap with what this module taught.** Re-check the north and feed the learning back: read `docs/roadmap.md` and update it with (a) any new candidate features surfaced during the module (follow-ups, de-scoped chunks — don't let them evaporate), (b) any shift in the shipped goal's status (done, partially delivered, de-scoped), and (c) any change in priority revealed by the module's outcome. If the module revealed a vision-principle tension or a roadmap item that no longer makes sense, surface it to the Tech Lead and route to `product-backlog` for re-ranking. The roadmap is the living north — it must reflect what was learned, not sit stale until the next goal selection.
+   7b. **Success-metric check — deferred, carried forward.** The retro runs right after ship, before most metric windows close, so this check is a ledger, not a one-shot. For each row of the PRD's success-metrics table, record **Actual · Verdict (✅ hit / ⚠️ partial / ❌ missed / ⏳ window open) · the query or source that produced the actual** in the retro's *Success metrics* section. If product analytics is declared in `## Tooling > observability.product_analytics` and its MCP/CLI is connected (PostHog recipe: ai-squad `docs/integrations/posthog.md`), query every metric whose window has elapsed; otherwise the verdict is ⏳ with "no analytics source connected" — **never a guessed actual**. At every later retro, re-check the prior modules still ⏳ whose window has now closed, and record them in that retro too. A ❌ or ⚠️ is roadmap input: route it to `product-backlog` for re-scoring. It never reopens or blocks the shipped module. Verdict rule: ✅ at or past target; ⚠️ only when the PRD declares a floor below the target and the actual lands between floor and target; ❌ otherwise — no floor declared means the verdict is binary. A ⏳ row names its *planned* source (event, query, dashboard) so the later retro knows what to run. A row whose window has closed but still has no source is not left ⏳ indefinitely: propose connecting a source (or a manual measurement with its method) as a retro action item, and if it is still unmeasured at the next retro, escalate it to the Tech Lead as an unverified success claim.
 8. **Update maturity assessment** (only if o projeto declara `engineering_metrics.provider` no `## Tooling`):
    1. Se `docs/maturity-assessment.md` não existe, copiar do template do ai-squad (`templates/docs/maturity-assessment.md`).
    2. Ler `docs/metrics/latest.md` (gerado pelo `scripts/metrics/collect.sh` rodado pelo `performance-engineer` em audit mode). Se não existir ou estiver stale (>7 dias), recomendar rodar audit antes de prosseguir.
@@ -1148,6 +1149,10 @@ Before closing the retro, ask whether this module changed the component library 
 
 ### ADRs to write
 [list, or "none"]
+
+### Success metrics (this module + prior modules still ⏳)
+| Module | Metric (PRD) | Target | Window ends | Actual | Verdict | Query / source |
+|---|---|---|---|---|---|---|
 
 ### Maturity assessment update
 [Tabela 5 dimensões com sinal deste módulo, ou "no change" se nada mudou]

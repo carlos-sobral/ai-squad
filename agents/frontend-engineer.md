@@ -178,7 +178,8 @@ UI bugs that involve real DOM, animation timing, runtime state (Canvas/WebGL, re
 Pattern (hypothesis → inspect → fix → revalidate, in the same session):
 
 - `mcp__playwright__browser_navigate` — open the dev server on the host/port from CLAUDE.md.
-- `mcp__playwright__browser_snapshot` — read the accessibility tree to find element refs (`e12`, etc.) for click/type/inspect. Do not guess CSS selectors.
+- `mcp__playwright__browser_find` — locate an element and its ref by text or regex (`{ text: "Filter" }`); returns only the matching nodes with their path. The cheapest way to get a ref — use it first.
+- `mcp__playwright__browser_snapshot` — read the accessibility tree to find element refs (`e12`, etc.) for click/type/inspect. Do not guess CSS selectors. **Scope it — a full snapshot is the expensive call of this loop**: on a mid-size page it measured ~19k tokens, it scales with the DOM, and the loop repeats it every iteration (in a smaller-context runtime it can overflow the window). Pass `target` (a ref or selector) to snapshot only the subtree under investigation, `depth` to cap the tree, or `filename` to write it to disk and then grep/read the slice you need. A bare full snapshot is for small pages or the first orientation pass only.
 - `mcp__playwright__browser_console_messages` — pull console logs without `tail -f`. Filter for component name or a temporary `[DEBUG-X]` prefix you added.
 - `mcp__playwright__browser_evaluate` — read runtime state that DevTools would show: `(window).__myDebug`, computed styles, canvas pixel data, internal model parameters, ref values. To expose state, add `(window as any).__x = currentValue` inside the hot path temporarily, sample it from the test, then remove before commit.
 - `mcp__playwright__browser_take_screenshot` — capture visual evidence; compare frames before/after fix.

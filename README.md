@@ -471,7 +471,7 @@ Inclui:
 - Deployment frequency, lead time, MTTR, change failure rate
 - Spec discipline (% modules com T2 antes de código)
 - Review coverage (% PRs com code review, security review)
-- Learning loop (retrospectivas, ADRs, atualizações de CLAUDE.md)
+- Learning loop (retrospectivas, ADRs, atualizações de CLAUDE.md, métricas de sucesso do PRD conferidas no retro quando a janela fecha)
 - Observability (SLI/SLO defined, alertas configurados)
 
 Gráfico de maturidade: `templates/docs/maturity-assessment.md` — rubrica 5×4 (5 dimensões × 4 níveis: Ad-hoc → Otimizando). Baseline auto-reivindicado no onboarding brownfield.
