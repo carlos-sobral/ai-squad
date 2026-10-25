@@ -88,12 +88,14 @@ Para sincronizar os 13 agents do Claude para o opencode:
 bash scripts/sync-opencode-agents.sh
 ```
 
-O script converte cada agent de `~/.claude/agents/` para `~/.config/opencode/agents/`, aplicando as regras de conversão:
+O script (e o `install.sh`, que usa as mesmas regras) converte cada agent de `~/.claude/agents/` para `~/.config/opencode/agents/`. As regras vivem num lugar só, [`opencode/translate_agent.py`](opencode/translate_agent.py):
 
-- `model` → `sensedia/sensedia` (override com `--model <id>` ou `OPCODE_MODEL`)
+- `model` → `glm/glm` (override com `--model <id>` ou `OPCODE_MODEL`)
 - `mode: subagent` → permite invocação via Task tool / `@menção`
 - `version` / `effort` → removidos (o opencode ignora)
+- nomes de ferramenta → `mcp__<srv>__<tool>` vira `<srv>_<tool>` (convenção do opencode v2); `WebSearch`/`WebFetch` viram `websearch`/`webfetch`
 - corpo do prompt → referências a `CLAUDE.md` reescritas para `AGENTS.md` (o arquivo de contexto de projeto nativo do opencode — ponte agnóstica de harness)
+- anexa [`opencode/runtime-notes.md`](opencode/runtime-notes.md) a todos (equivalências de ferramentas, `websearch` que só existe em alguns providers, `todowrite`) e, quando existe, `opencode/adaptations/<agent>.md` — hoje o `product-designer`, onde o **Open Design** (MCP `open-design_*`) substitui o Claude Design nos artboards, no pull-back e no Design System Sync Mode; `start_run` fica proibido porque criaria um segundo autor do contrato visual
 
 É idempotente — seguro re-rodar sempre que o global mudar. Depois de sincronizar, os agents aparecem como subagents no opencode (`opencode agent list`).
 

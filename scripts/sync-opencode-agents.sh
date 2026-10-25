@@ -11,16 +11,10 @@
 # opencode reads ~/.claude/skills/*/SKILL.md natively, so no conversion is
 # needed for skills.
 #
-# Conversion rules (Claude → opencode):
-#   - model:  replaced with the opencode model id (default sensedia/sensedia)
-#   - mode:   added as "subagent" so agents are invocable via the Task tool
-#   - version / effort: dropped (opencode ignores them)
-#   - body:   CLAUDE.md refs rewritten to AGENTS.md (opencode's native project
-#             context file — the AGENTS.md standard). This is the framework's
-#             harness-agnostic bridge: agents speak of "the project context
-#             file"; each adapter maps the name. (Backlog item #20, T1.)
+# Conversion rules live in ONE place: opencode/translate_agent.py (also used by install.sh).
+# Model defaults to glm/glm; override with --model or OPCODE_MODEL.
 #
-# Usage: bash scripts/sync-opencode-agents.sh [--model sensedia/sensedia]
+# Usage: bash scripts/sync-opencode-agents.sh [--model glm/glm]
 #
 # Idempotent: safe to re-run; regenerates all agents from the global source.
 
@@ -28,7 +22,8 @@ set -euo pipefail
 export LC_ALL=C
 export LANG=C
 
-MODEL="${OPCODE_MODEL:-sensedia/sensedia}"
+MODEL="${OPCODE_MODEL:-glm/glm}"
+TRANSLATOR="$(cd "$(dirname "$0")/.." && pwd)/opencode/translate_agent.py"
 SRC_DIR="${HOME}/.claude/agents"
 DST_DIR="${HOME}/.config/opencode/agents"
 
@@ -52,21 +47,7 @@ for src in "$SRC_DIR"/*.md; do
   name="$(basename "$src" .md)"
   dst="$DST_DIR/$name.md"
 
-  # Rewrite frontmatter: drop version/effort, swap model, add mode: subagent.
-  # Body is copied verbatim after the closing ---.
-  awk -v model="$MODEL" '
-    BEGIN { infm=0; fm=0; body=0 }
-    body { print; next }
-    !body && NR==1 && $0=="---" { infm=1; fm=1; print "---"; next }
-    fm && $0=="---" { fm=0; body=1; print "mode: subagent"; print "---"; next }
-    fm && infm {
-      if ($0 ~ /^model:/) { print "model: " model; next }
-      if ($0 ~ /^(version|effort|mode):/) { next }
-      print
-      next
-    }
-    { print }
-  ' "$src" | sed 's/CLAUDE\.md/AGENTS.md/g' > "$dst"
+  python3 "$TRANSLATOR" "$src" "$dst" --model "$MODEL"
 
   converted=$((converted + 1))
   log "converted $name → $dst"

@@ -72,6 +72,8 @@ echo ""
 #   - mode: subagent entra (se ausente)
 #   - effort:/version: saem (o OpenCode ignora campos extra; sem eles a cópia bate byte a byte)
 #   - CLAUDE.md -> AGENTS.md no arquivo inteiro (o OpenCode v2 não lê CLAUDE.md)
+#   - nomes de ferramenta: mcp__srv__tool -> srv_tool, `WebSearch`/`WebFetch` -> minúsculas
+#   - anexa opencode/runtime-notes.md (todos) + opencode/adaptations/<agent>.md (se existir)
 OPENCODE_AGENTS_DIR="$HOME/.config/opencode/agents"
 
 oc_agent_count=0
@@ -87,22 +89,8 @@ if mkdir -p "$OPENCODE_AGENTS_DIR" 2>/dev/null && command -v python3 >/dev/null 
       echo "  installing $agent_name"
     fi
 
-    AGENT_SRC="$agent_file" AGENT_DEST="$dest" python3 - <<'PYEOF'
-import os, re, pathlib
-
-src = pathlib.Path(os.environ["AGENT_SRC"]).read_text(encoding="utf-8")
-parts = src.split("---", 2)
-fm, body = parts[1], parts[2]
-
-fm = re.sub(r"^model: .*$", "model: glm/glm", fm, flags=re.M)
-fm = re.sub(r"^(effort|version): .*\n", "", fm, flags=re.M)
-if not re.search(r"^mode:", fm, flags=re.M):
-    fm = fm.rstrip("\n") + "\nmode: subagent\n"
-
-out = (fm + body).replace("CLAUDE.md", "AGENTS.md")  # troca no arquivo inteiro (description incluida)
-
-pathlib.Path(os.environ["AGENT_DEST"]).write_text(f"---{out}", encoding="utf-8")
-PYEOF
+    # regras de tradução num lugar só (também usadas por scripts/sync-opencode-agents.sh)
+    python3 "$SCRIPT_DIR/opencode/translate_agent.py" "$agent_file" "$dest" --model "${OPCODE_MODEL:-glm/glm}"
     oc_agent_count=$((oc_agent_count + 1))
   done
 else
