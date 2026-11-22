@@ -5,7 +5,7 @@
 >
 > **Adaptações para o OpenCode (público único deste arquivo):**
 > 1. A seção "Agent invocation — named teammates" descreve mecânica do **Claude Code** (tmux, panes, `TaskStop`) — no OpenCode, subagentes vivem em `~/.config/opencode/agents/` (frontmatter `mode: subagent`) e são invocados pelo mecanismo nativo.
-> 2. A coluna "Model" da tabela cita modelos do Claude Code; no OpenCode cada agente carrega o próprio `model` no frontmatter (`glm/glm` + variante).
+> 2. A coluna "Model" da tabela cita modelos do Claude Code; no OpenCode cada agente carrega o próprio `model` no frontmatter, por natureza do trabalho (decisão de 2026-11-21): **código** (backend, frontend, qa, performance, cloud, quality, security, tech-writer) → `glm/glm#medium` — o alvo é `#high`, que depende de a convenção da frota publicar a variante (o provider `glm` é sincronizado pelo plugin `sensedia-opencode-v2.ts` e edição local é sobrescrita); **planejamento, ideação, pesquisa e julgamento** (idea-researcher, product-manager, product-marketing-manager, product-designer, software-architect e os agentes do vault) → `claude-agent/opus#high`. As cópias em `~/.claude/agents/` seguem com os modelos do Claude Code e com o campo `name`, que o Claude Code exige e o OpenCode V2 trata como legado.
 > 3. Referências a `CLAUDE.md` de projeto viraram `AGENTS.md` — o OpenCode v2 não lê `CLAUDE.md`.
 
 This directory contains a Spec-Driven Development (SDD) agent system: a set of AI agents that cover the full software development lifecycle, from idea to production deploy. Each agent is a specialized worker invoked at a specific stage of the flow.
@@ -27,6 +27,7 @@ The system has two types of components:
 |---|---|---|
 | `idea-researcher` | Raw idea that needs structure before becoming a PRD | opus |
 | `product-manager` | Write a PRD or user stories | opus |
+| `product-marketing-manager` | Launch story (value prop, demo script, FAQ) for a shipped user-facing module, or refresh the app's positioning | opus |
 | `product-designer` | Design system setup or UX spec for a UI module | opus |
 | `software-architect` | Technical spec, API contracts, ADRs, or code review | opus |
 | `backend-engineer` | Implement backend from an approved tech spec | sonnet |
@@ -44,6 +45,8 @@ The system has two types of components:
 | Skill | One-line trigger |
 |---|---|
 | `sdlc-orchestrator` | Start any feature, module, or hotfix — invoke via `/sdlc-orchestrator` |
+
+**No OpenCode, o orquestrador também é agente `primary`** (`sdlc-orchestrator` na troca de agente, `claude-agent/opus#high`; fonte: `ai-squad/opencode/agents/sdlc-orchestrator.md`). Ele carrega a skill e a segue (a skill é a fonte única do processo), tem permissão total e **delega em vez de executar**: tudo que um especialista é dono — inclusive o fix de um hotfix T1 — vai para o subagente; ele mesmo só faz artefatos de coordenação, git/PR/merge e a verificação entre etapas.
 
 ### Slash patterns
 

@@ -12,7 +12,7 @@
 # needed for skills.
 #
 # Conversion rules live in ONE place: opencode/translate_agent.py (also used by install.sh).
-# Model defaults to glm/glm; override with --model or OPCODE_MODEL.
+# Model per agent by nature of work (see MODEL_BY_CLAUDE in the translator); --model or OPCODE_MODEL forces one for all.
 #
 # Usage: bash scripts/sync-opencode-agents.sh [--model glm/glm]
 #
@@ -22,7 +22,7 @@ set -euo pipefail
 export LC_ALL=C
 export LANG=C
 
-MODEL="${OPCODE_MODEL:-glm/glm}"
+MODEL="${OPCODE_MODEL:-}"
 TRANSLATOR="$(cd "$(dirname "$0")/.." && pwd)/opencode/translate_agent.py"
 SRC_DIR="${HOME}/.claude/agents"
 DST_DIR="${HOME}/.config/opencode/agents"
@@ -47,10 +47,10 @@ for src in "$SRC_DIR"/*.md; do
   name="$(basename "$src" .md)"
   dst="$DST_DIR/$name.md"
 
-  python3 "$TRANSLATOR" "$src" "$dst" --model "$MODEL"
+  python3 "$TRANSLATOR" "$src" "$dst" ${MODEL:+--model "$MODEL"}
 
   converted=$((converted + 1))
   log "converted $name → $dst"
 done
 
-log "done: $converted agents synced to $DST_DIR (model=$MODEL)"
+log "done: $converted agents synced to $DST_DIR (model=${MODEL:-per-agent})"

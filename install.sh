@@ -68,9 +68,10 @@ echo ""
 
 # Gera ~/.config/opencode/agents/*.md a partir do MESMO agents/ canônico.
 # Tradução (plano second-brain-agnostico, D3/Fase 3):
-#   - model: <claude-model>  -> model: glm/glm (gateway Sensedia)
+#   - model: por natureza do trabalho (opus -> claude-agent/opus#high; sonnet/haiku e security -> glm/glm#medium); OPCODE_MODEL força um só
+#   - name: sai (campo V1 no OpenCode; o ID vem do nome do arquivo)
 #   - mode: subagent entra (se ausente)
-#   - effort:/version: saem (o OpenCode ignora campos extra; sem eles a cópia bate byte a byte)
+#   - effort:/version:/name: saem (o OpenCode ignora campos extra; sem eles a cópia bate byte a byte)
 #   - CLAUDE.md -> AGENTS.md no arquivo inteiro (o OpenCode v2 não lê CLAUDE.md)
 #   - nomes de ferramenta: mcp__srv__tool -> srv_tool, `WebSearch`/`WebFetch` -> minúsculas
 #   - anexa opencode/runtime-notes.md (todos) + opencode/adaptations/<agent>.md (se existir)
@@ -90,7 +91,16 @@ if mkdir -p "$OPENCODE_AGENTS_DIR" 2>/dev/null && command -v python3 >/dev/null 
     fi
 
     # regras de tradução num lugar só (também usadas por scripts/sync-opencode-agents.sh)
-    python3 "$SCRIPT_DIR/opencode/translate_agent.py" "$agent_file" "$dest" --model "${OPCODE_MODEL:-glm/glm}"
+    python3 "$SCRIPT_DIR/opencode/translate_agent.py" "$agent_file" "$dest" ${OPCODE_MODEL:+--model "$OPCODE_MODEL"}
+    oc_agent_count=$((oc_agent_count + 1))
+  done
+  # Agentes que só existem no OpenCode (sem par em agents/), copiados como estão.
+  # Ex.: sdlc-orchestrator — no Claude Code é a skill; no OpenCode é também agente primary.
+  for agent_file in "$SCRIPT_DIR/opencode/agents"/*.md; do
+    [ -f "$agent_file" ] || continue
+    agent_name=$(basename "$agent_file")
+    if [ -f "$OPENCODE_AGENTS_DIR/$agent_name" ]; then echo "  updating  $agent_name (opencode-only)"; else echo "  installing $agent_name (opencode-only)"; fi
+    cp "$agent_file" "$OPENCODE_AGENTS_DIR/$agent_name"
     oc_agent_count=$((oc_agent_count + 1))
   done
 else
